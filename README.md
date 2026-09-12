@@ -47,6 +47,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+`npm run build` also runs `prisma migrate deploy` first, so a normal deploy (Vercel or otherwise)
+applies any pending schema migrations automatically as long as `DATABASE_URL` is set — you only
+need to run it by hand for local dev before `npm run dev`, since `dev` doesn't build.
+
 ## Environment variables
 
 See [`.env.example`](./.env.example) for the full list. The important ones:
