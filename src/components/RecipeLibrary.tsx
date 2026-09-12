@@ -8,9 +8,7 @@ import { RecipeCard } from "./RecipeCard";
 import type { RecipeDto } from "@/lib/types";
 
 const STATUS_MESSAGES = [
-  "Fetching the video…",
-  "Listening to the narration…",
-  "Reading on-screen text…",
+  "Reading the caption and hashtags…",
   "Working out ingredients and steps…",
   "Estimating time, difficulty, and cost…",
 ];

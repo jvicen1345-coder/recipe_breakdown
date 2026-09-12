@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { runCommand } from "./exec";
 
-const YT_DLP_BIN = process.env.YT_DLP_PATH || "yt-dlp";
+export const YT_DLP_BIN = process.env.YT_DLP_PATH || "yt-dlp";
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 
 export class InvalidTikTokUrlError extends Error {}
@@ -35,7 +35,7 @@ export function isTikTokUrl(value: string): boolean {
   }
 }
 
-function assertTikTokUrl(url: string) {
+export function assertTikTokUrl(url: string) {
   if (!isTikTokUrl(url)) {
     throw new InvalidTikTokUrlError("That doesn't look like a TikTok link (expected a tiktok.com URL).");
   }

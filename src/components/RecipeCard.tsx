@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Clock3, ChefHat, DollarSign, UtensilsCrossed } from "lucide-react";
 
@@ -24,12 +23,12 @@ export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
     >
       <div className="relative aspect-[4/5] w-full bg-violet-50 dark:bg-violet-900/40">
         {recipe.thumbnailUrl ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element -- external TikTok CDN hostnames rotate, can't be whitelisted
+          <img
             src={recipe.thumbnailUrl}
             alt={recipe.title}
-            fill
-            sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 90vw"
-            className="object-cover transition duration-300 group-hover:scale-105"
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-violet-300">

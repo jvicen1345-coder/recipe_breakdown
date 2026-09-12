@@ -16,7 +16,8 @@ model Recipe {
 
   title         String
   authorHandle  String?
-  thumbnailPath String?
+  thumbnailPath String? // set when a frame was extracted locally (full pipeline)
+  thumbnailUrl  String? // set when reusing TikTok's own hosted thumbnail (lite pipeline)
   caption       String?
   transcript    String?
   userNotes     String?

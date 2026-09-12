@@ -73,3 +73,13 @@ export function runCommand(
     });
   });
 }
+
+/** Checks whether a CLI tool is actually installed and runnable, e.g. to pick a fallback strategy. */
+export async function commandExists(bin: string): Promise<boolean> {
+  try {
+    await runCommand(bin, ["--version"], { timeoutMs: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
+}

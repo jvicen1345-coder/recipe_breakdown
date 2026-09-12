@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ChefHat, Clock3, DollarSign, ExternalLink, UtensilsCrossed } from "lucide-react";
 
@@ -43,7 +42,8 @@ export default async function RecipeDetailPage({ params }: Props) {
       <div className="grid gap-6 sm:grid-cols-[220px_1fr]">
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-violet-50 dark:bg-violet-900/40">
           {recipe.thumbnailUrl ? (
-            <Image src={recipe.thumbnailUrl} alt={recipe.title} fill sizes="220px" className="object-cover" />
+            // eslint-disable-next-line @next/next/no-img-element -- external TikTok CDN hostnames rotate, can't be whitelisted
+            <img src={recipe.thumbnailUrl} alt={recipe.title} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center text-violet-300">
               <UtensilsCrossed size={32} />

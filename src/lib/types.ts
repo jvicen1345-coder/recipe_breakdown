@@ -45,7 +45,7 @@ export function toRecipeDto(recipe: Recipe): RecipeDto {
     sourceUrl: recipe.sourceUrl,
     title: recipe.title,
     authorHandle: recipe.authorHandle,
-    thumbnailUrl: recipe.thumbnailPath ? `/api/media/${recipe.thumbnailPath}` : null,
+    thumbnailUrl: recipe.thumbnailUrl ?? (recipe.thumbnailPath ? `/api/media/${recipe.thumbnailPath}` : null),
     caption: recipe.caption,
     transcript: recipe.transcript,
     userNotes: recipe.userNotes,

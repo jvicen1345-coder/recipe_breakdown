@@ -7,7 +7,20 @@ you can revisit.
 
 ## How it works
 
-For each submitted TikTok link:
+The app automatically picks one of two pipelines per request, depending on whether `yt-dlp` is
+actually installed on the host it's running on — no configuration needed either way.
+
+**Lite pipeline** (used when `yt-dlp` isn't available — e.g. on Vercel):
+
+1. Fetches the video's caption, hashtags, author, and thumbnail from TikTok's public oEmbed
+   endpoint — a normal web request, no video download.
+2. Sends that caption plus any notes you typed in to Claude, which returns a structured recipe
+   breakdown.
+
+No spoken narration or on-screen text is read in this mode, so accuracy depends on how much the
+caption/hashtags say — use the "Add notes" field to fill in anything the caption leaves out.
+
+**Full pipeline** (used when `yt-dlp` + `ffmpeg` are installed — e.g. the included Docker image):
 
 1. **Download** — [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) fetches the video file and its
    metadata (caption, hashtags, uploader, duration).
@@ -15,13 +28,12 @@ For each submitted TikTok link:
    video.
 3. **Transcribe** — the audio is sent to OpenAI's Whisper API to capture any spoken narration.
 4. **Analyze** — the caption, transcript, sampled frames (read for on-screen ingredient lists/steps),
-   and any notes you typed in are sent to Claude, which returns a structured recipe breakdown
-   (title, ingredients, instructions, time, difficulty, price, protein/diet type).
-5. **Save** — the result is stored in a Postgres database, along with a thumbnail pulled from
-   the video itself (saved to local disk).
+   and any notes you typed in are sent to Claude for the structured breakdown.
+5. The video/audio are discarded after analysis; one extracted frame is kept as the thumbnail
+   (saved to local disk).
 
-The original video file and audio are discarded after analysis — only the extracted text/metadata
-and one thumbnail frame are kept.
+Both pipelines produce the same kind of result (title, ingredients, instructions, time, difficulty,
+price, protein/diet type) and save to the same Postgres database.
 
 ## Prerequisites
 
@@ -29,12 +41,12 @@ and one thumbnail frame are kept.
 - A Postgres database (e.g. [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres),
   [Neon](https://neon.tech), [Supabase](https://supabase.com), [Railway](https://railway.app), or a
   local instance for development)
-- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp#installation) on your `PATH` (or set `YT_DLP_PATH`)
-- `ffmpeg` and `ffprobe` on your `PATH` (or set `FFMPEG_PATH` / `FFPROBE_PATH`)
 - An [Anthropic API key](https://console.anthropic.com/) (required — this is what builds the
   structured recipe)
-- An [OpenAI API key](https://platform.openai.com/) (optional — enables transcription of spoken
-  narration; without it, analysis relies on the caption, on-screen text, and your notes)
+- Optional, only for the full pipeline: [`yt-dlp`](https://github.com/yt-dlp/yt-dlp#installation)
+  and `ffmpeg`/`ffprobe` on your `PATH` (or set `YT_DLP_PATH` / `FFMPEG_PATH` / `FFPROBE_PATH`), plus
+  an [OpenAI API key](https://platform.openai.com/) for transcription. Without these, the app still
+  works fully — it just uses the lite pipeline (see "How it works" above).
 
 ## Setup
 
@@ -68,7 +80,9 @@ Dockerfile works the same way; Railway is a straightforward option:
    redeploys (without one, `data/uploads` resets each time the container rebuilds — saved recipes
    and their text/metadata in Postgres are unaffected either way, only the thumbnail images).
 
-This will **not** work on Vercel or other serverless-function hosts — see the limitations below.
+Deploying to **Vercel** (or any other serverless host) works too — it just automatically runs the
+lite pipeline instead, since `yt-dlp` isn't available there. No extra setup beyond `DATABASE_URL`
+and `ANTHROPIC_API_KEY`.
 
 ## Environment variables
 
@@ -85,36 +99,33 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 
 ## Notes and limitations
 
-- **TikTok changes often.** `yt-dlp` is what makes downloads work; if TikTok changes its site and
-  links stop resolving, update it (`pip install -U yt-dlp` or your package manager's equivalent).
-- **Private, age-restricted, region-locked, or removed videos** can't be downloaded.
-- **No spoken narration + no on-screen text** means there's little for the analysis step to work
-  with — use the "Add notes" field on the form to paste in anything you noticed (ingredient list,
-  substitutions) to improve accuracy.
+- **On the lite pipeline (Vercel etc.), accuracy depends on the caption.** No spoken narration or
+  on-screen text is read — only the caption/hashtags and whatever you type into "Add notes." Videos
+  that put the recipe in the caption work well; videos that only say it out loud or show it as
+  on-screen text need the full pipeline, or your own notes to fill the gap.
+- **TikTok changes often.** This affects both pipelines differently: the lite pipeline depends on
+  TikTok's oEmbed endpoint staying available; the full pipeline depends on `yt-dlp` staying current
+  with TikTok's site (`pip install -U yt-dlp` or your package manager's equivalent if downloads stop
+  working).
+- **Private, age-restricted, region-locked, or removed videos** won't resolve on either pipeline.
 - **Time, difficulty, and price are estimates** from a language model reasoning over the video's
   content and general culinary knowledge, not measured facts — treat them as a helpful ballpark,
   not a guarantee.
 - **This is a single-user app** by design — no accounts/auth. If you deploy it somewhere shared,
   put it behind your own access control.
-- **Requests can take 30–90+ seconds** (video download + transcription + analysis). The API route
-  sets `maxDuration = 300`, but confirm your hosting platform allows long-running server functions.
-- **Serverless hosts (e.g. Vercel) are a poor fit for the download/analyze pipeline itself.** The
-  database is Postgres (works fine anywhere), but `src/lib/tiktok.ts` and `src/lib/media.ts` shell
-  out to `yt-dlp`/`ffmpeg` binaries, which typical serverless Node runtimes don't provide and can't
-  easily install at request time. Thumbnails are also written to local disk
-  (`data/uploads`, served by `src/app/api/media/[filename]`), which won't persist on a read-only or
-  ephemeral filesystem. For that reason, run this on a host with a persistent filesystem and shell
-  access — a VPS/Docker container, or a platform like Railway/Render/Fly.io — or adapt those two
-  pieces to a container-based execution environment and object storage (e.g. S3) if you need
-  serverless.
+- **The full pipeline's requests can take 30–90+ seconds** (video download + transcription +
+  analysis); the lite pipeline is much faster (a couple of seconds). The API route sets
+  `maxDuration = 300` regardless, but confirm your hosting platform allows long-running server
+  functions if you're running the full pipeline.
 
 ## Project structure
 
-- `src/lib/tiktok.ts` — downloads video + metadata via `yt-dlp`
-- `src/lib/media.ts` — extracts audio/frames via `ffmpeg`
-- `src/lib/transcribe.ts` — Whisper transcription
-- `src/lib/analyze.ts` — Claude-powered structured recipe extraction
-- `src/lib/pipeline.ts` — orchestrates the steps above and persists the result
+- `src/lib/oembed.ts` — lite pipeline: fetches caption/author/thumbnail via TikTok's oEmbed endpoint
+- `src/lib/tiktok.ts` — full pipeline: downloads video + metadata via `yt-dlp`
+- `src/lib/media.ts` — full pipeline: extracts audio/frames via `ffmpeg`
+- `src/lib/transcribe.ts` — full pipeline: Whisper transcription
+- `src/lib/analyze.ts` — Claude-powered structured recipe extraction (both pipelines)
+- `src/lib/pipeline.ts` — picks a pipeline (based on whether `yt-dlp` is installed) and persists the result
 - `src/app/api/recipes` — list/create recipes; `src/app/api/recipes/[id]` — read/delete one
 - `src/app/api/media/[filename]` — serves saved thumbnails
 - `src/app/page.tsx`, `src/app/recipes/[id]/page.tsx` — the UI
