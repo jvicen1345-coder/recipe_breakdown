@@ -20,9 +20,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
   return (
     <Link
       href={`/recipes/${recipe.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
+      className="group flex flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white/80 shadow-sm backdrop-blur-sm transition hover:shadow-md dark:border-violet-900/50 dark:bg-violet-950/40"
     >
-      <div className="relative aspect-[4/5] w-full bg-neutral-100 dark:bg-neutral-800">
+      <div className="relative aspect-[4/5] w-full bg-violet-50 dark:bg-violet-900/40">
         {recipe.thumbnailUrl ? (
           <Image
             src={recipe.thumbnailUrl}
@@ -32,17 +32,17 @@ export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
             className="object-cover transition duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-neutral-400">
+          <div className="flex h-full items-center justify-center text-violet-300">
             <UtensilsCrossed size={32} />
           </div>
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-2 font-semibold text-neutral-900 dark:text-neutral-100">
+        <h3 className="line-clamp-2 font-semibold text-violet-950 dark:text-violet-50">
           {recipe.title}
         </h3>
         {recipe.authorHandle && (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">@{recipe.authorHandle}</p>
+          <p className="text-xs text-violet-500 dark:text-violet-400">@{recipe.authorHandle}</p>
         )}
         <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
           {recipe.difficulty && (

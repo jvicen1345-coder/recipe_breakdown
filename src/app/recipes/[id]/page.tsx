@@ -35,26 +35,26 @@ export default async function RecipeDetailPage({ params }: Props) {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10 sm:px-6">
       <Link
         href="/"
-        className="inline-flex w-fit items-center gap-1 text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+        className="inline-flex w-fit items-center gap-1 text-sm text-violet-500 hover:text-violet-800 dark:hover:text-violet-200"
       >
         <ArrowLeft size={14} /> Back to your recipes
       </Link>
 
       <div className="grid gap-6 sm:grid-cols-[220px_1fr]">
-        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-violet-50 dark:bg-violet-900/40">
           {recipe.thumbnailUrl ? (
             <Image src={recipe.thumbnailUrl} alt={recipe.title} fill sizes="220px" className="object-cover" />
           ) : (
-            <div className="flex h-full items-center justify-center text-neutral-400">
+            <div className="flex h-full items-center justify-center text-violet-300">
               <UtensilsCrossed size={32} />
             </div>
           )}
         </div>
 
         <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">{recipe.title}</h1>
+          <h1 className="text-2xl font-bold text-violet-950 dark:text-violet-50">{recipe.title}</h1>
           {recipe.authorHandle && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">@{recipe.authorHandle}</p>
+            <p className="text-sm text-violet-500 dark:text-violet-400">@{recipe.authorHandle}</p>
           )}
 
           <div className="flex flex-wrap gap-1.5">
@@ -86,7 +86,7 @@ export default async function RecipeDetailPage({ params }: Props) {
               href={recipe.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
+              className="inline-flex items-center gap-1 text-sm font-medium text-rose-500 hover:underline dark:text-rose-300"
             >
               Watch on TikTok <ExternalLink size={14} />
             </a>
@@ -103,18 +103,18 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       <div className="grid gap-8 sm:grid-cols-[1fr_1.4fr]">
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h2 className="mb-3 text-lg font-semibold text-violet-950 dark:text-violet-100">
             Ingredients
           </h2>
           <ul className="flex flex-col gap-2">
             {recipe.ingredients.map((ing, i) => (
               <li
                 key={i}
-                className="flex justify-between gap-3 border-b border-neutral-100 pb-2 text-sm dark:border-neutral-800"
+                className="flex justify-between gap-3 border-b border-violet-100 pb-2 text-sm dark:border-violet-900/50"
               >
-                <span className="text-neutral-800 dark:text-neutral-200">{ing.item}</span>
+                <span className="text-violet-900 dark:text-violet-200">{ing.item}</span>
                 {ing.quantity && (
-                  <span className="whitespace-nowrap text-neutral-500 dark:text-neutral-400">
+                  <span className="whitespace-nowrap text-violet-500 dark:text-violet-400">
                     {ing.quantity}
                   </span>
                 )}
@@ -124,16 +124,16 @@ export default async function RecipeDetailPage({ params }: Props) {
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h2 className="mb-3 text-lg font-semibold text-violet-950 dark:text-violet-100">
             Instructions
           </h2>
           <ol className="flex flex-col gap-3">
             {recipe.instructions.map((step, i) => (
               <li key={i} className="flex gap-3 text-sm">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-700 dark:bg-orange-900/50 dark:text-orange-300">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-xs font-semibold text-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
                   {i + 1}
                 </span>
-                <span className="text-neutral-800 dark:text-neutral-200">{step}</span>
+                <span className="text-violet-900 dark:text-violet-200">{step}</span>
               </li>
             ))}
           </ol>
@@ -142,8 +142,8 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       {recipe.tips.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">Tips</h2>
-          <ul className="list-inside list-disc text-sm text-neutral-700 dark:text-neutral-300">
+          <h2 className="mb-3 text-lg font-semibold text-violet-950 dark:text-violet-100">Tips</h2>
+          <ul className="list-inside list-disc text-sm text-violet-800 dark:text-violet-300">
             {recipe.tips.map((tip, i) => (
               <li key={i}>{tip}</li>
             ))}
