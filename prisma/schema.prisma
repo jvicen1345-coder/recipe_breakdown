@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  sourceUrl   String   @unique
+
+  title         String
+  authorHandle  String?
+  thumbnailPath String?
+  caption       String?
+  transcript    String?
+  userNotes     String?
+
+  durationSeconds  Int?
+  servings         Int?
+  totalTimeMinutes Int?
+
+  difficulty        String? // easy | medium | hard
+  proteinType       String? // chicken | beef | pork | seafood | egg | plant-based | other | none
+  dietType          String? // vegan | vegetarian | pescatarian | omnivore
+  priceLevel        String? // budget | moderate | splurge
+  estimatedPriceUsd Float?
+
+  ingredientsJson String // JSON: { item, quantity }[]
+  instructionsJson String // JSON: string[]
+  tipsJson         String? // JSON: string[]
+  confidenceNotes  String?
+
+  createdAt DateTime @default(now())
+}
