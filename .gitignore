@@ -43,12 +43,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# sqlite database
-/dev.db
-/dev.db-journal
-/prisma/dev.db
-/prisma/dev.db-journal
-
 # local media storage (thumbnails) and scratch work dirs
 /data/
 /.tmp/

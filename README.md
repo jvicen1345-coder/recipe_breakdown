@@ -17,8 +17,8 @@ For each submitted TikTok link:
 4. **Analyze** — the caption, transcript, sampled frames (read for on-screen ingredient lists/steps),
    and any notes you typed in are sent to Claude, which returns a structured recipe breakdown
    (title, ingredients, instructions, time, difficulty, price, protein/diet type).
-5. **Save** — the result is stored in a local SQLite database, along with a thumbnail pulled from
-   the video itself.
+5. **Save** — the result is stored in a Postgres database, along with a thumbnail pulled from
+   the video itself (saved to local disk).
 
 The original video file and audio are discarded after analysis — only the extracted text/metadata
 and one thumbnail frame are kept.
@@ -26,6 +26,9 @@ and one thumbnail frame are kept.
 ## Prerequisites
 
 - Node.js 20+
+- A Postgres database (e.g. [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres),
+  [Neon](https://neon.tech), [Supabase](https://supabase.com), [Railway](https://railway.app), or a
+  local instance for development)
 - [`yt-dlp`](https://github.com/yt-dlp/yt-dlp#installation) on your `PATH` (or set `YT_DLP_PATH`)
 - `ffmpeg` and `ffprobe` on your `PATH` (or set `FFMPEG_PATH` / `FFPROBE_PATH`)
 - An [Anthropic API key](https://console.anthropic.com/) (required — this is what builds the
@@ -37,7 +40,7 @@ and one thumbnail frame are kept.
 
 ```bash
 npm install             # also generates the Prisma client via `postinstall`
-cp .env.example .env    # then fill in ANTHROPIC_API_KEY (and OPENAI_API_KEY if you have one)
+cp .env.example .env    # fill in DATABASE_URL, ANTHROPIC_API_KEY (and OPENAI_API_KEY if you have one)
 npx prisma migrate deploy
 npm run dev
 ```
@@ -50,7 +53,7 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | yes (defaults to a local file) | SQLite connection string |
+| `DATABASE_URL` | yes | Postgres connection string |
 | `ANTHROPIC_API_KEY` | yes | Powers the recipe breakdown itself |
 | `ANTHROPIC_MODEL` | no | Defaults to `claude-sonnet-5` |
 | `OPENAI_API_KEY` | no | Enables Whisper transcription of narration |
@@ -68,11 +71,19 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 - **Time, difficulty, and price are estimates** from a language model reasoning over the video's
   content and general culinary knowledge, not measured facts — treat them as a helpful ballpark,
   not a guarantee.
-- **This is a single-user, local app** by design — no accounts/auth. If you deploy it somewhere
-  shared, put it behind your own access control.
+- **This is a single-user app** by design — no accounts/auth. If you deploy it somewhere shared,
+  put it behind your own access control.
 - **Requests can take 30–90+ seconds** (video download + transcription + analysis). The API route
-  sets `maxDuration = 300`, but confirm your hosting platform allows long-running server functions,
-  or self-host with a persistent Node process.
+  sets `maxDuration = 300`, but confirm your hosting platform allows long-running server functions.
+- **Serverless hosts (e.g. Vercel) are a poor fit for the download/analyze pipeline itself.** The
+  database is Postgres (works fine anywhere), but `src/lib/tiktok.ts` and `src/lib/media.ts` shell
+  out to `yt-dlp`/`ffmpeg` binaries, which typical serverless Node runtimes don't provide and can't
+  easily install at request time. Thumbnails are also written to local disk
+  (`data/uploads`, served by `src/app/api/media/[filename]`), which won't persist on a read-only or
+  ephemeral filesystem. For that reason, run this on a host with a persistent filesystem and shell
+  access — a VPS/Docker container, or a platform like Railway/Render/Fly.io — or adapt those two
+  pieces to a container-based execution environment and object storage (e.g. S3) if you need
+  serverless.
 
 ## Project structure
 

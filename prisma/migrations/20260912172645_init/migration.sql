@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Recipe" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "sourceUrl" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "authorHandle" TEXT,
@@ -15,12 +15,14 @@ CREATE TABLE "Recipe" (
     "proteinType" TEXT,
     "dietType" TEXT,
     "priceLevel" TEXT,
-    "estimatedPriceUsd" REAL,
+    "estimatedPriceUsd" DOUBLE PRECISION,
     "ingredientsJson" TEXT NOT NULL,
     "instructionsJson" TEXT NOT NULL,
     "tipsJson" TEXT,
     "confidenceNotes" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Recipe_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
