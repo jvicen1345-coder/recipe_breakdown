@@ -176,10 +176,6 @@ export function RecipeDetailContent({
         </select>
       </div>
 
-      {recipe.confidenceNotes && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">{recipe.confidenceNotes}</p>
-      )}
-
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-cream-soft px-4 py-3">
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-dusty-rose">Servings</span>
@@ -284,6 +280,10 @@ export function RecipeDetailContent({
             })}
           </div>
         </section>
+      )}
+
+      {recipe.confidenceNotes && (
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">{recipe.confidenceNotes}</p>
       )}
     </div>
   );
