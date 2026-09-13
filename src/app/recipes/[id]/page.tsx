@@ -46,7 +46,7 @@ export default async function RecipeDetailPage({ params }: Props) {
         </div>
 
         <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold text-violet-950 dark:text-violet-50">{recipe.title}</h1>
+          <h1 className="text-2xl font-bold text-black dark:text-violet-50">{recipe.title}</h1>
           {recipe.authorHandle && (
             <p className="text-sm text-violet-500 dark:text-violet-400">@{recipe.authorHandle}</p>
           )}
@@ -98,7 +98,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       <div className="grid gap-8 sm:grid-cols-[1fr_1.4fr]">
         <section>
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-violet-950 dark:text-violet-100">
+            <h2 className="text-lg font-semibold text-black dark:text-violet-100">
               Ingredients
             </h2>
             <a
@@ -119,14 +119,14 @@ export default async function RecipeDetailPage({ params }: Props) {
                     {ing.quantity}
                   </span>
                 )}
-                <span className="text-violet-900 dark:text-violet-200">{ing.item}</span>
+                <span className="text-black dark:text-violet-200">{ing.item}</span>
               </li>
             ))}
           </ul>
         </section>
 
         <section id="instructions" className="scroll-mt-6">
-          <h2 className="mb-3 text-lg font-semibold text-violet-950 dark:text-violet-100">
+          <h2 className="mb-3 text-lg font-semibold text-black dark:text-violet-100">
             Instructions
           </h2>
           <ol className="flex flex-col gap-3">
@@ -135,7 +135,7 @@ export default async function RecipeDetailPage({ params }: Props) {
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-xs font-semibold text-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
                   {i + 1}
                 </span>
-                <span className="text-violet-900 dark:text-violet-200">{step}</span>
+                <span className="text-black dark:text-violet-200">{step}</span>
               </li>
             ))}
           </ol>
@@ -144,8 +144,8 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       {recipe.tips.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-violet-950 dark:text-violet-100">Tips</h2>
-          <ul className="list-inside list-disc text-sm text-violet-800 dark:text-violet-300">
+          <h2 className="mb-3 text-lg font-semibold text-black dark:text-violet-100">Tips</h2>
+          <ul className="list-inside list-disc text-sm text-black/90 dark:text-violet-300">
             {recipe.tips.map((tip, i) => (
               <li key={i}>{tip}</li>
             ))}

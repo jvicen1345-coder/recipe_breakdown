@@ -30,7 +30,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
         />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1 sm:gap-2 sm:p-4">
-        <h3 className="line-clamp-2 font-semibold text-violet-950 dark:text-violet-50">
+        <h3 className="line-clamp-2 font-semibold text-black dark:text-violet-50">
           {recipe.title}
         </h3>
         {recipe.authorHandle && (

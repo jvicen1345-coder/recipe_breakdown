@@ -82,7 +82,7 @@ export function RecipeLibrary({
           <Sparkles className="text-rose-400" />
           Recipe Breakdown
         </h1>
-        <p className="max-w-2xl text-violet-800/70 dark:text-violet-200/70">
+        <p className="max-w-2xl text-black/80 dark:text-violet-200/70">
           Paste a saved TikTok cooking video and get the recipe: ingredients, steps, make time,
           difficulty, estimated cost, and whether it&apos;s vegan, vegetarian, or built around a
           particular protein.

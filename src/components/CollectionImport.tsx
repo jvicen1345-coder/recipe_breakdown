@@ -199,7 +199,7 @@ export function CollectionImport({ onImported }: { onImported: (recipe: RecipeDt
                         <RecipeThumbnail src={entry.thumbnailUrl} alt={entry.title} className="h-full w-full" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-violet-950 dark:text-violet-50">
+                        <p className="truncate text-sm font-medium text-black dark:text-violet-50">
                           {entry.title}
                         </p>
                         {entry.uploader && (

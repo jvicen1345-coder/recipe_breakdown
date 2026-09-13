@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fdf2f8;
-  --foreground: #3b3350;
+  --background: #fdf6fb;
+  --foreground: #14121a;
 }
 
 @theme inline {
@@ -13,8 +13,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #221f36;
-    --foreground: #f3ecff;
+    --background: #211f2b;
+    --foreground: #f1eef7;
   }
 }
 
@@ -22,9 +22,9 @@ body {
   background: var(--background);
   background-image: linear-gradient(
     135deg,
-    #fce7f3 0%,
-    #f3e8ff 45%,
-    #dbeafe 100%
+    #fdf5fa 0%,
+    #faf7fd 45%,
+    #f3f8fd 100%
   );
   background-attachment: fixed;
   color: var(--foreground);
@@ -36,9 +36,9 @@ body {
   body {
     background-image: linear-gradient(
       135deg,
-      #2e2038 0%,
-      #241f3d 45%,
-      #1a2340 100%
+      #27242f 0%,
+      #242430 45%,
+      #1f2530 100%
     );
   }
 }
