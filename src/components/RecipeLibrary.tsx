@@ -26,9 +26,11 @@ const TRENDING_PLACEHOLDERS = [
 export function RecipeLibrary({
   initialRecipes,
   loadError,
+  collectionImportEnabled = false,
 }: {
   initialRecipes: RecipeDto[];
   loadError?: string | null;
+  collectionImportEnabled?: boolean;
 }) {
   const [recipes, setRecipes] = useState(initialRecipes);
   const [search, setSearch] = useState("");
@@ -206,11 +208,13 @@ export function RecipeLibrary({
         )}
       </form>
 
-      <CollectionImport
-        onImported={(recipe) =>
-          setRecipes((prev) => (prev.some((r) => r.id === recipe.id) ? prev : [recipe, ...prev]))
-        }
-      />
+      {collectionImportEnabled && (
+        <CollectionImport
+          onImported={(recipe) =>
+            setRecipes((prev) => (prev.some((r) => r.id === recipe.id) ? prev : [recipe, ...prev]))
+          }
+        />
+      )}
 
       <section className="flex flex-col gap-3">
         <h2 className="font-serif text-xl font-semibold text-rose-deep">Trending on TikTok 🔥</h2>

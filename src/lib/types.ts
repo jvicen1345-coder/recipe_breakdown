@@ -5,6 +5,16 @@ export interface Ingredient {
   quantity: string | null;
 }
 
+export interface Nutrition {
+  caloriesPerServing: number | null;
+  proteinGrams: number | null;
+  carbsGrams: number | null;
+  fatGrams: number | null;
+  fiberGrams: number | null;
+  sugarGrams: number | null;
+  sodiumMg: number | null;
+}
+
 export interface RecipeDto {
   id: string;
   sourceUrl: string;
@@ -25,6 +35,7 @@ export interface RecipeDto {
   ingredients: Ingredient[];
   instructions: string[];
   tips: string[];
+  nutrition: Nutrition | null;
   confidenceNotes: string | null;
   createdAt: string;
 }
@@ -36,6 +47,16 @@ function safeParseArray<T>(json: string | null): T[] {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
+  }
+}
+
+function safeParseObject<T>(json: string | null): T | null {
+  if (!json) return null;
+  try {
+    const parsed = JSON.parse(json);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as T) : null;
+  } catch {
+    return null;
   }
 }
 
@@ -60,6 +81,7 @@ export function toRecipeDto(recipe: Recipe): RecipeDto {
     ingredients: safeParseArray<Ingredient>(recipe.ingredientsJson),
     instructions: safeParseArray<string>(recipe.instructionsJson),
     tips: safeParseArray<string>(recipe.tipsJson),
+    nutrition: safeParseObject<Nutrition>(recipe.nutritionJson),
     confidenceNotes: recipe.confidenceNotes,
     createdAt: recipe.createdAt.toISOString(),
   };

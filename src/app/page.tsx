@@ -1,4 +1,5 @@
 import { RecipeLibrary } from "@/components/RecipeLibrary";
+import { isFullPipelineAvailable } from "@/lib/pipeline";
 import { prisma } from "@/lib/prisma";
 import { toRecipeDto } from "@/lib/types";
 import type { RecipeDto } from "@/lib/types";
@@ -23,5 +24,13 @@ export default async function HomePage() {
       "Couldn't reach the database. If you're still setting this up, make sure DATABASE_URL is configured and migrations have run.";
   }
 
-  return <RecipeLibrary initialRecipes={recipes} loadError={loadError} />;
+  const collectionImportEnabled = await isFullPipelineAvailable();
+
+  return (
+    <RecipeLibrary
+      initialRecipes={recipes}
+      loadError={loadError}
+      collectionImportEnabled={collectionImportEnabled}
+    />
+  );
 }

@@ -40,6 +40,15 @@ export async function createRecipeFromUrl(url: string, userNotes?: string) {
   return hasYtDlp ? createRecipeFull(url, userNotes) : createRecipeLite(url, userNotes);
 }
 
+/**
+ * Whether this host can run the full pipeline (yt-dlp present). Collection import
+ * needs yt-dlp just to list a Collection's contents, so it's only worth offering
+ * in the UI when this is true — e.g. not on Vercel's serverless runtime.
+ */
+export async function isFullPipelineAvailable(): Promise<boolean> {
+  return commandExists(YT_DLP_BIN);
+}
+
 async function createRecipeFull(url: string, userNotes?: string) {
   const { metadata, videoPath, workDir } = await downloadTikTok(url);
 
@@ -90,6 +99,7 @@ async function createRecipeFull(url: string, userNotes?: string) {
         ingredientsJson: JSON.stringify(analysis.ingredients),
         instructionsJson: JSON.stringify(analysis.instructions),
         tipsJson: JSON.stringify(analysis.tips),
+        nutritionJson: JSON.stringify(analysis.nutrition),
         confidenceNotes: analysis.confidenceNotes,
       },
     });
@@ -129,6 +139,7 @@ async function createRecipeLite(url: string, userNotes?: string) {
       ingredientsJson: JSON.stringify(analysis.ingredients),
       instructionsJson: JSON.stringify(analysis.instructions),
       tipsJson: JSON.stringify(analysis.tips),
+      nutritionJson: JSON.stringify(analysis.nutrition),
       confidenceNotes: analysis.confidenceNotes,
     },
   });

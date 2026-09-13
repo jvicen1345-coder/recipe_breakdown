@@ -31,6 +31,15 @@ export const recipeAnalysisSchema = z.object({
     .min(1),
   instructions: z.array(z.string().min(1)).min(1),
   tips: z.array(z.string()).default([]),
+  nutrition: z.object({
+    caloriesPerServing: z.number().positive().nullable(),
+    proteinGrams: z.number().nonnegative().nullable(),
+    carbsGrams: z.number().nonnegative().nullable(),
+    fatGrams: z.number().nonnegative().nullable(),
+    fiberGrams: z.number().nonnegative().nullable(),
+    sugarGrams: z.number().nonnegative().nullable(),
+    sodiumMg: z.number().nonnegative().nullable(),
+  }),
   confidenceNotes: z.string().nullable(),
 });
 
@@ -91,6 +100,28 @@ const RECIPE_TOOL: Anthropic.Tool = {
         items: { type: "string" },
         description: "Optional short tips, substitutions, or serving suggestions mentioned.",
       },
+      nutrition: {
+        type: "object",
+        description: "Estimated nutrition facts for a single serving of the finished dish.",
+        properties: {
+          caloriesPerServing: { type: ["number", "null"] },
+          proteinGrams: { type: ["number", "null"] },
+          carbsGrams: { type: ["number", "null"] },
+          fatGrams: { type: ["number", "null"] },
+          fiberGrams: { type: ["number", "null"] },
+          sugarGrams: { type: ["number", "null"] },
+          sodiumMg: { type: ["number", "null"], description: "Sodium in milligrams." },
+        },
+        required: [
+          "caloriesPerServing",
+          "proteinGrams",
+          "carbsGrams",
+          "fatGrams",
+          "fiberGrams",
+          "sugarGrams",
+          "sodiumMg",
+        ],
+      },
       confidenceNotes: {
         type: ["string", "null"],
         description:
@@ -109,6 +140,7 @@ const RECIPE_TOOL: Anthropic.Tool = {
       "ingredients",
       "instructions",
       "tips",
+      "nutrition",
       "confidenceNotes",
     ],
   },
@@ -119,6 +151,8 @@ const SYSTEM_PROMPT = `You are a culinary analyst for a recipe-saving app. Users
 You will receive the video's caption/hashtags, an optional speech transcript, optional notes the user typed in by hand, and a handful of frames sampled evenly through the video. Read any on-screen text visible in the frames (ingredient lists, step captions, quantities) and combine it with the caption and transcript to reconstruct the recipe as completely and accurately as possible.
 
 When information is missing or ambiguous, do not leave fields empty — use your general culinary knowledge to make a reasonable estimate (typical quantities, standard technique, usual cook time for that dish) and record any notable assumptions in confidenceNotes. Estimate total hands-on + cook/bake time in minutes, a difficulty rating for a home cook (easy/medium/hard), and an approximate total USD grocery cost to make the whole dish (not per serving) based on typical US grocery prices. Classify the single dominant protein and the overall diet category (vegan/vegetarian/pescatarian/omnivore).
+
+Also estimate nutrition facts for a single serving (divide the whole dish by the serving count you determined): calories, protein, carbs, fat, fiber, sugar (all in grams except calories), and sodium (in milligrams). Base this on standard nutritional values for the ingredients and quantities involved — reason like a nutrition-label estimate, not a guess pulled from thin air. Only use null for a nutrition field if the dish genuinely has none of it (e.g. fiberGrams could be 0, but don't null out a field just because you're unsure — estimate it).
 
 Always respond by calling the submit_recipe_breakdown tool exactly once, with no other text.`;
 

@@ -35,6 +35,9 @@ model Recipe {
   ingredientsJson String // JSON: { item, quantity }[]
   instructionsJson String // JSON: string[]
   tipsJson         String? // JSON: string[]
+  // JSON: { caloriesPerServing, proteinGrams, carbsGrams, fatGrams, fiberGrams, sugarGrams, sodiumMg }
+  // Per serving, estimated by the model — null for recipes saved before this field existed.
+  nutritionJson    String?
   confidenceNotes  String?
 
   createdAt DateTime @default(now())

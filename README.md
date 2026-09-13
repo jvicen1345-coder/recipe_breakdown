@@ -2,8 +2,9 @@
 
 Paste a saved TikTok cooking video and get a structured, cookable recipe out of it: ingredients,
 step-by-step instructions, make time, difficulty, an estimated grocery cost, the dominant protein,
-and whether it's vegan/vegetarian/pescatarian/omnivore. Saved recipes are kept in a local library
-you can revisit — searchable, filterable by diet, heart a card to favorite it, and each recipe has a
+whether it's vegan/vegetarian/pescatarian/omnivore, and estimated per-serving nutrition facts
+(calories, protein, carbs, fat, fiber, sugar, sodium). Saved recipes are kept in a local library you
+can revisit — searchable, filterable by diet, heart a card to favorite it, and each recipe has a
 tabbed ingredients/instructions checklist (with a progress bar) for cooking along.
 
 ## How it works
@@ -34,7 +35,9 @@ caption/hashtags say — use the "Add notes" field to fill in anything the capti
    (saved to local disk).
 
 Both pipelines produce the same kind of result (title, ingredients, instructions, time, difficulty,
-price, protein/diet type) and save to the same Postgres database.
+price, protein/diet type, nutrition facts) and save to the same Postgres database. Nutrition facts
+are a per-serving estimate from the same Claude analysis step, reasoned from the ingredients and
+quantities like a nutrition-label estimate — not a measured or database-verified value.
 
 ### Importing a whole Collection
 
@@ -45,7 +48,9 @@ video in it (title, thumbnail, uploader), uncheck any you don't want, and import
 one runs through the normal pipeline and streams into your library as it finishes.
 
 This needs `yt-dlp` to list the collection's contents, so — like the full pipeline — it only works
-on a self-hosted deployment, not Vercel.
+on a self-hosted deployment, not Vercel. The app checks for `yt-dlp` on startup and hides this UI
+entirely when it isn't available, so it won't show up (or offer something that can't work) on a
+serverless deployment.
 
 ## Prerequisites
 
@@ -120,9 +125,9 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
   with TikTok's site (`pip install -U yt-dlp` or your package manager's equivalent if downloads stop
   working).
 - **Private, age-restricted, region-locked, or removed videos** won't resolve on either pipeline.
-- **Time, difficulty, and price are estimates** from a language model reasoning over the video's
-  content and general culinary knowledge, not measured facts — treat them as a helpful ballpark,
-  not a guarantee.
+- **Time, difficulty, price, and nutrition facts are estimates** from a language model reasoning
+  over the video's content and general culinary knowledge, not measured facts — treat them as a
+  helpful ballpark, not a lab-verified nutrition label.
 - **This is a single-user app** by design — no accounts/auth. If you deploy it somewhere shared,
   put it behind your own access control.
 - **The full pipeline's requests can take 30–90+ seconds** (video download + transcription +

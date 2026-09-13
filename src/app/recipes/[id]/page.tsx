@@ -21,10 +21,21 @@ import {
 } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { toRecipeDto } from "@/lib/types";
+import type { Nutrition } from "@/lib/types";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
+
+const NUTRITION_FIELDS: { key: keyof Nutrition; label: string; unit: string }[] = [
+  { key: "caloriesPerServing", label: "Calories", unit: "" },
+  { key: "proteinGrams", label: "Protein", unit: "g" },
+  { key: "carbsGrams", label: "Carbs", unit: "g" },
+  { key: "fatGrams", label: "Fat", unit: "g" },
+  { key: "fiberGrams", label: "Fiber", unit: "g" },
+  { key: "sugarGrams", label: "Sugar", unit: "g" },
+  { key: "sodiumMg", label: "Sodium", unit: "mg" },
+];
 
 export default async function RecipeDetailPage({ params }: Props) {
   const { id } = await params;
@@ -114,6 +125,31 @@ export default async function RecipeDetailPage({ params }: Props) {
               <li key={i}>{tip}</li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {recipe.nutrition && (
+        <section>
+          <h2 className="font-serif text-lg font-semibold text-rose-deep">Nutrition Facts</h2>
+          <p className="mb-3 text-xs text-dusty-rose">Per serving · estimated, not measured</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {NUTRITION_FIELDS.map(({ key, label, unit }) => {
+              const value = recipe.nutrition![key];
+              return (
+                <div
+                  key={key}
+                  className="flex flex-col items-center gap-0.5 rounded-2xl bg-cream-soft px-3 py-3 text-center"
+                >
+                  <span className="font-serif text-xl font-semibold text-rose-deep">
+                    {value != null ? `${value}${unit}` : "—"}
+                  </span>
+                  <span className="text-[11px] font-medium tracking-wide text-dusty-rose uppercase">
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </section>
       )}
     </div>
