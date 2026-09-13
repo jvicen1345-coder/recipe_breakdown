@@ -3,7 +3,8 @@
 Paste a saved TikTok cooking video and get a structured, cookable recipe out of it: ingredients,
 step-by-step instructions, make time, difficulty, an estimated grocery cost, the dominant protein,
 and whether it's vegan/vegetarian/pescatarian/omnivore. Saved recipes are kept in a local library
-you can revisit.
+you can revisit — searchable, filterable by diet, and each one has a tap-to-check-off checklist for
+cooking along.
 
 ## How it works
 

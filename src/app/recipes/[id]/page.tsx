@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ChefHat, Clock3, DollarSign, ExternalLink, ListOrdered } from "lucide-react";
+import { ArrowLeft, ChefHat, Clock3, DollarSign, ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/Badge";
 import { DeleteRecipeButton } from "@/components/DeleteRecipeButton";
+import { RecipeChecklist } from "@/components/RecipeChecklist";
 import { RecipeThumbnail } from "@/components/RecipeThumbnail";
 import {
   DIET_LABELS,
@@ -95,52 +96,7 @@ export default async function RecipeDetailPage({ params }: Props) {
         </p>
       )}
 
-      <div className="grid gap-8 sm:grid-cols-[1fr_1.4fr]">
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-black dark:text-violet-100">
-              Ingredients
-            </h2>
-            <a
-              href="#instructions"
-              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300"
-            >
-              <ListOrdered size={12} /> Jump to Instructions
-            </a>
-          </div>
-          <ul className="flex flex-col gap-2">
-            {recipe.ingredients.map((ing, i) => (
-              <li
-                key={i}
-                className="flex items-baseline gap-2 border-b border-violet-100 pb-2 text-sm dark:border-violet-900/50"
-              >
-                {ing.quantity && (
-                  <span className="shrink-0 font-semibold text-rose-500 dark:text-rose-300">
-                    {ing.quantity}
-                  </span>
-                )}
-                <span className="text-black dark:text-violet-200">{ing.item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section id="instructions" className="scroll-mt-6">
-          <h2 className="mb-3 text-lg font-semibold text-black dark:text-violet-100">
-            Instructions
-          </h2>
-          <ol className="flex flex-col gap-3">
-            {recipe.instructions.map((step, i) => (
-              <li key={i} className="flex gap-3 text-sm">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-xs font-semibold text-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
-                  {i + 1}
-                </span>
-                <span className="text-black dark:text-violet-200">{step}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      </div>
+      <RecipeChecklist recipeId={recipe.id} ingredients={recipe.ingredients} instructions={recipe.instructions} />
 
       {recipe.tips.length > 0 && (
         <section>

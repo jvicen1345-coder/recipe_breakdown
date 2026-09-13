@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, Search, Sparkles } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
 import { RecipeCard } from "./RecipeCard";
+import { DIET_LABELS } from "@/lib/format";
 import type { RecipeDto } from "@/lib/types";
+
+const DIET_FILTER_OPTIONS = Object.entries(DIET_LABELS);
 
 const STATUS_MESSAGES = [
   "Reading the caption and hashtags…",
@@ -22,6 +25,8 @@ export function RecipeLibrary({
   loadError?: string | null;
 }) {
   const [recipes, setRecipes] = useState(initialRecipes);
+  const [search, setSearch] = useState("");
+  const [dietFilter, setDietFilter] = useState("all");
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [showNotes, setShowNotes] = useState(false);
@@ -74,6 +79,18 @@ export function RecipeLibrary({
       setSubmitting(false);
     }
   }
+
+  const filteredRecipes = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return recipes.filter((recipe) => {
+      const matchesSearch =
+        !query ||
+        recipe.title.toLowerCase().includes(query) ||
+        recipe.authorHandle?.toLowerCase().includes(query);
+      const matchesDiet = dietFilter === "all" || recipe.dietType === dietFilter;
+      return matchesSearch && matchesDiet;
+    });
+  }, [recipes, search, dietFilter]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-10 sm:px-6">
@@ -169,10 +186,46 @@ export function RecipeLibrary({
           No recipes saved yet — paste a TikTok link above to get started.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-          {recipes.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
-          ))}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search
+                size={16}
+                className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-violet-400"
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search your recipes…"
+                className="w-full rounded-xl border border-violet-200 bg-white py-2.5 pr-4 pl-10 text-sm outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200 dark:border-violet-800 dark:bg-violet-950 dark:focus:ring-rose-900"
+              />
+            </div>
+            <select
+              value={dietFilter}
+              onChange={(e) => setDietFilter(e.target.value)}
+              className="rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200 dark:border-violet-800 dark:bg-violet-950 dark:focus:ring-rose-900"
+            >
+              <option value="all">All diets</option>
+              {DIET_FILTER_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {filteredRecipes.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-violet-200 bg-white/50 p-12 text-center text-violet-500 dark:border-violet-800 dark:bg-violet-950/20 dark:text-violet-400">
+              No recipes match your search/filter.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+              {filteredRecipes.map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
