@@ -6,7 +6,8 @@ import { toRecipeDto } from "@/lib/types";
 // Importing several videos sequentially (each running the full download/
 // transcribe/analyze pipeline) can take a while — this streams one result
 // line at a time rather than waiting for all of them before responding.
-export const maxDuration = 900;
+// Capped at 300: Vercel's Hobby plan rejects any higher maxDuration outright.
+export const maxDuration = 300;
 
 const schema = z.object({
   urls: z.array(z.string().trim().min(1)).min(1).max(50),
