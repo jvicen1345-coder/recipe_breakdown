@@ -25,7 +25,7 @@ export function DeleteRecipeButton({ recipeId }: { recipeId: string }) {
       type="button"
       onClick={handleDelete}
       disabled={deleting}
-      className="inline-flex items-center gap-2 rounded-lg border border-violet-200 px-3 py-1.5 text-sm text-violet-600 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-60 dark:border-violet-800 dark:text-violet-300"
+      className="inline-flex items-center gap-2 rounded-lg border border-blush-dark px-3 py-1.5 text-sm text-dusty-rose transition hover:border-coral hover:text-coral-deep disabled:opacity-60"
     >
       {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
       Remove

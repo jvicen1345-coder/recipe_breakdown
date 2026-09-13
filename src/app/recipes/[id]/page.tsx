@@ -4,6 +4,7 @@ import { ArrowLeft, ChefHat, Clock3, DollarSign, ExternalLink } from "lucide-rea
 
 import { Badge } from "@/components/Badge";
 import { DeleteRecipeButton } from "@/components/DeleteRecipeButton";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { RecipeChecklist } from "@/components/RecipeChecklist";
 import { RecipeThumbnail } from "@/components/RecipeThumbnail";
 import {
@@ -14,6 +15,7 @@ import {
   PRICE_LABELS,
   PRICE_STYLES,
   PROTEIN_LABELS,
+  TIME_BADGE_STYLE,
   formatMinutes,
   formatPriceUsd,
 } from "@/lib/format";
@@ -36,20 +38,24 @@ export default async function RecipeDetailPage({ params }: Props) {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-10 sm:px-6">
       <Link
         href="/"
-        className="inline-flex w-fit items-center gap-1 text-sm text-violet-500 hover:text-violet-800 dark:hover:text-violet-200"
+        className="inline-flex w-fit items-center gap-1 text-sm text-dusty-rose hover:text-rose-deep"
       >
         <ArrowLeft size={14} /> Back to your recipes
       </Link>
 
       <div className="grid gap-6 sm:grid-cols-[220px_1fr]">
-        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-3xl bg-violet-50 dark:bg-violet-900/40 sm:aspect-[4/5]">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-3xl bg-blush-soft sm:aspect-[4/5]">
           <RecipeThumbnail src={recipe.thumbnailUrl} alt={recipe.title} className="h-full w-full" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-black/0 to-black/0" />
+          <FavoriteButton recipeId={recipe.id} className="absolute top-2.5 right-2.5" />
         </div>
 
         <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold text-black dark:text-violet-50">{recipe.title}</h1>
+          <h1 className="font-serif text-2xl font-semibold text-rose-deep sm:text-3xl">
+            {recipe.title}
+          </h1>
           {recipe.authorHandle && (
-            <p className="text-sm text-violet-500 dark:text-violet-400">@{recipe.authorHandle}</p>
+            <p className="text-sm text-dusty-rose">@{recipe.authorHandle}</p>
           )}
 
           <div className="flex flex-wrap gap-1.5">
@@ -59,7 +65,9 @@ export default async function RecipeDetailPage({ params }: Props) {
               </Badge>
             )}
             {recipe.totalTimeMinutes != null && (
-              <Badge icon={<Clock3 size={12} />}>{formatMinutes(recipe.totalTimeMinutes)}</Badge>
+              <Badge className={TIME_BADGE_STYLE} icon={<Clock3 size={12} />}>
+                {formatMinutes(recipe.totalTimeMinutes)}
+              </Badge>
             )}
             {recipe.priceLevel && (
               <Badge className={PRICE_STYLES[recipe.priceLevel]} icon={<DollarSign size={12} />}>
@@ -81,7 +89,7 @@ export default async function RecipeDetailPage({ params }: Props) {
               href={recipe.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-rose-500 hover:underline dark:text-rose-300"
+              className="inline-flex items-center gap-1 text-sm font-medium text-coral-deep hover:underline"
             >
               Watch on TikTok <ExternalLink size={14} />
             </a>
@@ -91,7 +99,7 @@ export default async function RecipeDetailPage({ params }: Props) {
       </div>
 
       {recipe.confidenceNotes && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {recipe.confidenceNotes}
         </p>
       )}
@@ -100,8 +108,8 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       {recipe.tips.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-black dark:text-violet-100">Tips</h2>
-          <ul className="list-inside list-disc text-sm text-black/90 dark:text-violet-300">
+          <h2 className="mb-3 font-serif text-lg font-semibold text-rose-deep">Tips</h2>
+          <ul className="list-inside list-disc text-sm text-foreground/90">
             {recipe.tips.map((tip, i) => (
               <li key={i}>{tip}</li>
             ))}

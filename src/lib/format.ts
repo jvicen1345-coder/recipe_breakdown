@@ -4,10 +4,12 @@ export const DIFFICULTY_LABELS: Record<string, string> = {
   hard: "Hard",
 };
 
+// Badges are colored by category, not by value — every difficulty is soft pink,
+// every price tier is mint, etc. — per the pastel "That Girl" design system.
 export const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  medium: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  hard: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+  easy: "bg-blush text-rose-deep",
+  medium: "bg-blush text-rose-deep",
+  hard: "bg-blush text-rose-deep",
 };
 
 export const PRICE_LABELS: Record<string, string> = {
@@ -17,9 +19,9 @@ export const PRICE_LABELS: Record<string, string> = {
 };
 
 export const PRICE_STYLES: Record<string, string> = {
-  budget: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  moderate: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  splurge: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+  budget: "bg-mint text-mint-dark",
+  moderate: "bg-mint text-mint-dark",
+  splurge: "bg-mint text-mint-dark",
 };
 
 export const DIET_LABELS: Record<string, string> = {
@@ -30,11 +32,13 @@ export const DIET_LABELS: Record<string, string> = {
 };
 
 export const DIET_STYLES: Record<string, string> = {
-  vegan: "bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300",
-  vegetarian: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-  pescatarian: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
-  omnivore: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  vegan: "bg-peach text-peach-dark",
+  vegetarian: "bg-peach text-peach-dark",
+  pescatarian: "bg-peach text-peach-dark",
+  omnivore: "bg-peach text-peach-dark",
 };
+
+export const TIME_BADGE_STYLE = "bg-lavender text-lavender-dark";
 
 export const PROTEIN_LABELS: Record<string, string> = {
   chicken: "Chicken",

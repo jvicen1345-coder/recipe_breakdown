@@ -134,11 +134,11 @@ export function CollectionImport({ onImported }: { onImported: (recipe: RecipeDt
   }
 
   return (
-    <div className="rounded-3xl border border-violet-100 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-violet-900/50 dark:bg-violet-950/40 sm:p-5">
+    <div className="rounded-3xl border border-blush-dark/50 bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:p-5">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 text-left text-sm font-medium text-violet-700 dark:text-violet-300"
+        className="flex w-full items-center gap-2 text-left text-sm font-medium text-rose-deep"
       >
         {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         Import a whole Collection instead
@@ -155,12 +155,12 @@ export function CollectionImport({ onImported }: { onImported: (recipe: RecipeDt
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               disabled={loadingPreview || importing}
-              className="flex-1 rounded-xl border border-violet-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-200 disabled:opacity-60 dark:border-violet-800 dark:bg-violet-950 dark:focus:ring-rose-900"
+              className="flex-1 rounded-full border border-blush-dark/60 bg-white px-4 py-2.5 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30 disabled:opacity-60"
             />
             <button
               type="submit"
               disabled={loadingPreview || importing || !url.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-100 px-5 py-2.5 text-sm font-semibold text-violet-800 transition hover:bg-violet-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-violet-900 dark:text-violet-200"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-5 py-2.5 text-sm font-semibold text-rose-deep transition hover:bg-blush-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loadingPreview ? <Loader2 size={16} className="animate-spin" /> : null}
               {loadingPreview ? "Loading…" : "Preview"}
@@ -168,44 +168,39 @@ export function CollectionImport({ onImported }: { onImported: (recipe: RecipeDt
           </form>
 
           {previewError && (
-            <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
-              {previewError}
-            </p>
+            <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-coral-deep">{previewError}</p>
           )}
 
           {entries && (
             <>
-              <p className="text-sm text-violet-600 dark:text-violet-400">
-                <span className="font-medium">{collectionTitle}</span> — {entries.length} video
+              <p className="text-sm text-dusty-rose">
+                <span className="font-medium text-rose-deep">{collectionTitle}</span> — {entries.length}{" "}
+                video
                 {entries.length === 1 ? "" : "s"} found. Uncheck any you don&apos;t want.
               </p>
 
-              <div className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-xl border border-violet-100 p-1 dark:border-violet-900/50">
+              <div className="flex max-h-80 flex-col gap-1 overflow-y-auto rounded-xl border border-blush p-1">
                 {entries.map((entry) => {
                   const result = results[entry.sourceUrl];
                   return (
                     <label
                       key={entry.sourceUrl}
-                      className="flex items-center gap-3 rounded-lg p-2 hover:bg-violet-50 dark:hover:bg-violet-900/30"
+                      className="flex items-center gap-3 rounded-lg p-2 hover:bg-blush-soft"
                     >
                       <input
                         type="checkbox"
                         checked={selected.has(entry.sourceUrl)}
                         onChange={() => toggleEntry(entry.sourceUrl)}
                         disabled={importing}
-                        className="size-4 shrink-0 accent-rose-400"
+                        className="size-4 shrink-0 accent-coral"
                       />
-                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-violet-50 dark:bg-violet-900/40">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-blush-soft">
                         <RecipeThumbnail src={entry.thumbnailUrl} alt={entry.title} className="h-full w-full" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-black dark:text-violet-50">
-                          {entry.title}
-                        </p>
+                        <p className="truncate text-sm font-medium text-foreground">{entry.title}</p>
                         {entry.uploader && (
-                          <p className="truncate text-xs text-violet-500 dark:text-violet-400">
-                            @{entry.uploader}
-                          </p>
+                          <p className="truncate text-xs text-dusty-rose">@{entry.uploader}</p>
                         )}
                       </div>
                       <ResultBadge result={result} />
@@ -218,7 +213,7 @@ export function CollectionImport({ onImported }: { onImported: (recipe: RecipeDt
                 type="button"
                 onClick={handleImport}
                 disabled={importing || selected.size === 0}
-                className="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-rose-300 px-5 py-2.5 text-sm font-semibold text-rose-950 transition hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {importing ? <Loader2 size={16} className="animate-spin" /> : null}
                 {importing ? "Importing…" : `Import ${selected.size} selected`}
@@ -235,11 +230,11 @@ function ResultBadge({ result }: { result?: ItemResult }) {
   if (!result) return null;
 
   if (result.status === "importing") {
-    return <Loader2 size={16} className="shrink-0 animate-spin text-violet-400" />;
+    return <Loader2 size={16} className="shrink-0 animate-spin text-dusty-rose" />;
   }
   if (result.status === "ok") {
     return (
-      <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+      <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-sage-dark">
         <Check size={14} /> Saved
       </span>
     );
@@ -248,18 +243,18 @@ function ResultBadge({ result }: { result?: ItemResult }) {
     return result.recipeId ? (
       <Link
         href={`/recipes/${result.recipeId}`}
-        className="shrink-0 text-xs font-medium text-violet-500 underline dark:text-violet-400"
+        className="shrink-0 text-xs font-medium text-dusty-rose underline"
       >
         Already saved
       </Link>
     ) : (
-      <span className="shrink-0 text-xs font-medium text-violet-500 dark:text-violet-400">Already saved</span>
+      <span className="shrink-0 text-xs font-medium text-dusty-rose">Already saved</span>
     );
   }
   return (
     <span
       title={result.message}
-      className="flex shrink-0 items-center gap-1 text-xs font-medium text-rose-600 dark:text-rose-400"
+      className="flex shrink-0 items-center gap-1 text-xs font-medium text-coral-deep"
     >
       <X size={14} /> Failed
     </span>

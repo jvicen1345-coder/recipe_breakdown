@@ -14,7 +14,7 @@ export function Badge({
     <span
       className={clsx(
         "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap",
-        className ?? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
+        className ?? "bg-cream-soft text-dusty-rose",
       )}
     >
       {icon}

@@ -16,7 +16,7 @@ export function RecipeThumbnail({
 
   if (!src || failed) {
     return (
-      <div className={`flex items-center justify-center text-violet-300 ${className ?? ""}`}>
+      <div className={`flex items-center justify-center text-blush-dark ${className ?? ""}`}>
         <UtensilsCrossed size={28} />
       </div>
     );
