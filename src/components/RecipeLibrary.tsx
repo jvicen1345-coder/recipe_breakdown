@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
+import { HomeDashboardCards } from "./HomeDashboardCards";
 import { RecipeCard } from "./RecipeCard";
 import { getRecentlyViewedIds } from "@/lib/clientState";
 import type { RecipeDto } from "@/lib/types";
@@ -274,6 +275,8 @@ export function RecipeLibrary({
           }
         />
       )}
+
+      <HomeDashboardCards recipes={recipes} />
 
       {recentlyViewed.length > 0 && (
         <section className="flex flex-col gap-3">
