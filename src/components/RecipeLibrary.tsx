@@ -183,10 +183,7 @@ export function RecipeLibrary({
           <h1 className="font-serif text-4xl font-semibold text-rose-deep sm:text-5xl">
             What&apos;s cooking, bestie? 🍓
           </h1>
-          <p className="max-w-md text-sm text-foreground/70 sm:text-base">
-            Save the TikTok recipes you actually want to make. Paste the link and we&apos;ll turn it
-            into something you can actually cook.
-          </p>
+          <p className="text-sm text-foreground/70 sm:text-base">Post your TikTok recipe link.</p>
         </div>
       </header>
 
