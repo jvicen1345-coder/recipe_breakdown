@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Petal Eats 🌸🍴",
+  title: "Cutesy Eats 🌸🍴",
   description: "Turn saved TikTok cooking videos into structured, cookable recipes.",
 };
 

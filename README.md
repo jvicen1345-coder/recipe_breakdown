@@ -1,4 +1,4 @@
-# Petal Eats 🌸🍴
+# Cutesy Eats 🌸🍴
 
 Paste a saved TikTok cooking video and get a structured, cookable recipe out of it: ingredients,
 step-by-step instructions, make time, difficulty, an estimated grocery cost, the dominant protein,

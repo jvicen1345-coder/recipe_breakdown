@@ -21,7 +21,7 @@ export function Navbar() {
           className="flex shrink-0 items-center gap-1.5 font-serif text-lg font-semibold text-rose-deep"
         >
           <span aria-hidden>🌸🍴</span>
-          Petal Eats
+          Cutesy Eats
         </Link>
 
         <div className="hidden items-center gap-1 rounded-full bg-white/60 p-1 sm:flex">
