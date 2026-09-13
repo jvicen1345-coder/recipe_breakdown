@@ -40,5 +40,18 @@ model Recipe {
   nutritionJson    String?
   confidenceNotes  String?
 
+  personalNotes String? // freeform notes the user typed in after saving (tweaks, substitutions, etc.)
+  folderId      String?
+  folder        Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  emoji     String?
+  createdAt DateTime @default(now())
+
+  recipes Recipe[]
 }

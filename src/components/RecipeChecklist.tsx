@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { Check, RotateCcw, Sparkles } from "lucide-react";
 
+import {
+  ingredientsStorageKey,
+  loadCheckedIndices,
+  saveCheckedIndices,
+  stepsStorageKey,
+} from "@/lib/checklistStorage";
 import type { Ingredient } from "@/lib/types";
 
 interface Props {
@@ -11,21 +17,9 @@ interface Props {
   instructions: string[];
 }
 
-function loadChecked(key: string): Set<number> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return new Set();
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? new Set(parsed) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
 export function RecipeChecklist({ recipeId, ingredients, instructions }: Props) {
-  const ingredientsKey = `recipe-checklist:${recipeId}:ingredients`;
-  const stepsKey = `recipe-checklist:${recipeId}:steps`;
+  const ingredientsKey = ingredientsStorageKey(recipeId);
+  const stepsKey = stepsStorageKey(recipeId);
 
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
@@ -38,28 +32,20 @@ export function RecipeChecklist({ recipeId, ingredients, instructions }: Props) 
   // up the real, persisted values once mounted in the browser.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring from localStorage, unavailable during SSR
-    setCheckedIngredients(loadChecked(ingredientsKey));
-    setCheckedSteps(loadChecked(stepsKey));
+    setCheckedIngredients(loadCheckedIndices(ingredientsKey));
+    setCheckedSteps(loadCheckedIndices(stepsKey));
     setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipeId]);
 
   useEffect(() => {
     if (!hydrated) return;
-    try {
-      localStorage.setItem(ingredientsKey, JSON.stringify([...checkedIngredients]));
-    } catch {
-      // localStorage can throw in private-browsing contexts; checklist just won't persist.
-    }
+    saveCheckedIndices(ingredientsKey, checkedIngredients);
   }, [hydrated, ingredientsKey, checkedIngredients]);
 
   useEffect(() => {
     if (!hydrated) return;
-    try {
-      localStorage.setItem(stepsKey, JSON.stringify([...checkedSteps]));
-    } catch {
-      // same as above
-    }
+    saveCheckedIndices(stepsKey, checkedSteps);
   }, [hydrated, stepsKey, checkedSteps]);
 
   function toggleIngredient(i: number) {

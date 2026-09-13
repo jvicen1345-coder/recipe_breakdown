@@ -1,0 +1,20 @@
+import { NextResponse } from "next/server";
+
+import { prisma } from "@/lib/prisma";
+
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
+export async function DELETE(_request: Request, { params }: Params) {
+  const { id } = await params;
+  const folder = await prisma.folder.findUnique({ where: { id } });
+  if (!folder) {
+    return NextResponse.json({ error: "Folder not found." }, { status: 404 });
+  }
+
+  // Recipes in this folder are unassigned (folderId → null), not deleted — see the
+  // onDelete: SetNull relation in schema.prisma.
+  await prisma.folder.delete({ where: { id } });
+  return new NextResponse(null, { status: 204 });
+}

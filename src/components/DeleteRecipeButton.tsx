@@ -4,7 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 
-export function DeleteRecipeButton({ recipeId }: { recipeId: string }) {
+export function DeleteRecipeButton({
+  recipeId,
+  onDeleted,
+}: {
+  recipeId: string;
+  /** Called instead of the default redirect-to-home — used when this button lives inside a modal. */
+  onDeleted?: () => void;
+}) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
@@ -13,8 +20,12 @@ export function DeleteRecipeButton({ recipeId }: { recipeId: string }) {
     setDeleting(true);
     const res = await fetch(`/api/recipes/${recipeId}`, { method: "DELETE" });
     if (res.ok) {
-      router.push("/");
-      router.refresh();
+      if (onDeleted) {
+        onDeleted();
+      } else {
+        router.push("/");
+        router.refresh();
+      }
     } else {
       setDeleting(false);
     }

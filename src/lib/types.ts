@@ -37,6 +37,15 @@ export interface RecipeDto {
   tips: string[];
   nutrition: Nutrition | null;
   confidenceNotes: string | null;
+  personalNotes: string | null;
+  folderId: string | null;
+  createdAt: string;
+}
+
+export interface FolderDto {
+  id: string;
+  name: string;
+  emoji: string | null;
   createdAt: string;
 }
 
@@ -83,6 +92,17 @@ export function toRecipeDto(recipe: Recipe): RecipeDto {
     tips: safeParseArray<string>(recipe.tipsJson),
     nutrition: safeParseObject<Nutrition>(recipe.nutritionJson),
     confidenceNotes: recipe.confidenceNotes,
+    personalNotes: recipe.personalNotes,
+    folderId: recipe.folderId,
     createdAt: recipe.createdAt.toISOString(),
+  };
+}
+
+export function toFolderDto(folder: { id: string; name: string; emoji: string | null; createdAt: Date }): FolderDto {
+  return {
+    id: folder.id,
+    name: folder.name,
+    emoji: folder.emoji,
+    createdAt: folder.createdAt.toISOString(),
   };
 }

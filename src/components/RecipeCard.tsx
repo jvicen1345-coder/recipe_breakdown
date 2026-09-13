@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
-import { Clock3, ChefHat, DollarSign } from "lucide-react";
+import { Clock3, ChefHat, DollarSign, ShoppingCart } from "lucide-react";
 
 import { Badge } from "./Badge";
 import { FavoriteButton } from "./FavoriteButton";
 import { RecipeThumbnail } from "./RecipeThumbnail";
+import { useRecipeModal } from "./RecipeModalProvider";
+import { useToast } from "./ToastProvider";
+import { ingredientsStorageKey, saveCheckedIndices } from "@/lib/checklistStorage";
 import {
   DIET_STYLES,
   DIET_LABELS,
@@ -16,12 +21,33 @@ import {
 } from "@/lib/format";
 import type { RecipeDto } from "@/lib/types";
 
-export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
+export function RecipeCard({
+  recipe,
+  showQuickActions = false,
+}: {
+  recipe: RecipeDto;
+  /** Hover overlay with "View Recipe" / "Add to List" — used on the My Recipes grid. */
+  showQuickActions?: boolean;
+}) {
   const price = formatPriceUsd(recipe.estimatedPriceUsd);
+  const openRecipe = useRecipeModal();
+  const showToast = useToast();
+
+  function handleAddToList(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const allIndices = new Set(recipe.ingredients.map((_, i) => i));
+    saveCheckedIndices(ingredientsStorageKey(recipe.id), allIndices);
+    showToast("Added to grocery list 🛒");
+  }
 
   return (
     <Link
       href={`/recipes/${recipe.id}`}
+      onClick={(e) => {
+        e.preventDefault();
+        openRecipe(recipe);
+      }}
       className="group flex flex-col overflow-hidden rounded-3xl bg-white/75 shadow-[0_10px_30px_-14px_rgba(192,120,140,0.45)] ring-1 ring-blush-dark/50 backdrop-blur-sm transition hover:-translate-y-1 hover:shadow-[0_18px_44px_-16px_rgba(192,120,140,0.55)]"
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-3xl bg-blush-soft">
@@ -32,6 +58,21 @@ export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-black/0 to-black/0" />
         <FavoriteButton recipeId={recipe.id} className="absolute top-2.5 right-2.5" />
+
+        {showQuickActions && (
+          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:opacity-100">
+            <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-deep">
+              View Recipe
+            </span>
+            <button
+              type="button"
+              onClick={handleAddToList}
+              className="inline-flex items-center gap-1 rounded-full bg-sage px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sage-dark"
+            >
+              <ShoppingCart size={12} /> Add to List
+            </button>
+          </div>
+        )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3 sm:p-4">
         <h3 className="font-serif line-clamp-2 text-base leading-snug font-semibold text-rose-deep sm:text-lg">
