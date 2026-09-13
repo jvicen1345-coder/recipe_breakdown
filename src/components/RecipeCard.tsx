@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Clock3, ChefHat, DollarSign, UtensilsCrossed } from "lucide-react";
+import { Clock3, ChefHat, DollarSign } from "lucide-react";
 
 import { Badge } from "./Badge";
+import { RecipeThumbnail } from "./RecipeThumbnail";
 import {
   DIET_STYLES,
   DIET_LABELS,
@@ -19,31 +20,23 @@ export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
   return (
     <Link
       href={`/recipes/${recipe.id}`}
-      className="group flex flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white/80 shadow-sm backdrop-blur-sm transition hover:shadow-md dark:border-violet-900/50 dark:bg-violet-950/40"
+      className="group flex flex-row items-center gap-3 overflow-hidden rounded-2xl border border-violet-100 bg-white/80 p-3 shadow-sm backdrop-blur-sm transition hover:shadow-md dark:border-violet-900/50 dark:bg-violet-950/40 sm:flex-col sm:items-stretch sm:gap-0 sm:rounded-3xl sm:p-0"
     >
-      <div className="relative aspect-[4/5] w-full bg-violet-50 dark:bg-violet-900/40">
-        {recipe.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- external TikTok CDN hostnames rotate, can't be whitelisted
-          <img
-            src={recipe.thumbnailUrl}
-            alt={recipe.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-violet-300">
-            <UtensilsCrossed size={32} />
-          </div>
-        )}
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-violet-50 dark:bg-violet-900/40 sm:aspect-[4/5] sm:h-auto sm:w-full sm:rounded-none">
+        <RecipeThumbnail
+          src={recipe.thumbnailUrl}
+          alt={recipe.title}
+          className="h-full w-full transition duration-300 group-hover:scale-105"
+        />
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-1 sm:gap-2 sm:p-4">
         <h3 className="line-clamp-2 font-semibold text-violet-950 dark:text-violet-50">
           {recipe.title}
         </h3>
         {recipe.authorHandle && (
           <p className="text-xs text-violet-500 dark:text-violet-400">@{recipe.authorHandle}</p>
         )}
-        <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
+        <div className="flex flex-wrap gap-1.5 sm:mt-auto sm:pt-2">
           {recipe.difficulty && (
             <Badge
               className={DIFFICULTY_STYLES[recipe.difficulty]}
