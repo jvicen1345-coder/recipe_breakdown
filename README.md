@@ -35,6 +35,17 @@ caption/hashtags say — use the "Add notes" field to fill in anything the capti
 Both pipelines produce the same kind of result (title, ingredients, instructions, time, difficulty,
 price, protein/diet type) and save to the same Postgres database.
 
+### Importing a whole Collection
+
+TikTok lets you group saved videos into a Collection with its own shareable link
+(`tiktok.com/@user/collection/...`, or a `tiktok.com/t/...` short link that redirects to one).
+"Import a whole Collection instead" (below the main form) lets you paste that link, preview every
+video in it (title, thumbnail, uploader), uncheck any you don't want, and import the rest — each
+one runs through the normal pipeline and streams into your library as it finishes.
+
+This needs `yt-dlp` to list the collection's contents, so — like the full pipeline — it only works
+on a self-hosted deployment, not Vercel.
+
 ## Prerequisites
 
 - Node.js 20+
@@ -126,6 +137,10 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 - `src/lib/transcribe.ts` — full pipeline: Whisper transcription
 - `src/lib/analyze.ts` — Claude-powered structured recipe extraction (both pipelines)
 - `src/lib/pipeline.ts` — picks a pipeline (based on whether `yt-dlp` is installed) and persists the result
+- `src/lib/collection.ts` — lists a Collection's videos via `yt-dlp --flat-playlist`
+- `src/app/api/collections/preview` — lists a Collection's videos for the picker UI
+- `src/app/api/collections/import` — imports selected videos, streaming one result per line (NDJSON)
+- `src/components/CollectionImport.tsx` — the preview/select/import UI
 - `src/app/api/recipes` — list/create recipes; `src/app/api/recipes/[id]` — read/delete one
 - `src/app/api/media/[filename]` — serves saved thumbnails
 - `src/app/page.tsx`, `src/app/recipes/[id]/page.tsx` — the UI

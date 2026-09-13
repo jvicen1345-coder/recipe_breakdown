@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
+import { fetchTikTokCollection } from "@/lib/collection";
+import { commandExists, ExternalToolError } from "@/lib/exec";
+import { InvalidTikTokUrlError, YT_DLP_BIN } from "@/lib/tiktok";
+
+export const maxDuration = 60;
+
+const schema = z.object({ url: z.string().trim().min(1, "A TikTok collection link is required.") });
+
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
+  }
+
+  const hasYtDlp = await commandExists(YT_DLP_BIN);
+  if (!hasYtDlp) {
+    return NextResponse.json(
+      {
+        error:
+          "Importing a Collection needs yt-dlp, which isn't available on this deployment. It only works on a self-hosted deployment (e.g. the included Dockerfile on Railway/Render/a VPS) — single-video links still work here.",
+      },
+      { status: 501 },
+    );
+  }
+
+  try {
+    const collection = await fetchTikTokCollection(parsed.data.url);
+    if (collection.entries.length === 0) {
+      return NextResponse.json({ error: "No videos found in that collection." }, { status: 404 });
+    }
+    return NextResponse.json({ collection });
+  } catch (err) {
+    if (err instanceof InvalidTikTokUrlError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    if (err instanceof ExternalToolError) {
+      return NextResponse.json({ error: `Couldn't read that collection (${err.tool}): ${err.message}` }, { status: 502 });
+    }
+    console.error("[api/collections/preview] failed:", err);
+    const message = err instanceof Error ? err.message : "Failed to read that collection.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

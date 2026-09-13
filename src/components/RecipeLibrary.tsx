@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Loader2, Sparkles } from "lucide-react";
 
+import { CollectionImport } from "./CollectionImport";
 import { RecipeCard } from "./RecipeCard";
 import type { RecipeDto } from "@/lib/types";
 
@@ -156,6 +157,12 @@ export function RecipeLibrary({
           </p>
         )}
       </form>
+
+      <CollectionImport
+        onImported={(recipe) =>
+          setRecipes((prev) => (prev.some((r) => r.id === recipe.id) ? prev : [recipe, ...prev]))
+        }
+      />
 
       {recipes.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-violet-200 bg-white/50 p-12 text-center text-violet-500 dark:border-violet-800 dark:bg-violet-950/20 dark:text-violet-400">
