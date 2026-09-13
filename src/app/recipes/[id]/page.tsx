@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ChefHat, Clock3, DollarSign, ExternalLink } from "lucide-react";
+import { ArrowLeft, ChefHat, Clock3, DollarSign, ExternalLink, ListOrdered } from "lucide-react";
 
 import { Badge } from "@/components/Badge";
 import { DeleteRecipeButton } from "@/components/DeleteRecipeButton";
@@ -97,27 +97,35 @@ export default async function RecipeDetailPage({ params }: Props) {
 
       <div className="grid gap-8 sm:grid-cols-[1fr_1.4fr]">
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-violet-950 dark:text-violet-100">
-            Ingredients
-          </h2>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-violet-950 dark:text-violet-100">
+              Ingredients
+            </h2>
+            <a
+              href="#instructions"
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300"
+            >
+              <ListOrdered size={12} /> Jump to Instructions
+            </a>
+          </div>
           <ul className="flex flex-col gap-2">
             {recipe.ingredients.map((ing, i) => (
               <li
                 key={i}
-                className="flex justify-between gap-3 border-b border-violet-100 pb-2 text-sm dark:border-violet-900/50"
+                className="flex items-baseline gap-2 border-b border-violet-100 pb-2 text-sm dark:border-violet-900/50"
               >
-                <span className="text-violet-900 dark:text-violet-200">{ing.item}</span>
                 {ing.quantity && (
-                  <span className="whitespace-nowrap text-violet-500 dark:text-violet-400">
+                  <span className="shrink-0 font-semibold text-rose-500 dark:text-rose-300">
                     {ing.quantity}
                   </span>
                 )}
+                <span className="text-violet-900 dark:text-violet-200">{ing.item}</span>
               </li>
             ))}
           </ul>
         </section>
 
-        <section>
+        <section id="instructions" className="scroll-mt-6">
           <h2 className="mb-3 text-lg font-semibold text-violet-950 dark:text-violet-100">
             Instructions
           </h2>
