@@ -20,9 +20,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeDto }) {
   return (
     <Link
       href={`/recipes/${recipe.id}`}
-      className="group flex flex-row items-center gap-3 overflow-hidden rounded-2xl border border-violet-100 bg-white/80 p-3 shadow-sm backdrop-blur-sm transition hover:shadow-md dark:border-violet-900/50 dark:bg-violet-950/40 sm:flex-col sm:items-stretch sm:gap-0 sm:rounded-3xl sm:p-0"
+      className="group flex flex-row items-center gap-3 overflow-hidden rounded-2xl border border-white/40 bg-white/30 p-3 backdrop-blur-sm transition hover:border-white/70 hover:bg-white/60 hover:shadow-md dark:border-violet-900/20 dark:bg-violet-950/20 dark:hover:border-violet-800/50 dark:hover:bg-violet-950/45 sm:flex-col sm:items-stretch sm:gap-0 sm:rounded-3xl sm:p-0"
     >
-      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-violet-50 dark:bg-violet-900/40 sm:aspect-[4/5] sm:h-auto sm:w-full sm:rounded-none">
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-violet-100/40 dark:bg-violet-900/25 sm:aspect-[4/5] sm:h-auto sm:w-full sm:rounded-none">
         <RecipeThumbnail
           src={recipe.thumbnailUrl}
           alt={recipe.title}

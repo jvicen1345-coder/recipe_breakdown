@@ -187,6 +187,13 @@ export function RecipeLibrary({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold text-black dark:text-violet-100">Your Recipes</h2>
+            <span className="text-xs text-violet-400 dark:text-violet-500">
+              {recipes.length} saved
+            </span>
+          </div>
+
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
               <Search
