@@ -18,10 +18,29 @@ function focusInput(id: string) {
   el.focus({ preventScroll: true });
 }
 
+function mobileNavLinkClass(active: boolean): string {
+  return `flex flex-1 flex-col items-center gap-0.5 py-2 transition ${
+    active ? "text-coral-deep" : "text-dusty-rose"
+  }`;
+}
+
+function MobileNavIcon({ active, children }: { active: boolean; children: React.ReactNode }) {
+  return (
+    <span
+      className={`flex h-7 w-7 items-center justify-center rounded-full transition ${active ? "bg-blush" : ""}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const onHome = pathname === "/";
+  const onGroceryPage = pathname === "/grocery-list";
+  const onPantryPage = pathname === "/pantry";
+  const onNutritionPage = pathname === "/nutrition";
 
   function handleHomeClick(e: React.MouseEvent) {
     if (!onHome) return;
@@ -86,13 +105,11 @@ export function Navbar() {
       </nav>
 
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 backdrop-blur-md sm:hidden">
-        <Link
-          href="/"
-          onClick={handleHomeClick}
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
-        >
-          <Home size={18} />
-          <span className="text-[10px] font-medium">Home</span>
+        <Link href="/" onClick={handleHomeClick} className={mobileNavLinkClass(onHome)} aria-current={onHome ? "page" : undefined}>
+          <MobileNavIcon active={onHome}>
+            <Home size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onHome ? "font-semibold" : "font-medium"}`}>Home</span>
         </Link>
         <Link
           href="/#recipes"
@@ -112,24 +129,33 @@ export function Navbar() {
         </Link>
         <Link
           href="/grocery-list"
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+          className={mobileNavLinkClass(onGroceryPage)}
+          aria-current={onGroceryPage ? "page" : undefined}
         >
-          <ShoppingCart size={18} />
-          <span className="text-[10px] font-medium">Grocery</span>
+          <MobileNavIcon active={onGroceryPage}>
+            <ShoppingCart size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onGroceryPage ? "font-semibold" : "font-medium"}`}>Grocery</span>
         </Link>
         <Link
           href="/pantry"
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+          className={mobileNavLinkClass(onPantryPage)}
+          aria-current={onPantryPage ? "page" : undefined}
         >
-          <Refrigerator size={18} />
-          <span className="text-[10px] font-medium">Pantry</span>
+          <MobileNavIcon active={onPantryPage}>
+            <Refrigerator size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onPantryPage ? "font-semibold" : "font-medium"}`}>Pantry</span>
         </Link>
         <Link
           href="/nutrition"
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+          className={mobileNavLinkClass(onNutritionPage)}
+          aria-current={onNutritionPage ? "page" : undefined}
         >
-          <BarChart3 size={18} />
-          <span className="text-[10px] font-medium">Week</span>
+          <MobileNavIcon active={onNutritionPage}>
+            <BarChart3 size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onNutritionPage ? "font-semibold" : "font-medium"}`}>Week</span>
         </Link>
       </div>
     </header>
