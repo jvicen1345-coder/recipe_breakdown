@@ -363,7 +363,7 @@ export function MyRecipesGrid({
                 className="card-fade-in flex min-w-0 flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-blush-dark bg-white/40 p-6 text-center transition hover:-translate-y-1 hover:border-coral hover:bg-white/70"
               >
                 <span className="text-3xl">✨</span>
-                <p className="font-serif text-base font-semibold text-rose-deep">Add new recipes, girly</p>
+                <p className="font-serif text-base font-semibold text-rose-deep">Add new recipes</p>
                 <p className="text-xs text-dusty-rose">Find something on TikTok →</p>
               </a>
             )}
