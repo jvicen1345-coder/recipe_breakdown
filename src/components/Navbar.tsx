@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, Home, Plus, Refrigerator, Search, ShoppingCart } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/grocery-list", label: "Grocery List" },
-  { href: "/pantry", label: "Pantry" },
-  { href: "/nutrition", label: "This Week" },
+const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/grocery-list", label: "Grocery List", icon: ShoppingCart },
+  { href: "/pantry", label: "Pantry", icon: Refrigerator },
+  { href: "/nutrition", label: "This Week", icon: BarChart3 },
 ];
 
 function focusInput(id: string) {
@@ -80,15 +81,18 @@ export function Navbar() {
         <div className="hidden items-center gap-1 rounded-full bg-white/60 p-1 sm:flex">
           {NAV_LINKS.map((link) => {
             const active = pathname === link.href;
+            const Icon = link.icon;
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={link.label === "Home" ? handleHomeClick : undefined}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                aria-current={active ? "page" : undefined}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                   active ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose hover:text-rose-deep"
                 }`}
               >
+                <Icon size={15} className={active ? "text-coral-deep" : "text-dusty-rose"} />
                 {link.label}
               </Link>
             );
@@ -98,7 +102,7 @@ export function Navbar() {
         <Link
           href="/#add-recipe"
           onClick={handleAddRecipeClick}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
+          className="hidden shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 sm:inline-flex"
         >
           <Plus size={14} /> Add Recipe
         </Link>
