@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
@@ -21,15 +21,12 @@ const SORT_LABELS: Record<SortOption, string> = {
 };
 
 export function MyRecipesGrid({
-  initialRecipes,
+  recipes,
   initialFolders,
-  loadError,
 }: {
-  initialRecipes: RecipeDto[];
+  recipes: RecipeDto[];
   initialFolders: FolderDto[];
-  loadError?: string | null;
 }) {
-  const [recipes] = useState(initialRecipes);
   const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
   const [dietFilter, setDietFilter] = useState("all");
@@ -84,18 +81,11 @@ export function MyRecipesGrid({
   }
 
   return (
-    <div className="page-fade-in mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="flex flex-col gap-6">
       <div className="flex items-baseline justify-between gap-2">
-        <h1 className="font-serif text-3xl font-semibold text-rose-deep">My Recipes</h1>
+        <h2 className="font-serif text-xl font-semibold text-rose-deep">Your Recipes</h2>
         <span className="text-xs text-dusty-rose">{recipes.length} saved</span>
       </div>
-
-      {loadError && (
-        <p className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-          {loadError}
-        </p>
-      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -167,6 +157,7 @@ export function MyRecipesGrid({
             className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-dusty-rose"
           />
           <input
+            id="recipe-search-input"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -202,17 +193,21 @@ export function MyRecipesGrid({
       {recipes.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-blush-dark p-16 text-center text-dusty-rose">
           <span className="text-4xl">🌸</span>
-          <p className="font-serif text-lg text-rose-deep">Your recipe box is empty — let&apos;s fill it up! 🌸</p>
-          <p className="text-sm">Paste a TikTok link on the Home page to save your first recipe.</p>
+          <p className="font-serif text-lg text-rose-deep">Your recipe box is empty</p>
+          <p className="text-sm">Paste a link above to fill it up ✨</p>
         </div>
       ) : filteredRecipes.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-blush-dark p-12 text-center text-dusty-rose">
-          No recipes match your search/filter.
+          No recipes match your search/filter — try something else! ✨
         </div>
       ) : (
         <div className="columns-2 gap-4 sm:columns-3 lg:columns-4">
-          {filteredRecipes.map((recipe) => (
-            <div key={recipe.id} className="mb-4 break-inside-avoid">
+          {filteredRecipes.map((recipe, i) => (
+            <div
+              key={recipe.id}
+              className="card-fade-in mb-4 break-inside-avoid"
+              style={{ animationDelay: `${Math.min(i, 20) * 50}ms` }}
+            >
               <RecipeCard recipe={recipe} showQuickActions />
             </div>
           ))}

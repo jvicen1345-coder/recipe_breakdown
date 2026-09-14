@@ -1,23 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Plus } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Home, Plus, Search, ShoppingCart } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/recipes", label: "My Recipes" },
+  { href: "/#recipes", label: "My Recipes" },
   { href: "/grocery-list", label: "Grocery List" },
 ];
 
+function focusInput(id: string) {
+  const el = document.getElementById(id) as HTMLInputElement | null;
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.focus({ preventScroll: true });
+}
+
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const onHome = pathname === "/";
+
+  function handleHomeClick(e: React.MouseEvent) {
+    if (!onHome) return;
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleRecipesClick(e: React.MouseEvent) {
+    if (!onHome) return;
+    e.preventDefault();
+    document.getElementById("recipes")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handleAddRecipeClick(e: React.MouseEvent) {
+    e.preventDefault();
+    if (onHome) {
+      focusInput("add-recipe-input");
+    } else {
+      router.push("/#add-recipe");
+    }
+  }
+
+  function handleSearchClick(e: React.MouseEvent) {
+    e.preventDefault();
+    if (onHome) {
+      focusInput("recipe-search-input");
+    } else {
+      router.push("/#recipes");
+    }
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-blush-dark/40 bg-cream/70 backdrop-blur-md">
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link
           href="/"
+          onClick={handleHomeClick}
           className="flex shrink-0 items-center gap-1.5 font-serif text-lg font-semibold text-rose-deep"
         >
           <span aria-hidden>🌸🍴</span>
@@ -31,6 +71,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={link.label === "My Recipes" ? handleRecipesClick : undefined}
                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                   active ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose hover:text-rose-deep"
                 }`}
@@ -43,27 +84,45 @@ export function Navbar() {
 
         <Link
           href="/#add-recipe"
+          onClick={handleAddRecipeClick}
           className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
         >
           <Plus size={14} /> Add Recipe
         </Link>
       </nav>
 
-      <div className="flex justify-center gap-1 border-t border-blush-dark/30 px-2 py-1.5 sm:hidden">
-        {NAV_LINKS.map((link) => {
-          const active = pathname === link.href;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex-1 rounded-full px-2 py-1 text-center text-xs font-medium transition ${
-                active ? "bg-blush text-rose-deep" : "text-dusty-rose"
-              }`}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 backdrop-blur-md sm:hidden">
+        <Link
+          href="/"
+          onClick={handleHomeClick}
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+        >
+          <Home size={18} />
+          <span className="text-[10px] font-medium">Home</span>
+        </Link>
+        <Link
+          href="/#recipes"
+          onClick={handleSearchClick}
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+        >
+          <Search size={18} />
+          <span className="text-[10px] font-medium">Search</span>
+        </Link>
+        <Link
+          href="/#add-recipe"
+          onClick={handleAddRecipeClick}
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-coral-deep"
+        >
+          <Plus size={18} />
+          <span className="text-[10px] font-medium">Add</span>
+        </Link>
+        <Link
+          href="/grocery-list"
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+        >
+          <ShoppingCart size={18} />
+          <span className="text-[10px] font-medium">Grocery</span>
+        </Link>
       </div>
     </header>
   );

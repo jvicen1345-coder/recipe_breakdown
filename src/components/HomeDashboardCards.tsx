@@ -18,20 +18,24 @@ const PROTEIN_TYPES_FOR_INSIGHT = [
   "other",
 ] as const;
 
+const HAVENT_MADE_MIN_RECIPES = 3;
+const INSIGHT_MIN_IDENTIFIABLE_PROTEINS = 2;
+
 interface NeglectedProtein {
   type: (typeof PROTEIN_TYPES_FOR_INSIGHT)[number];
-  neverAdded: boolean;
 }
 
 function computeNeglectedProtein(recipes: RecipeDto[]): NeglectedProtein | null {
-  if (recipes.length === 0) return null;
+  const identifiable = recipes.filter((r) => r.proteinType && r.proteinType !== "none");
+  if (identifiable.length < INSIGHT_MIN_IDENTIFIABLE_PROTEINS) return null;
+
   let worst: (NeglectedProtein & { lastAdded: number }) | null = null;
   for (const type of PROTEIN_TYPES_FOR_INSIGHT) {
-    const matching = recipes.filter((r) => r.proteinType === type);
+    const matching = identifiable.filter((r) => r.proteinType === type);
     const lastAdded =
       matching.length > 0 ? Math.max(...matching.map((r) => new Date(r.createdAt).getTime())) : -Infinity;
     if (!worst || lastAdded < worst.lastAdded) {
-      worst = { type, lastAdded, neverAdded: matching.length === 0 };
+      worst = { type, lastAdded };
     }
   }
   return worst;
@@ -39,6 +43,13 @@ function computeNeglectedProtein(recipes: RecipeDto[]): NeglectedProtein | null 
 
 function articleFor(label: string): string {
   return /^[aeiou]/i.test(label) ? "an" : "a";
+}
+
+interface CardSpec {
+  key: string;
+  label: string;
+  emoji: string;
+  recipe: RecipeDto;
 }
 
 export function HomeDashboardCards({ recipes }: { recipes: RecipeDto[] }) {
@@ -62,44 +73,65 @@ export function HomeDashboardCards({ recipes }: { recipes: RecipeDto[] }) {
     setFavoriteRecipe(recipes.find((r) => favoriteIds.has(r.id)) ?? null);
   }, [recipes]);
 
-  const recentlyAdded = recipes[0] ?? null;
   const insight = useMemo(() => computeNeglectedProtein(recipes), [recipes]);
 
-  if (recipes.length === 0) return null;
+  const recentlyAdded = recipes[0] ?? null;
+
+  // Only-one-recipe rule: never repeat the same recipe across multiple widgets.
+  const recipeCards: CardSpec[] = [];
+  if (recentlyAdded) {
+    recipeCards.push({ key: "recent", label: "Recently Added", emoji: "🆕", recipe: recentlyAdded });
+  }
+  const shownIds = new Set(recipeCards.map((c) => c.recipe.id));
+
+  if (recipes.length >= HAVENT_MADE_MIN_RECIPES && neglectedRecipe && !shownIds.has(neglectedRecipe.id)) {
+    recipeCards.push({ key: "neglected", label: "Haven't Made in a While", emoji: "⏳", recipe: neglectedRecipe });
+    shownIds.add(neglectedRecipe.id);
+  }
+
+  if (favoriteRecipe && !shownIds.has(favoriteRecipe.id)) {
+    recipeCards.push({ key: "favorite", label: "Your Favourites 💕", emoji: "💖", recipe: favoriteRecipe });
+    shownIds.add(favoriteRecipe.id);
+  }
+
+  const showInsight = insight != null;
+  const totalCards = recipeCards.length + (showInsight ? 1 : 0);
+
+  if (totalCards === 0) return null;
+
+  const gridColsClass =
+    totalCards === 1
+      ? "grid-cols-1"
+      : totalCards === 2
+        ? "grid-cols-2"
+        : totalCards === 3
+          ? "grid-cols-2 sm:grid-cols-3"
+          : "grid-cols-2 sm:grid-cols-4";
 
   return (
-    <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <DashboardRecipeCard
-        label="Recently Added"
-        emoji="🆕"
-        recipe={recentlyAdded}
-        onOpen={openRecipe}
-        emptyText="Nothing saved yet"
-      />
-      <DashboardRecipeCard
-        label="Haven't Made in a While"
-        emoji="⏳"
-        recipe={neglectedRecipe}
-        onOpen={openRecipe}
-        emptyText="—"
-      />
-      <DashboardRecipeCard
-        label="Trending for You"
-        emoji="💖"
-        recipe={favoriteRecipe}
-        onOpen={openRecipe}
-        emptyText="Heart a recipe to see it here"
-      />
-      <div className="flex flex-col justify-between gap-2 rounded-3xl bg-gradient-to-br from-blush to-peach p-3 shadow-[0_10px_28px_-16px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/40">
-        <span className="text-xs font-medium tracking-wide text-dusty-rose uppercase">🍽️ For You</span>
-        <p className="font-serif text-sm leading-snug font-semibold text-rose-deep">
-          {insight
-            ? `You haven't added ${articleFor(PROTEIN_LABELS[insight.type])} ${PROTEIN_LABELS[insight.type]} meal ${
-                insight.neverAdded ? "yet" : "in a while"
-              }!`
-            : "Save a few recipes to see meal insights here."}
-        </p>
-      </div>
+    <section className={`mx-auto grid w-full gap-3 ${gridColsClass} ${totalCards === 1 ? "max-w-xs" : ""}`}>
+      {recipeCards.map((card, i) => (
+        <DashboardRecipeCard
+          key={card.key}
+          label={card.label}
+          emoji={card.emoji}
+          recipe={card.recipe}
+          onOpen={openRecipe}
+          delayMs={i * 50}
+        />
+      ))}
+      {showInsight && insight && (
+        <div
+          className="card-fade-in flex flex-col justify-between gap-2 rounded-3xl bg-gradient-to-br from-blush to-peach p-3 shadow-[0_10px_28px_-16px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/40"
+          style={{ animationDelay: `${recipeCards.length * 50}ms` }}
+        >
+          <span className="text-xs font-medium tracking-wide text-dusty-rose uppercase">🍽️ For You</span>
+          <p className="font-serif text-sm leading-snug font-semibold text-rose-deep">
+            Craving something new? Try {articleFor(PROTEIN_LABELS[insight.type])} {PROTEIN_LABELS[insight.type]}{" "}
+            recipe next! 🍽️
+          </p>
+        </div>
+      )}
     </section>
   );
 }
@@ -109,34 +141,30 @@ function DashboardRecipeCard({
   emoji,
   recipe,
   onOpen,
-  emptyText,
+  delayMs,
 }: {
   label: string;
   emoji: string;
-  recipe: RecipeDto | null;
+  recipe: RecipeDto;
   onOpen: (recipe: RecipeDto) => void;
-  emptyText: string;
+  delayMs: number;
 }) {
   return (
     <button
       type="button"
-      onClick={() => recipe && onOpen(recipe)}
-      disabled={!recipe}
-      className="flex flex-col gap-2 rounded-3xl bg-white/75 p-3 text-left shadow-[0_10px_28px_-16px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/40 transition hover:-translate-y-0.5 disabled:cursor-default disabled:hover:translate-y-0"
+      onClick={() => onOpen(recipe)}
+      style={{ animationDelay: `${delayMs}ms` }}
+      className="card-fade-in flex flex-col gap-2 rounded-3xl bg-white/75 p-3 text-left shadow-[0_10px_28px_-16px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/40 transition hover:-translate-y-0.5"
     >
       <span className="text-xs font-medium tracking-wide text-dusty-rose uppercase">
         {emoji} {label}
       </span>
-      {recipe ? (
-        <div className="flex items-center gap-2">
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-blush-soft">
-            <RecipeThumbnail src={recipe.thumbnailUrl} alt={recipe.title} className="h-full w-full" />
-          </div>
-          <p className="font-serif line-clamp-2 text-sm font-semibold text-rose-deep">{recipe.title}</p>
+      <div className="flex items-center gap-2">
+        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-blush-soft">
+          <RecipeThumbnail src={recipe.thumbnailUrl} alt={recipe.title} className="h-full w-full" />
         </div>
-      ) : (
-        <p className="text-xs text-dusty-rose">{emptyText}</p>
-      )}
+        <p className="font-serif line-clamp-2 text-sm font-semibold text-rose-deep">{recipe.title}</p>
+      </div>
     </button>
   );
 }

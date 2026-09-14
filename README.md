@@ -5,18 +5,23 @@ step-by-step instructions, make time, difficulty, an estimated grocery cost, the
 whether it's vegan/vegetarian/pescatarian/omnivore, and estimated per-serving nutrition facts
 (calories, protein, carbs, fat, fiber, sugar, sodium).
 
-Saved recipes live in three pages, tied together by the navbar:
+Saved recipes live across two pages, tied together by the navbar:
 
-- **Home** — the "Break it down" input, a Collection-import option, 4 personalized dashboard cards
-  (Recently Added, Haven't Made in a While, Trending for You, and a "For You" meal-type insight),
-  and a "Cook something tonight?" pill row (Quick / Budget / High Protein / Vegan / Comfort Food)
-  that filters your own saved recipes by those criteria.
-- **My Recipes** — every saved recipe as a Pinterest-style masonry grid: search, filter by diet,
-  sort (Recently Added / A–Z / Cook Time / Cost), organize into folders (e.g. "Meal Prep 💪"), and
-  hover a card for quick "View Recipe" / "Add to List" actions.
+- **Home** — everything in one scroll: the "Break it down" input, a Collection-import option, up to
+  4 personalized dashboard cards (Recently Added, Haven't Made in a While, Your Favourites 💕, and a
+  "For You" meal-type suggestion — each only appears once it has real, non-repeated data to show), a
+  "Cook something tonight?" pill row (Quick / Budget / High Protein / Vegan / Comfort Food) that
+  filters your own saved recipes by those criteria, and — always below that — the full "Your
+  Recipes" grid: search, filter by diet, sort (Recently Added / A–Z / Cook Time / Cost), organize
+  into folders (e.g. "Meal Prep 💪"), and hover a card for quick "View 👀" / "Save to List 🛒"
+  actions. The navbar's "My Recipes" link and mobile search icon just smooth-scroll to this grid
+  rather than navigating to a separate page.
 - **Grocery List** — auto-built from whatever ingredients you've checked off across your saved
   recipes, grouped into Produce/Proteins/Dairy/Pantry, with its own cross-off checkboxes and a
   "Copy list" button.
+
+On mobile, the top nav is replaced by a fixed bottom bar (Home / Search / Add / Grocery List) so
+the main actions stay one thumb-tap away.
 
 Clicking any recipe card opens a full detail view in a modal (a direct link to `/recipes/[id]` still
 works as a real page) with a servings adjuster that scales every ingredient quantity live, the
@@ -175,6 +180,9 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
   checklist, notes, nutrition, folder) shared by both the modal and the standalone page
 - `src/components/RecipeDetailModal.tsx` / `RecipeModalProvider.tsx` — the modal recipe view opened
   from any recipe card, plus the context that opens it from anywhere in the app
-- `src/components/MyRecipesGrid.tsx`, `src/app/recipes/page.tsx` — the My Recipes page
+- `src/components/HomeDashboardCards.tsx` — the 4 threshold-gated personalized dashboard cards
+- `src/components/MyRecipesGrid.tsx` — the "Your Recipes" grid, embedded on the Home page
 - `src/components/GroceryList.tsx`, `src/app/grocery-list/page.tsx` — the Grocery List page
-- `src/app/page.tsx`, `src/app/recipes/[id]/page.tsx` — Home and the standalone recipe detail page
+- `src/app/page.tsx`, `src/components/RecipeLibrary.tsx` — Home (hero, input, dashboard cards, Cook
+  Tonight, and the Your Recipes grid all in one page)
+- `src/app/recipes/[id]/page.tsx` — the standalone recipe detail page (direct links/sharing)

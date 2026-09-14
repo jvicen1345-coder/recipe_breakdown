@@ -6,8 +6,10 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
 import { HomeDashboardCards } from "./HomeDashboardCards";
+import { MyRecipesGrid } from "./MyRecipesGrid";
 import { RecipeCard } from "./RecipeCard";
-import type { RecipeDto } from "@/lib/types";
+import { useToast } from "./ToastProvider";
+import type { FolderDto, RecipeDto } from "@/lib/types";
 
 const STATUS_MESSAGES = [
   "Reading the caption and hashtags…",
@@ -44,6 +46,10 @@ const COMFORT_FOOD_KEYWORDS = [
   "stew",
 ];
 
+const COOK_TONIGHT_FILTER_LABELS: Record<string, string> = Object.fromEntries(
+  COOK_TONIGHT_FILTERS.map((f) => [f.value, f.label]),
+);
+
 function matchesCookTonightFilter(recipe: RecipeDto, filter: string): boolean {
   switch (filter) {
     case "quick":
@@ -65,10 +71,12 @@ function matchesCookTonightFilter(recipe: RecipeDto, filter: string): boolean {
 
 export function RecipeLibrary({
   initialRecipes,
+  initialFolders,
   loadError,
   collectionImportEnabled = false,
 }: {
   initialRecipes: RecipeDto[];
+  initialFolders: FolderDto[];
   loadError?: string | null;
   collectionImportEnabled?: boolean;
 }) {
@@ -81,6 +89,7 @@ export function RecipeLibrary({
   const [error, setError] = useState<{ message: string; existingRecipeId?: string } | null>(null);
   const [activeCookTonightFilters, setActiveCookTonightFilters] = useState<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const showToast = useToast();
 
   useEffect(() => {
     if (!submitting) {
@@ -120,6 +129,7 @@ export function RecipeLibrary({
       setUrl("");
       setNotes("");
       setShowNotes(false);
+      showToast("Saved to your box 💕");
     } catch {
       setError({ message: "Couldn't reach the server. Please try again." });
     } finally {
@@ -172,7 +182,7 @@ export function RecipeLibrary({
         </span>
         <span
           aria-hidden
-          className="floaty floaty-delay pointer-events-none absolute top-[4%] right-[2%] hidden text-2xl opacity-60 select-none sm:block sm:text-3xl"
+          className="floaty-fast pointer-events-none absolute top-[4%] right-[2%] hidden text-2xl opacity-60 select-none sm:block sm:text-3xl"
         >
           ✨
         </span>
@@ -193,7 +203,7 @@ export function RecipeLibrary({
           <h1 className="font-serif text-4xl font-semibold text-rose-deep sm:text-5xl">
             What&apos;s cooking, bestie? 🍓
           </h1>
-          <p className="text-sm text-foreground/70 sm:text-base">Post your TikTok recipe link.</p>
+          <p className="text-sm text-foreground/70 sm:text-base">From FYP to your kitchen ✨</p>
         </div>
       </header>
 
@@ -211,6 +221,7 @@ export function RecipeLibrary({
       >
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
+            id="add-recipe-input"
             type="url"
             required
             inputMode="url"
@@ -298,7 +309,9 @@ export function RecipeLibrary({
                 type="button"
                 onClick={() => toggleCookTonightFilter(filter.value)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                  active ? "bg-rose-deep text-white" : "bg-blush text-rose-deep hover:bg-blush-dark"
+                  active
+                    ? "bg-gradient-to-r from-coral to-rose-deep text-white shadow-sm"
+                    : "bg-blush text-rose-deep hover:bg-blush-dark"
                 }`}
               >
                 {filter.label}
@@ -313,17 +326,27 @@ export function RecipeLibrary({
           </p>
         ) : cookTonightMatches.length === 0 ? (
           <p className="text-sm text-dusty-rose">
-            No saved recipes match that yet — try another filter, or save a few more!
+            No{" "}
+            {[...activeCookTonightFilters].map((f) => COOK_TONIGHT_FILTER_LABELS[f]).join(" or ")} recipes
+            saved yet — add one above! ✨
           </p>
         ) : (
           <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
-            {cookTonightMatches.map((recipe) => (
-              <div key={recipe.id} className="w-44 shrink-0 sm:w-52">
+            {cookTonightMatches.map((recipe, i) => (
+              <div
+                key={recipe.id}
+                className="card-fade-in w-44 shrink-0 sm:w-52"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
                 <RecipeCard recipe={recipe} />
               </div>
             ))}
           </div>
         )}
+      </section>
+
+      <section id="recipes" className="scroll-mt-24">
+        <MyRecipesGrid recipes={recipes} initialFolders={initialFolders} />
       </section>
     </div>
   );

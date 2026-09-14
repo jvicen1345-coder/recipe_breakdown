@@ -1,8 +1,8 @@
 import { RecipeLibrary } from "@/components/RecipeLibrary";
 import { isFullPipelineAvailable } from "@/lib/pipeline";
 import { prisma } from "@/lib/prisma";
-import { toRecipeDto } from "@/lib/types";
-import type { RecipeDto } from "@/lib/types";
+import { toFolderDto, toRecipeDto } from "@/lib/types";
+import type { FolderDto, RecipeDto } from "@/lib/types";
 
 // This reads the saved-recipes list fresh on every request; it must not be
 // statically prerendered with a build-time snapshot of the (empty) database.
@@ -10,11 +10,16 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   let recipes: RecipeDto[] = [];
+  let folders: FolderDto[] = [];
   let loadError: string | null = null;
 
   try {
-    const rows = await prisma.recipe.findMany({ orderBy: { createdAt: "desc" } });
-    recipes = rows.map(toRecipeDto);
+    const [recipeRows, folderRows] = await Promise.all([
+      prisma.recipe.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.folder.findMany({ orderBy: { createdAt: "asc" } }),
+    ]);
+    recipes = recipeRows.map(toRecipeDto);
+    folders = folderRows.map(toFolderDto);
   } catch (err) {
     // Keep the page itself rendering even if the database isn't reachable yet
     // (e.g. DATABASE_URL not configured, or migrations not applied) — show a
@@ -29,6 +34,7 @@ export default async function HomePage() {
   return (
     <RecipeLibrary
       initialRecipes={recipes}
+      initialFolders={folders}
       loadError={loadError}
       collectionImportEnabled={collectionImportEnabled}
     />

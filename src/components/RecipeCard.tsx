@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock3, ChefHat, DollarSign, ShoppingCart } from "lucide-react";
+import { Clock3, ChefHat, DollarSign } from "lucide-react";
 
 import { Badge } from "./Badge";
 import { FavoriteButton } from "./FavoriteButton";
@@ -62,14 +62,14 @@ export function RecipeCard({
         {showQuickActions && (
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:opacity-100">
             <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-deep">
-              View Recipe
+              View 👀
             </span>
             <button
               type="button"
               onClick={handleAddToList}
-              className="inline-flex items-center gap-1 rounded-full bg-sage px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sage-dark"
+              className="rounded-full bg-sage px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sage-dark"
             >
-              <ShoppingCart size={12} /> Add to List
+              Save to List 🛒
             </button>
           </div>
         )}

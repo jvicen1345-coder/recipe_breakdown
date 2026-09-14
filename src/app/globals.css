@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --background: #fdf6ee;
   --foreground: #3d2a30;
@@ -77,6 +81,10 @@ body {
 
 .floaty-slow {
   animation: recipe-float 9s ease-in-out infinite;
+}
+
+.floaty-fast {
+  animation: recipe-float 5s ease-in-out infinite;
 }
 
 .floaty-delay {
@@ -193,4 +201,20 @@ body {
   top: 0;
   left: 50%;
   animation: confetti-fall 1.1s ease-in forwards;
+}
+
+@keyframes card-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-fade-in {
+  opacity: 0;
+  animation: card-fade-in 0.4s ease-out forwards;
 }
