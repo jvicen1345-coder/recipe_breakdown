@@ -1,48 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
 import { HomeDashboardCards } from "./HomeDashboardCards";
-import { RecipeCard } from "./RecipeCard";
-import { getRecentlyViewedIds } from "@/lib/clientState";
 import type { RecipeDto } from "@/lib/types";
 
 const STATUS_MESSAGES = [
   "Reading the caption and hashtags…",
   "Working out ingredients and steps…",
   "Estimating time, difficulty, and cost…",
-];
-
-const TRENDING_PLACEHOLDERS = [
-  {
-    title: "Baked Feta Pasta",
-    handle: "noodlesandnoise",
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=500&q=70&auto=format&fit=crop",
-    tags: ["quick", "comfort"],
-  },
-  {
-    title: "Crumbl-Style Cookies",
-    handle: "sweettreatsxo",
-    image: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=500&q=70&auto=format&fit=crop",
-    tags: ["comfort"],
-  },
-  {
-    title: "Green Goddess Bowl",
-    handle: "cleangirl.eats",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=70&auto=format&fit=crop",
-    tags: ["vegan", "high-protein", "budget"],
-  },
-];
-
-const TRENDING_FILTERS: { value: string; label: string }[] = [
-  { value: "quick", label: "Quick (<30 min)" },
-  { value: "budget", label: "Budget" },
-  { value: "high-protein", label: "High Protein" },
-  { value: "vegan", label: "Vegan" },
-  { value: "comfort", label: "Comfort Food" },
 ];
 
 export function RecipeLibrary({
@@ -61,14 +30,7 @@ export function RecipeLibrary({
   const [submitting, setSubmitting] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
   const [error, setError] = useState<{ message: string; existingRecipeId?: string } | null>(null);
-  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
-  const [activeTrendingFilters, setActiveTrendingFilters] = useState<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring from localStorage, unavailable during SSR
-    setRecentlyViewedIds(getRecentlyViewedIds());
-  }, []);
 
   useEffect(() => {
     if (!submitting) {
@@ -114,25 +76,6 @@ export function RecipeLibrary({
       setSubmitting(false);
     }
   }
-
-  const recentlyViewed = useMemo(() => {
-    const byId = new Map(recipes.map((r) => [r.id, r]));
-    return recentlyViewedIds.map((id) => byId.get(id)).filter((r): r is RecipeDto => Boolean(r));
-  }, [recipes, recentlyViewedIds]);
-
-  function toggleTrendingFilter(value: string) {
-    setActiveTrendingFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(value)) next.delete(value);
-      else next.add(value);
-      return next;
-    });
-  }
-
-  const visibleTrending = useMemo(() => {
-    if (activeTrendingFilters.size === 0) return TRENDING_PLACEHOLDERS;
-    return TRENDING_PLACEHOLDERS.filter((item) => item.tags.some((tag) => activeTrendingFilters.has(tag)));
-  }, [activeTrendingFilters]);
 
   return (
     <div className="page-fade-in mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6">
@@ -277,67 +220,6 @@ export function RecipeLibrary({
       )}
 
       <HomeDashboardCards recipes={recipes} />
-
-      {recentlyViewed.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="font-serif text-xl font-semibold text-rose-deep">Recently Viewed</h2>
-          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
-            {recentlyViewed.map((recipe) => (
-              <div key={recipe.id} className="w-44 shrink-0 sm:w-52">
-                <RecipeCard recipe={recipe} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="flex flex-col gap-3">
-        <h2 className="font-serif text-xl font-semibold text-rose-deep">Cook something tonight? 🌙</h2>
-        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-          {TRENDING_FILTERS.map((filter) => {
-            const active = activeTrendingFilters.has(filter.value);
-            return (
-              <button
-                key={filter.value}
-                type="button"
-                onClick={() => toggleTrendingFilter(filter.value)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                  active ? "bg-rose-deep text-white" : "bg-blush text-rose-deep hover:bg-blush-dark"
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <h3 className="font-serif text-lg font-semibold text-rose-deep">Trending on TikTok 🔥</h3>
-        {visibleTrending.length === 0 ? (
-          <p className="text-sm text-dusty-rose">No trending picks match those filters yet.</p>
-        ) : (
-          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
-            {visibleTrending.map((item) => (
-              <div
-                key={item.title}
-                className="flex w-44 shrink-0 flex-col overflow-hidden rounded-3xl bg-white/70 shadow-[0_10px_28px_-16px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/40 sm:w-52"
-              >
-                <div className="relative aspect-[4/5] w-full overflow-hidden bg-blush-soft">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- external Unsplash CDN, no domain config needed for a couple of static demo photos */}
-                  <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
-                </div>
-                <div className="flex flex-col gap-0.5 p-3">
-                  <p className="font-serif truncate text-sm font-semibold text-rose-deep sm:text-base">
-                    {item.title}
-                  </p>
-                  <p className="truncate text-xs text-dusty-rose">@{item.handle}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <p className="text-xs text-dusty-rose/80">Inspiration for now — paste a link above to save your own ✨</p>
-      </section>
     </div>
   );
 }

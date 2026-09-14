@@ -7,8 +7,9 @@ whether it's vegan/vegetarian/pescatarian/omnivore, and estimated per-serving nu
 
 Saved recipes live in three pages, tied together by the navbar:
 
-- **Home** — the "Break it down" input, a Collection-import option, a Recently Viewed row, and a
-  filterable Trending row (placeholder inspiration cards).
+- **Home** — the "Break it down" input, a Collection-import option, and 4 personalized dashboard
+  cards (Recently Added, Haven't Made in a While, Trending for You, and a "For You" meal-type
+  insight).
 - **My Recipes** — every saved recipe as a Pinterest-style masonry grid: search, filter by diet,
   sort (Recently Added / A–Z / Cook Time / Cost), organize into folders (e.g. "Meal Prep 💪"), and
   hover a card for quick "View Recipe" / "Add to List" actions.

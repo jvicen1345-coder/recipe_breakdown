@@ -6,14 +6,9 @@ import { X } from "lucide-react";
 import { FavoriteButton } from "./FavoriteButton";
 import { RecipeDetailContent } from "./RecipeDetailContent";
 import { RecipeThumbnail } from "./RecipeThumbnail";
-import { recordRecipeViewed } from "@/lib/clientState";
 import type { RecipeDto } from "@/lib/types";
 
 export function RecipeDetailModal({ recipe, onClose }: { recipe: RecipeDto; onClose: () => void }) {
-  useEffect(() => {
-    recordRecipeViewed(recipe.id);
-  }, [recipe.id]);
-
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
