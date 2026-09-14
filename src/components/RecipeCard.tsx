@@ -51,7 +51,7 @@ export function RecipeCard({
         e.preventDefault();
         openRecipe(recipe);
       }}
-      className="group flex flex-col overflow-hidden rounded-3xl bg-white/75 shadow-[0_10px_30px_-14px_rgba(192,120,140,0.45)] ring-1 ring-blush-dark/50 backdrop-blur-sm transition hover:-translate-y-1 hover:shadow-[0_18px_44px_-16px_rgba(192,120,140,0.55)]"
+      className="group flex h-full flex-col overflow-hidden rounded-3xl bg-white/75 shadow-[0_10px_30px_-14px_rgba(192,120,140,0.45)] ring-1 ring-blush-dark/50 backdrop-blur-sm transition hover:-translate-y-1 hover:shadow-[0_18px_44px_-16px_rgba(192,120,140,0.55)]"
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-t-3xl bg-blush-soft">
         <RecipeThumbnail
