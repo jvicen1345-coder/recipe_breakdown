@@ -21,6 +21,14 @@ const SORT_LABELS: Record<SortOption, string> = {
   cost: "Cost",
 };
 
+function filterPillClass(active: boolean): string {
+  return `shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+    active
+      ? "bg-gradient-to-r from-coral to-rose-deep text-white shadow-md"
+      : "bg-blush text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] hover:-translate-y-0.5 hover:bg-blush-dark hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
+  }`;
+}
+
 export function MyRecipesGrid({
   recipes,
   initialFolders,
@@ -240,53 +248,57 @@ export function MyRecipesGrid({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          {searching ? (
-            <Loader2
-              size={16}
-              className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 animate-spin text-coral"
-            />
-          ) : isSmartSearch ? (
-            <Sparkles size={16} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-coral" />
-          ) : (
-            <Search
-              size={16}
-              className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-dusty-rose"
-            />
-          )}
-          <input
-            id="recipe-search-input"
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search, or ask e.g. 'quick chicken dinner'…"
-            className="w-full rounded-full border border-blush-dark/60 bg-white py-2.5 pr-4 pl-10 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30"
+      <div className="relative">
+        {searching ? (
+          <Loader2
+            size={16}
+            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 animate-spin text-coral"
           />
-        </div>
-        <select
-          value={dietFilter}
-          onChange={(e) => setDietFilter(e.target.value)}
-          className="rounded-full border border-blush-dark/60 bg-white px-4 py-2.5 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30"
-        >
-          <option value="all">All diets</option>
-          {DIET_FILTER_OPTIONS.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortOption)}
-          className="rounded-full border border-blush-dark/60 bg-white px-4 py-2.5 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30"
-        >
-          {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
-            <option key={value} value={value}>
-              Sort: {label}
-            </option>
-          ))}
-        </select>
+        ) : isSmartSearch ? (
+          <Sparkles size={16} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-coral" />
+        ) : (
+          <Search
+            size={16}
+            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-dusty-rose"
+          />
+        )}
+        <input
+          id="recipe-search-input"
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search, or ask e.g. 'quick chicken dinner'…"
+          className="w-full rounded-full border border-blush-dark/60 bg-white py-2.5 pr-4 pl-10 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30"
+        />
+      </div>
+
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+        <button type="button" onClick={() => setDietFilter("all")} className={filterPillClass(dietFilter === "all")}>
+          All diets
+        </button>
+        {DIET_FILTER_OPTIONS.map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setDietFilter(value)}
+            className={filterPillClass(dietFilter === value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+        {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setSort(value)}
+            className={filterPillClass(sort === value)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {recipes.length === 0 ? (

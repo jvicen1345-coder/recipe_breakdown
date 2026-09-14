@@ -312,6 +312,8 @@ export function RecipeLibrary({
         </button>
       </section>
 
+      <NutritionSnapshotCard />
+
       <section className="flex flex-col gap-3">
         <h2 className="font-serif text-xl font-semibold text-rose-deep">Cook something tonight? 🌙</h2>
         <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
@@ -354,8 +356,6 @@ export function RecipeLibrary({
           </div>
         )}
       </section>
-
-      <NutritionSnapshotCard />
 
       <section id="recipes" className="scroll-mt-24">
         <MyRecipesGrid recipes={recipes} initialFolders={initialFolders} />
