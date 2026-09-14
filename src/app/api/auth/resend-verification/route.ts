@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 
 import { getSessionUserId, issueVerificationToken } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/mail";
@@ -14,9 +14,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Your email is already confirmed." }, { status: 400 });
   }
 
-  const token = await issueVerificationToken(user.id);
-  const verifyUrl = `${new URL(request.url).origin}/api/auth/verify-email?token=${token}`;
-  await sendVerificationEmail(user.email, verifyUrl);
+  const origin = new URL(request.url).origin;
+  after(async () => {
+    try {
+      const token = await issueVerificationToken(user.id);
+      await sendVerificationEmail(user.email, `${origin}/api/auth/verify-email?token=${token}`);
+    } catch (err) {
+      console.error("[api/auth/resend-verification] failed to send verification email:", err);
+    }
+  });
 
   return NextResponse.json({ ok: true });
 }

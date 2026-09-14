@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 
 import { hashPassword, issueVerificationToken, setSessionCookie } from "@/lib/auth";
@@ -30,9 +30,18 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({ data: { email, passwordHash, name: name || null } });
     await setSessionCookie(user.id);
 
-    const token = await issueVerificationToken(user.id);
-    const verifyUrl = `${new URL(request.url).origin}/api/auth/verify-email?token=${token}`;
-    await sendVerificationEmail(user.email, verifyUrl);
+    // Deferred so the response (and the client's redirect to the homepage) doesn't
+    // wait on a network round-trip to Resend — the account already exists and the
+    // session cookie is already set, so there's nothing left that needs this first.
+    const origin = new URL(request.url).origin;
+    after(async () => {
+      try {
+        const token = await issueVerificationToken(user.id);
+        await sendVerificationEmail(user.email, `${origin}/api/auth/verify-email?token=${token}`);
+      } catch (err) {
+        console.error("[api/auth/signup] failed to send verification email:", err);
+      }
+    });
 
     return NextResponse.json(
       {
