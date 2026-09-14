@@ -59,10 +59,18 @@ body {
     radial-gradient(circle at 20% 92%, rgba(200, 235, 214, 0.32) 0%, transparent 46%),
     radial-gradient(circle at 92% 88%, rgba(255, 224, 189, 0.32) 0%, transparent 46%),
     linear-gradient(160deg, #fdf6ee 0%, #fdf0ef 50%, #fbeee5 100%);
-  background-attachment: fixed;
+  /* `fixed` is desktop-only — iOS Safari can badly stutter or lock up page
+     scrolling when a fixed background repaints under a scrolling body. */
+  background-attachment: scroll;
   color: var(--foreground);
   font-family: var(--font-quicksand), Arial, Helvetica, sans-serif;
   min-height: 100dvh;
+}
+
+@media (min-width: 640px) {
+  body {
+    background-attachment: fixed;
+  }
 }
 
 @keyframes recipe-float {

@@ -68,45 +68,48 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-blush-dark/40 bg-cream/70 backdrop-blur-md">
-      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Link
-          href="/"
-          onClick={handleHomeClick}
-          className="flex shrink-0 items-center font-serif text-lg font-semibold text-rose-deep"
-        >
-          Cutesy Eats
-        </Link>
+    <>
+      {/* Desktop-only top bar — on mobile, navigation lives exclusively in the fixed bottom bar below. */}
+      <header className="sticky top-0 z-30 hidden border-b border-blush-dark/40 bg-cream/70 backdrop-blur-md sm:block">
+        <nav className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <Link
+            href="/"
+            onClick={handleHomeClick}
+            className="flex shrink-0 items-center font-serif text-lg font-semibold text-rose-deep"
+          >
+            Cutesy Eats
+          </Link>
 
-        <div className="hidden items-center gap-1 rounded-full bg-white/60 p-1 sm:flex">
-          {NAV_LINKS.map((link) => {
-            const active = pathname === link.href;
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={link.label === "Home" ? handleHomeClick : undefined}
-                aria-current={active ? "page" : undefined}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                  active ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose hover:text-rose-deep"
-                }`}
-              >
-                <Icon size={15} className={active ? "text-coral-deep" : "text-dusty-rose"} />
-                {link.label}
-              </Link>
-            );
-          })}
-        </div>
+          <div className="flex items-center gap-1 rounded-full bg-white/60 p-1">
+            {NAV_LINKS.map((link) => {
+              const active = pathname === link.href;
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={link.label === "Home" ? handleHomeClick : undefined}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                    active ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose hover:text-rose-deep"
+                  }`}
+                >
+                  <Icon size={15} className={active ? "text-coral-deep" : "text-dusty-rose"} />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </div>
 
-        <Link
-          href="/#add-recipe"
-          onClick={handleAddRecipeClick}
-          className="hidden shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 sm:inline-flex"
-        >
-          <Plus size={14} /> Add Recipe
-        </Link>
-      </nav>
+          <Link
+            href="/#add-recipe"
+            onClick={handleAddRecipeClick}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
+          >
+            <Plus size={14} /> Add Recipe
+          </Link>
+        </nav>
+      </header>
 
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 backdrop-blur-md sm:hidden">
         <Link href="/" onClick={handleHomeClick} className={mobileNavLinkClass(onHome)} aria-current={onHome ? "page" : undefined}>
@@ -162,6 +165,6 @@ export function Navbar() {
           <span className={`text-[10px] ${onNutritionPage ? "font-semibold" : "font-medium"}`}>Week</span>
         </Link>
       </div>
-    </header>
+    </>
   );
 }

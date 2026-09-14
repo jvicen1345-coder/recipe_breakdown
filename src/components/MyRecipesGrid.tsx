@@ -309,11 +309,11 @@ export function MyRecipesGrid({
               Smart matches for &ldquo;{search.trim()}&rdquo;
             </p>
           )}
-          <div className="columns-2 gap-4 sm:columns-3 lg:columns-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {filteredRecipes.map((recipe, i) => (
               <div
                 key={recipe.id}
-                className="card-fade-in mb-4 break-inside-avoid"
+                className="card-fade-in min-w-0"
                 style={{ animationDelay: `${Math.min(i, 20) * 50}ms` }}
               >
                 <RecipeCard recipe={recipe} showQuickActions />

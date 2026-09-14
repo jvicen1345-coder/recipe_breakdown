@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Quicksand } from "next/font/google";
 import "./globals.css";
 
@@ -20,6 +20,15 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Cutesy Eats 🌸🍴",
   description: "Turn saved TikTok cooking videos into structured, cookable recipes.",
+};
+
+// Pinch-zoom breaks this layout's fixed bottom nav / full-screen overlays (Cook
+// Mode, the swiper, bottom sheets), so it's disabled app-wide.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
