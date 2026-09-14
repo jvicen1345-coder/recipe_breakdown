@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Plus, Search, ShoppingCart } from "lucide-react";
+import { BarChart3, Home, Plus, Refrigerator, Search, ShoppingCart } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/grocery-list", label: "Grocery List" },
+  { href: "/pantry", label: "Pantry" },
+  { href: "/nutrition", label: "This Week" },
 ];
 
 function focusInput(id: string) {
@@ -114,6 +116,20 @@ export function Navbar() {
         >
           <ShoppingCart size={18} />
           <span className="text-[10px] font-medium">Grocery</span>
+        </Link>
+        <Link
+          href="/pantry"
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+        >
+          <Refrigerator size={18} />
+          <span className="text-[10px] font-medium">Pantry</span>
+        </Link>
+        <Link
+          href="/nutrition"
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+        >
+          <BarChart3 size={18} />
+          <span className="text-[10px] font-medium">Week</span>
         </Link>
       </div>
     </header>

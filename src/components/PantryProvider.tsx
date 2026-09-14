@@ -1,0 +1,76 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+import type { PantryItemDto } from "@/lib/types";
+
+interface PantryContextValue {
+  items: PantryItemDto[];
+  names: string[];
+  loading: boolean;
+  hasItem: (name: string) => boolean;
+  addItem: (name: string, category: string) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+}
+
+const PantryContext = createContext<PantryContextValue | null>(null);
+
+export function usePantry() {
+  const ctx = useContext(PantryContext);
+  if (!ctx) throw new Error("usePantry must be used within a PantryProvider");
+  return ctx;
+}
+
+export function PantryProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<PantryItemDto[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/pantry")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setItems(data.items ?? []);
+      })
+      .catch(() => {
+        // Pantry data is a nice-to-have enhancement layer; silently skip if it fails to load.
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const addItem = useCallback(async (name: string, category: string) => {
+    const res = await fetch("/api/pantry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, category }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setItems((prev) => (prev.some((i) => i.id === data.item.id) ? prev : [...prev, data.item]));
+    }
+  }, []);
+
+  const removeItem = useCallback(async (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    await fetch(`/api/pantry/${id}`, { method: "DELETE" });
+  }, []);
+
+  const hasItem = useCallback(
+    (name: string) => items.some((i) => i.name.toLowerCase() === name.toLowerCase()),
+    [items],
+  );
+
+  const names = useMemo(() => items.map((i) => i.name), [items]);
+
+  const value = useMemo(
+    () => ({ items, names, loading, hasItem, addItem, removeItem }),
+    [items, names, loading, hasItem, addItem, removeItem],
+  );
+
+  return <PantryContext.Provider value={value}>{children}</PantryContext.Provider>;
+}

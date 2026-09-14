@@ -34,6 +34,15 @@ export function addRecipeToGroceryList(recipeId: string, ingredientCount: number
   saveGroceryItemKeys(keys);
 }
 
+/** Adds only the given ingredient indices of a recipe (e.g. the ones missing from the pantry). */
+export function addIngredientIndicesToGroceryList(recipeId: string, indices: number[]) {
+  const keys = loadGroceryItemKeys();
+  for (const i of indices) {
+    keys.add(`${recipeId}:${i}`);
+  }
+  saveGroceryItemKeys(keys);
+}
+
 export function loadCrossedOff(): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {

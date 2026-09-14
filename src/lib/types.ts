@@ -49,6 +49,33 @@ export interface FolderDto {
   createdAt: string;
 }
 
+export interface PantryItemDto {
+  id: string;
+  name: string;
+  category: string;
+  createdAt: string;
+}
+
+export interface NutritionSnapshot {
+  weekOffset: number;
+  weekStart: string;
+  weekEnd: string;
+  totals: { calories: number; protein: number; carbs: number; fat: number };
+  daily: { date: string; calories: number }[];
+  macroPct: { protein: number; carbs: number; fat: number };
+  insight: string;
+  cookedRecipes: {
+    logId: string;
+    recipeId: string;
+    title: string;
+    thumbnailUrl: string | null;
+    cookedAt: string;
+    rating: number | null;
+    caloriesPerServing: number | null;
+  }[];
+  recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[];
+}
+
 function safeParseArray<T>(json: string | null): T[] {
   if (!json) return [];
   try {
@@ -104,5 +131,19 @@ export function toFolderDto(folder: { id: string; name: string; emoji: string | 
     name: folder.name,
     emoji: folder.emoji,
     createdAt: folder.createdAt.toISOString(),
+  };
+}
+
+export function toPantryItemDto(item: {
+  id: string;
+  name: string;
+  category: string;
+  createdAt: Date;
+}): PantryItemDto {
+  return {
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    createdAt: item.createdAt.toISOString(),
   };
 }

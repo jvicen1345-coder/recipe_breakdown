@@ -5,7 +5,7 @@ step-by-step instructions, make time, difficulty, an estimated grocery cost, the
 whether it's vegan/vegetarian/pescatarian/omnivore, and estimated per-serving nutrition facts
 (calories, protein, carbs, fat, fiber, sugar, sodium).
 
-Saved recipes live across two pages, tied together by the navbar:
+Saved recipes live across four pages, tied together by the navbar:
 
 - **Home** — everything in one scroll: the "Break it down" input, a Collection-import option, a
   "Cook something tonight?" pill row (Quick / Budget / High Protein / Low Calorie / Vegan /
@@ -27,14 +27,48 @@ Saved recipes live across two pages, tied together by the navbar:
   something off while cooking doesn't touch your shopping list and vice versa), grouped into
   Produce/Proteins/Dairy/Pantry, with its own cross-off checkboxes, a "Copy list" button, and a
   "Clear list" button to empty it out.
+- **My Pantry** — a sage-accented page for staples you keep stocked. Tap common staples (grouped
+  into Oils & Vinegars / Spices / Grains & Pasta / Dairy / Canned Goods) to toggle them on, or
+  search to add anything else. Once you've added a few items, every recipe card and detail view
+  shows a "🧺 X/Y ingredients" badge, and the pantry page itself surfaces how many saved recipes
+  you're 80%+ of the way to being able to make.
+- **This Week** — a lightweight nutrition snapshot built only from recipes you've actually cooked
+  (via Cook Mode's "I made this!"), never manual logging: weekly calorie/protein/carb/fat totals, a
+  daily bar chart, a macro breakdown, the list of what you cooked, and "Recommended for you" picks
+  from your saved-but-uncooked recipes that would balance the week's macros. A compact version of
+  this lives on the homepage too.
 
-On mobile, the top nav is replaced by a fixed bottom bar (Home / Search / Add / Grocery List) so
-the main actions stay one thumb-tap away.
+On mobile, the top nav is replaced by a fixed bottom bar (Home / Search / Add / Grocery / Pantry /
+Week) so the main actions stay one thumb-tap away.
 
 Clicking any recipe card opens a full detail view in a modal (a direct link to `/recipes/[id]` still
 works as a real page) with a servings adjuster that scales every ingredient quantity live, the
-per-serving calories, a personal notes box, an "I made this! 🎉" button, and the full nutrition
-breakdown.
+per-serving calories, a personal notes box, a pantry-match badge, and the full nutrition breakdown.
+
+### Cook Mode 🍳
+
+"Start Cooking" on any recipe opens a full-screen, distraction-free guided flow: one step at a time
+in a large serif font, with the previous/next step teased in small muted text above/below, a thin
+progress bar at the top, and swipe or arrow-button navigation. Steps with a detected duration
+("cook for 6-7 minutes", "simmer for 20 minutes" — parsed by `src/lib/cookTimers.ts`) surface a
+"Start Timer ⏱" button; timers run concurrently in a pill bar pinned to the bottom, pulse and
+vibrate (where supported) when done. The final step becomes a celebration screen — confetti, "I
+made this! 💕", and a 5-star rating — which logs a `CookLog` row (used by the nutrition snapshot)
+and marks the recipe cooked.
+
+### Cook Tonight? Swiper 🌙
+
+A Tinder-style discovery mode ("Feeling indecisive?" on the homepage) for when you don't know what
+to make. Recipes not cooked in 7+ days (or never) surface first, ones cooked 3-7 days ago are
+neutral, and anything cooked in the last 3 days sinks to the back — shuffled within each bucket.
+Swipe or tap ✅/👋; a right swipe drops you straight into Cook Mode for that recipe.
+
+### Ingredient substitutions 🔄
+
+Tap any ingredient in a recipe's list to open a bottom sheet with 2-3 hardcoded smart swaps (see
+`src/lib/substitutions.ts` — heavy cream, butter, chicken, parmesan, pasta, eggs, milk, and flour
+are covered) each with a note on how it changes the dish, a diet tag where relevant, and a badge if
+the substitute is already in your pantry or on your grocery list.
 
 ## How it works
 
@@ -199,3 +233,20 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 - `src/app/page.tsx`, `src/components/RecipeLibrary.tsx` — Home (hero, input, dashboard cards, Cook
   Tonight, and the Your Recipes grid all in one page)
 - `src/app/recipes/[id]/page.tsx` — the standalone recipe detail page (direct links/sharing)
+- `src/components/CookMode.tsx` — the full-screen guided cooking flow (steps, timers, celebration)
+- `src/lib/cookTimers.ts` — parses a duration out of an instruction step's text
+- `src/app/api/recipes/[id]/cook` — logs an "I made this!" event (`CookLog`: recipe, timestamp,
+  optional rating)
+- `src/components/CookTonightSwiper.tsx` — the Tinder-style "Cook Tonight?" discovery mode
+- `src/components/PantryProvider.tsx` — app-wide context that fetches/mutates pantry items once
+- `src/lib/pantryMatch.ts` — fuzzy text matching between pantry staples and ingredient text
+- `src/app/api/pantry`, `src/app/api/pantry/[id]` — list/create pantry items; delete one
+- `src/components/PantryPageClient.tsx`, `src/app/pantry/page.tsx` — the My Pantry page
+- `src/components/BottomSheet.tsx` — shared draggable blush bottom-sheet shell
+- `src/components/SubstitutionSheet.tsx`, `src/lib/substitutions.ts` — the ingredient substitution
+  tapper and its hardcoded lookup table
+- `src/app/api/nutrition-snapshot` — aggregates a week's `CookLog` entries into totals, a daily
+  breakdown, macro %, an insight line, and balancing recommendations from uncooked saves
+- `src/components/NutritionSnapshotCard.tsx` — the compact "This Week" homepage card
+- `src/components/NutritionSnapshotPageClient.tsx`, `src/app/nutrition/page.tsx` — the full weekly
+  nutrition snapshot page with a week selector

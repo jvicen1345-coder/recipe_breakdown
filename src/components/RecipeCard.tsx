@@ -5,10 +5,12 @@ import { Clock3, ChefHat, DollarSign } from "lucide-react";
 
 import { Badge } from "./Badge";
 import { FavoriteButton } from "./FavoriteButton";
+import { usePantry } from "./PantryProvider";
 import { RecipeThumbnail } from "./RecipeThumbnail";
 import { useRecipeModal } from "./RecipeModalProvider";
 import { useToast } from "./ToastProvider";
 import { addRecipeToGroceryList } from "@/lib/groceryListStorage";
+import { pantryMatchCount } from "@/lib/pantryMatch";
 import {
   DIET_STYLES,
   DIET_LABELS,
@@ -32,6 +34,8 @@ export function RecipeCard({
   const price = formatPriceUsd(recipe.estimatedPriceUsd);
   const openRecipe = useRecipeModal();
   const showToast = useToast();
+  const { names: pantryNames } = usePantry();
+  const pantryCount = pantryMatchCount(recipe.ingredients, pantryNames);
 
   function handleAddToList(e: React.MouseEvent) {
     e.preventDefault();
@@ -101,6 +105,11 @@ export function RecipeCard({
           )}
           {recipe.proteinType && recipe.proteinType !== "none" && recipe.dietType === "omnivore" && (
             <Badge>{PROTEIN_LABELS[recipe.proteinType]}</Badge>
+          )}
+          {pantryNames.length > 0 && (
+            <Badge className="bg-sage/25 text-sage-dark">
+              🧺 {pantryCount.have}/{pantryCount.total}
+            </Badge>
           )}
         </div>
       </div>

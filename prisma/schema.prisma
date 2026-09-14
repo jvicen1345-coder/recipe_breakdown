@@ -44,6 +44,8 @@ model Recipe {
   folderId      String?
   folder        Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
+  cookLogs CookLog[]
+
   createdAt DateTime @default(now())
 }
 
@@ -54,4 +56,24 @@ model Folder {
   createdAt DateTime @default(now())
 
   recipes Recipe[]
+}
+
+// A staple the user keeps stocked (olive oil, garlic, pasta, …), used to check
+// which recipe ingredients they already have on hand.
+model PantryItem {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String
+  createdAt DateTime @default(now())
+}
+
+// One "I made this!" event from Cook Mode — powers cook counts, the "haven't
+// made in a while" swiper logic's server-side view, and the weekly nutrition
+// snapshot (each log contributes one serving of its recipe's estimated nutrition).
+model CookLog {
+  id       String   @id @default(cuid())
+  recipeId String
+  recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  cookedAt DateTime @default(now())
+  rating   Int? // 1-5 stars, optional
 }

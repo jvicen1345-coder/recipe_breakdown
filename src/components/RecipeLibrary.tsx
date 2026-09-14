@@ -5,9 +5,12 @@ import Link from "next/link";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
+import { CookTonightSwiper } from "./CookTonightSwiper";
 import { MyRecipesGrid } from "./MyRecipesGrid";
+import { NutritionSnapshotCard } from "./NutritionSnapshotCard";
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
+import { COMFORT_FOOD_KEYWORDS } from "@/lib/comfortFoodKeywords";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
 const STATUS_MESSAGES = [
@@ -26,27 +29,6 @@ const COOK_TONIGHT_FILTERS: { value: string; label: string }[] = [
   { value: "pescatarian", label: "Pescatarian" },
   { value: "easy", label: "Easy" },
   { value: "comfort", label: "Comfort Food" },
-];
-
-const COMFORT_FOOD_KEYWORDS = [
-  "mac",
-  "cheese",
-  "casserole",
-  "pizza",
-  "mash",
-  "gravy",
-  "fried chicken",
-  "grilled cheese",
-  "pot pie",
-  "chili",
-  "lasagna",
-  "alfredo",
-  "meatloaf",
-  "biscuit",
-  "pancake",
-  "waffle",
-  "soup",
-  "stew",
 ];
 
 const COOK_TONIGHT_FILTER_LABELS: Record<string, string> = Object.fromEntries(
@@ -99,8 +81,17 @@ export function RecipeLibrary({
   const [statusIndex, setStatusIndex] = useState(0);
   const [error, setError] = useState<{ message: string; existingRecipeId?: string } | null>(null);
   const [activeCookTonightFilters, setActiveCookTonightFilters] = useState<Set<string>>(new Set());
+  const [showSwiper, setShowSwiper] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const showToast = useToast();
+
+  function handleOpenSwiper() {
+    if (recipes.length < 2) {
+      showToast("Save at least 2 recipes to use the swiper 🌸");
+      return;
+    }
+    setShowSwiper(true);
+  }
 
   useEffect(() => {
     if (!submitting) {
@@ -307,6 +298,20 @@ export function RecipeLibrary({
         />
       )}
 
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-[1.75rem] bg-gradient-to-r from-blush to-lavender/40 px-5 py-4">
+        <div>
+          <p className="font-serif text-lg font-semibold text-rose-deep">Feeling indecisive? 🎀</p>
+          <p className="text-xs text-dusty-rose">Swipe through your saved recipes to find tonight&apos;s pick.</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleOpenSwiper}
+          className="shrink-0 rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+        >
+          Cook Tonight? 🌙
+        </button>
+      </section>
+
       <section className="flex flex-col gap-3">
         <h2 className="font-serif text-xl font-semibold text-rose-deep">Cook something tonight? 🌙</h2>
         <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
@@ -350,9 +355,13 @@ export function RecipeLibrary({
         )}
       </section>
 
+      <NutritionSnapshotCard />
+
       <section id="recipes" className="scroll-mt-24">
         <MyRecipesGrid recipes={recipes} initialFolders={initialFolders} />
       </section>
+
+      {showSwiper && <CookTonightSwiper recipes={recipes} onClose={() => setShowSwiper(false)} />}
     </div>
   );
 }

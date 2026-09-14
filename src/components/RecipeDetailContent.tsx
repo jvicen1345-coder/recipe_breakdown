@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChefHat, Clock3, DollarSign, ExternalLink, Flame, Minus, Plus } from "lucide-react";
+import { ChefHat, Clock3, CookingPot, DollarSign, ExternalLink, Flame, Minus, Plus } from "lucide-react";
 
 import { Badge } from "./Badge";
 import { ConfettiBurst } from "./ConfettiBurst";
+import { CookMode } from "./CookMode";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
+import { usePantry } from "./PantryProvider";
 import { RecipeChecklist } from "./RecipeChecklist";
 import { useToast } from "./ToastProvider";
 import { isMarkedCooked, markCooked } from "@/lib/clientState";
+import { pantryMatchCount } from "@/lib/pantryMatch";
 import {
   DIET_LABELS,
   DIET_STYLES,
@@ -54,6 +57,9 @@ export function RecipeDetailContent({
   const [savingNotes, setSavingNotes] = useState(false);
   const [cooked, setCooked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showCookMode, setShowCookMode] = useState(false);
+  const { names: pantryNames } = usePantry();
+  const pantryCount = pantryMatchCount(recipe.ingredients, pantryNames);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring from localStorage, unavailable during SSR
@@ -149,6 +155,11 @@ export function RecipeDetailContent({
         {recipe.proteinType && recipe.proteinType !== "none" && (
           <Badge>{PROTEIN_LABELS[recipe.proteinType]}</Badge>
         )}
+        {pantryNames.length > 0 && (
+          <Badge className="bg-sage/25 text-sage-dark">
+            🧺 You have {pantryCount.have}/{pantryCount.total} ingredients
+          </Badge>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -209,7 +220,17 @@ export function RecipeDetailContent({
         )}
       </div>
 
+      <button
+        type="button"
+        onClick={() => setShowCookMode(true)}
+        className="shine-on-hover inline-flex items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-coral to-rose-deep px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+      >
+        <CookingPot size={16} /> Start Cooking 🍳
+      </button>
+
       <RecipeChecklist recipeId={recipe.id} ingredients={scaledIngredients} instructions={recipe.instructions} />
+
+      {showCookMode && <CookMode recipe={recipe} onClose={() => setShowCookMode(false)} />}
 
       <div>
         <button

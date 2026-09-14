@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, RotateCcw, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, RotateCcw, ShoppingCart, Sparkles, X } from "lucide-react";
 
+import { usePantry } from "./PantryProvider";
+import { SubstitutionSheet } from "./SubstitutionSheet";
+import { useToast } from "./ToastProvider";
 import {
   ingredientsStorageKey,
   loadCheckedIndices,
   saveCheckedIndices,
   stepsStorageKey,
 } from "@/lib/checklistStorage";
+import { addIngredientIndicesToGroceryList } from "@/lib/groceryListStorage";
+import { ingredientInPantry } from "@/lib/pantryMatch";
 import type { Ingredient } from "@/lib/types";
 
 interface Props {
@@ -25,6 +30,19 @@ export function RecipeChecklist({ recipeId, ingredients, instructions }: Props) 
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [hydrated, setHydrated] = useState(false);
   const [tab, setTab] = useState<"ingredients" | "instructions">("ingredients");
+  const [tappedIngredient, setTappedIngredient] = useState<{ ing: Ingredient; index: number } | null>(null);
+  const { names: pantryNames } = usePantry();
+  const showToast = useToast();
+
+  const missingIndices = useMemo(
+    () => ingredients.map((_, i) => i).filter((i) => !ingredientInPantry(ingredients[i].item, pantryNames)),
+    [ingredients, pantryNames],
+  );
+
+  function handleAddMissingToGroceryList() {
+    addIngredientIndicesToGroceryList(recipeId, missingIndices);
+    showToast("Missing ingredients added to your list 🛒");
+  }
 
   // Restore any in-progress checklist (e.g. after the phone's screen locked mid-cook).
   // Deliberately deferred to an effect: localStorage isn't available during server
@@ -118,39 +136,83 @@ export function RecipeChecklist({ recipeId, ingredients, instructions }: Props) 
       </div>
 
       {tab === "ingredients" ? (
-        <ul className="flex flex-col gap-1">
-          {ingredients.map((ing, i) => {
-            const checked = checkedIngredients.has(i);
-            return (
-              <li key={i} className="border-b border-blush">
-                <label className="flex cursor-pointer items-baseline gap-3 py-2.5 text-sm active:bg-blush-soft">
-                  <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleIngredient(i)}
-                      className="peer absolute inset-0 h-5 w-5 cursor-pointer appearance-none rounded-full border-2 border-blush-dark bg-white transition checked:border-coral checked:bg-coral"
-                    />
-                    <Check
-                      size={12}
-                      className="pointer-events-none relative hidden text-white peer-checked:block"
-                    />
-                  </span>
-                  {ing.quantity && (
-                    <span
-                      className={`shrink-0 font-semibold text-rose-deep ${checked ? "opacity-40 line-through" : ""}`}
-                    >
-                      {ing.quantity}
+        <>
+          {pantryNames.length > 0 && missingIndices.length > 0 && (
+            <div className="mb-3 rounded-2xl bg-blush/60 p-3">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold tracking-wide text-rose-deep uppercase">What I still need</p>
+                <button
+                  type="button"
+                  onClick={handleAddMissingToGroceryList}
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-3 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:brightness-105"
+                >
+                  <ShoppingCart size={11} /> Add missing to grocery list
+                </button>
+              </div>
+              <ul className="flex flex-wrap gap-1.5">
+                {missingIndices.map((i) => (
+                  <li key={i} className="rounded-full bg-white/70 px-2.5 py-1 text-xs text-dusty-rose">
+                    {ingredients[i].item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <ul className="flex flex-col gap-1">
+            {ingredients.map((ing, i) => {
+              const checked = checkedIngredients.has(i);
+              const inPantry = ingredientInPantry(ing.item, pantryNames);
+              return (
+                <li key={i} className="border-b border-blush">
+                  <div className="flex items-baseline gap-3 py-2.5 text-sm">
+                    <span className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleIngredient(i)}
+                        className="peer absolute inset-0 h-5 w-5 cursor-pointer appearance-none rounded-full border-2 border-blush-dark bg-white transition checked:border-coral checked:bg-coral"
+                      />
+                      <Check
+                        size={12}
+                        className="pointer-events-none relative hidden text-white peer-checked:block"
+                      />
                     </span>
-                  )}
-                  <span className={`text-foreground ${checked ? "opacity-40 line-through" : ""}`}>
-                    {ing.item}
-                  </span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
+                    <button
+                      type="button"
+                      onClick={() => setTappedIngredient({ ing, index: i })}
+                      className="flex flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left active:opacity-70"
+                    >
+                      {ing.quantity && (
+                        <span
+                          className={`shrink-0 font-semibold text-rose-deep ${checked ? "opacity-40 line-through" : ""}`}
+                        >
+                          {ing.quantity}
+                        </span>
+                      )}
+                      <span className={`text-foreground ${checked ? "opacity-40 line-through" : ""}`}>
+                        {ing.item}
+                      </span>
+                    </button>
+                    {pantryNames.length > 0 &&
+                      (inPantry ? (
+                        <Check size={14} className="shrink-0 text-sage-dark" aria-label="In your pantry" />
+                      ) : (
+                        <X size={14} className="shrink-0 text-coral-deep/70" aria-label="Not in your pantry" />
+                      ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {tappedIngredient && (
+            <SubstitutionSheet
+              ingredient={tappedIngredient.ing}
+              recipeId={recipeId}
+              recipeIngredients={ingredients}
+              onClose={() => setTappedIngredient(null)}
+            />
+          )}
+        </>
       ) : (
         <ol className="flex flex-col gap-1">
           {instructions.map((step, i) => {
