@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, ClipboardCopy, RefreshCw, Trash2 } from "lucide-react";
+import { Check, ClipboardCopy, RefreshCw, ShoppingBag, ShoppingCart, Trash2 } from "lucide-react";
 
+import { usePantry } from "./PantryProvider";
+import { usePlan } from "./PlanProvider";
+import { ProLockBadge } from "./ProLockBadge";
+import { useProUpsell } from "./ProUpsellProvider";
+import { SmartCartSheet } from "./SmartCartSheet";
 import { useToast } from "./ToastProvider";
 import {
   clearGroceryList,
@@ -16,13 +21,15 @@ import {
   GROCERY_CATEGORY_ORDER,
   type GroceryCategory,
 } from "@/lib/groceryCategories";
+import { daysSince } from "@/lib/pantryStaleness";
 import type { RecipeDto } from "@/lib/types";
 
-interface GroceryItem {
+export interface GroceryItem {
   key: string;
   item: string;
   quantity: string | null;
   category: GroceryCategory;
+  recipeId: string;
   recipeTitle: string;
 }
 
@@ -41,16 +48,45 @@ function buildGroceryItems(recipes: RecipeDto[]): GroceryItem[] {
       item: ing.item,
       quantity: ing.quantity,
       category: categorizeIngredient(ing.item),
+      recipeId,
       recipeTitle: recipe.title,
     });
   }
   return items;
 }
 
-export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] }) {
+export function GroceryList({
+  initialRecipes,
+  onQuickRefresh,
+}: {
+  initialRecipes: RecipeDto[];
+  /** Opens the "still have these?" bottom sheet — used by the staleness banner below. */
+  onQuickRefresh: () => void;
+}) {
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [crossedOff, setCrossedOff] = useState<Set<string>>(new Set());
+  const [showSmartCart, setShowSmartCart] = useState(false);
+  const [showStaleBlock, setShowStaleBlock] = useState(false);
   const showToast = useToast();
+  const { names: pantryNames } = usePantry();
+  const { isPro, pantryOnboardedAt, pantryLastConfirmedAt, stalenessLevel } = usePlan();
+  const openUpsell = useProUpsell();
+  const showStaleBanner = Boolean(pantryOnboardedAt) && (stalenessLevel === "banner" || stalenessLevel === "block");
+  const staleDays = daysSince(pantryLastConfirmedAt);
+
+  function handleOrderWhatINeed() {
+    if (!isPro) {
+      openUpsell("smart-cart");
+      return;
+    }
+    // Bridge: delivery cart must always check pantry staleness before generating —
+    // 30+ days blocks cart generation outright until a quick refresh happens.
+    if (Boolean(pantryOnboardedAt) && stalenessLevel === "block") {
+      setShowStaleBlock(true);
+      return;
+    }
+    setShowSmartCart(true);
+  }
 
   function refresh() {
     setItems(buildGroceryItems(initialRecipes));
@@ -133,6 +169,14 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
               </button>
               <button
                 type="button"
+                onClick={handleOrderWhatINeed}
+                className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105"
+              >
+                <ShoppingCart size={12} /> Order what I need
+              </button>
+              {!isPro && <ProLockBadge reason="smart-cart" />}
+              <button
+                type="button"
                 onClick={handleClear}
                 className="inline-flex items-center gap-1 rounded-full bg-coral/20 px-3 py-1.5 text-xs font-medium text-coral-deep shadow-sm transition hover:bg-coral/30"
               >
@@ -142,6 +186,23 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
           )}
         </div>
       </div>
+
+      {showStaleBanner && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
+          <span className="flex items-center gap-2">
+            <ShoppingBag size={15} className="shrink-0" />
+            Your pantry was last updated {staleDays ?? "a while"} day{staleDays === 1 ? "" : "s"} ago 🧺 — quick
+            refresh before building your cart?
+          </span>
+          <button
+            type="button"
+            onClick={onQuickRefresh}
+            className="shrink-0 rounded-full bg-amber-200/70 px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-200"
+          >
+            Quick refresh
+          </button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-sage p-16 text-center text-sage-dark">
@@ -191,6 +252,39 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
               </section>
             );
           })}
+        </div>
+      )}
+
+      {showSmartCart && (
+        <SmartCartSheet items={items} pantryNames={pantryNames} onClose={() => setShowSmartCart(false)} />
+      )}
+
+      {showStaleBlock && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-rose-deep/30 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex w-full max-w-sm flex-col gap-4 rounded-t-[2rem] bg-white p-6 text-center shadow-[0_-20px_60px_-20px_rgba(192,120,140,0.5)] sm:rounded-[2rem] sm:shadow-[0_30px_70px_-25px_rgba(192,120,140,0.6)]">
+            <h2 className="font-serif text-xl font-semibold text-sage-dark">Let&apos;s check your pantry first 🧺</h2>
+            <p className="text-sm text-sage-dark/80">
+              It&apos;s been {staleDays ?? "a while"} day{staleDays === 1 ? "" : "s"} since your pantry was
+              updated — a quick refresh keeps your cart from ordering things you already have.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowStaleBlock(false);
+                onQuickRefresh();
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-sage-dark to-sage px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+            >
+              Quick refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowStaleBlock(false)}
+              className="text-xs font-medium text-sage-dark/70 underline-offset-2 hover:underline"
+            >
+              Not right now
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -72,6 +72,7 @@ export async function GET(request: Request) {
       cookedAt: log.cookedAt.toISOString(),
       rating: log.rating,
       caloriesPerServing: nutrition?.caloriesPerServing ?? null,
+      orderedViaApp: log.recipe.lastOrderedViaAppAt != null,
     });
   }
 

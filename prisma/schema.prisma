@@ -27,6 +27,29 @@ model User {
   emailVerified              Boolean   @default(false)
   verificationToken          String?   @unique
   verificationTokenExpiresAt DateTime?
+
+  // --- Pro subscription (see lib/plan.ts + lib/stripe.ts) ---
+  plan                           String    @default("free") // free | pro
+  stripeCustomerId               String?   @unique
+  stripeSubscriptionId           String?   @unique
+  subscriptionStatus             String? // active | canceled | past_due | trialing
+  subscriptionInterval           String? // month | year
+  subscriptionRenewsAt           DateTime?
+  subscriptionCancelAtPeriodEnd  Boolean   @default(false)
+
+  // --- Living pantry (see lib/pantry.ts) ---
+  // How often they grocery shop, set during pantry onboarding — paces the staleness nudges
+  // so a biweekly shopper isn't nagged on a weekly shopper's schedule.
+  groceryCadence        String? // weekly | biweekly | whenever
+  pantryOnboardedAt     DateTime?
+  // Bumped by any pantry add/remove/quick-refresh confirm — the "how stale is this" clock.
+  pantryLastConfirmedAt DateTime?
+  // Running count of ingredients a smart cart excluded because pantry already had them —
+  // the "your pantry has saved you from buying X ingredients" stat on the subscription page.
+  ingredientsSavedByPantry Int @default(0)
+
+  recipesCreated Recipe[]
+  foldersCreated Folder[]
 }
 
 model Recipe {
@@ -67,6 +90,18 @@ model Recipe {
   cookLogs CookLog[]
 
   createdAt DateTime @default(now())
+
+  // Whoever saved this recipe — the library itself stays shared (everyone sees every
+  // recipe), this only exists so the free-tier 10-recipe cap counts what YOU personally
+  // saved rather than the whole household's shared count.
+  createdByUserId String?
+  createdBy       User?   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  // Set when this recipe's ingredients were sent to a delivery cart — powers the
+  // "Ordered via Cutesy Eats" tag on the weekly nutrition snapshot.
+  lastOrderedViaAppAt DateTime?
+
+  cartOrders CartOrder[]
 }
 
 model Folder {
@@ -76,6 +111,11 @@ model Folder {
   createdAt DateTime @default(now())
 
   recipes Recipe[]
+
+  // Same attribution-only purpose as Recipe.createdByUserId — powers the free-tier
+  // 2-folder cap without making folders themselves per-user/private.
+  createdByUserId String?
+  createdBy       User?   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 }
 
 // A staple the household keeps stocked (olive oil, garlic, pasta, …), used to check
@@ -84,6 +124,22 @@ model PantryItem {
   id        String   @id @default(cuid())
   name      String   @unique
   category  String
+  createdAt DateTime @default(now())
+  // Bumped whenever this item is (re)confirmed — via onboarding, the full pantry page,
+  // or the quick-refresh sheet. Distinct from createdAt so "last confirmed 3 days ago"
+  // reads right even for an item added months back.
+  lastConfirmedAt DateTime @default(now())
+}
+
+// One "send to a delivery app" action from the Smart Cart or "Shop this recipe" —
+// powers the nutrition snapshot's "Ordered via Cutesy Eats" tag and the pantry-savings
+// stat on the subscription page.
+model CartOrder {
+  id        String   @id @default(cuid())
+  provider  String // instacart | amazon-fresh
+  itemsJson String // JSON: string[] of ingredient names sent to the delivery app
+  recipeId  String?
+  recipe    Recipe?  @relation(fields: [recipeId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 }
 

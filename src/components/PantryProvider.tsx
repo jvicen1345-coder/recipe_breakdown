@@ -12,6 +12,8 @@ interface PantryContextValue {
   hasItem: (name: string) => boolean;
   addItem: (name: string, category: string) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
+  /** Re-fetches the full pantry list — used after bulk changes (onboarding, quick refresh). */
+  refresh: () => Promise<void>;
 }
 
 const PantryContext = createContext<PantryContextValue | null>(null);
@@ -27,23 +29,22 @@ export function PantryProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const showToast = useToast();
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/pantry")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled) setItems(data.items ?? []);
-      })
-      .catch(() => {
-        // Pantry data is a nice-to-have enhancement layer; silently skip if it fails to load.
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pantry");
+      const data = await res.json();
+      setItems(data.items ?? []);
+    } catch {
+      // Pantry data is a nice-to-have enhancement layer; silently skip if it fails to load.
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount, not derivable from props/state
+    load();
+  }, [load]);
 
   const addItem = useCallback(
     async (name: string, category: string) => {
@@ -85,8 +86,8 @@ export function PantryProvider({ children }: { children: React.ReactNode }) {
   const names = useMemo(() => items.map((i) => i.name), [items]);
 
   const value = useMemo(
-    () => ({ items, names, loading, hasItem, addItem, removeItem }),
-    [items, names, loading, hasItem, addItem, removeItem],
+    () => ({ items, names, loading, hasItem, addItem, removeItem, refresh: load }),
+    [items, names, loading, hasItem, addItem, removeItem, load],
   );
 
   return <PantryContext.Provider value={value}>{children}</PantryContext.Provider>;

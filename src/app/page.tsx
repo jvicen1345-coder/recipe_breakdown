@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RecipeLibrary } from "@/components/RecipeLibrary";
 import { getSessionUserId } from "@/lib/auth";
 import { isFullPipelineAvailable } from "@/lib/pipeline";
+import { FREE_RECIPE_LIMIT, isPro } from "@/lib/plan";
 import { prisma } from "@/lib/prisma";
 import { toFolderDto, toRecipeDto } from "@/lib/types";
 import type { FolderDto, RecipeDto } from "@/lib/types";
@@ -19,14 +20,19 @@ export default async function HomePage() {
   let folders: FolderDto[] = [];
   let loadError: string | null = null;
   let showThisWeekCard = true;
+  let isProUser = false;
+  let myRecipeCount = 0;
 
   try {
-    const [recipeRows, folderRows, user] = await Promise.all([
+    const [recipeRows, folderRows, user, myRecipeCountResult] = await Promise.all([
       prisma.recipe.findMany({ orderBy: { createdAt: "desc" } }),
       prisma.folder.findMany({ orderBy: { createdAt: "asc" } }),
-      prisma.user.findUnique({ where: { id: userId }, select: { showThisWeekCard: true } }),
+      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.recipe.count({ where: { createdByUserId: userId } }),
     ]);
     showThisWeekCard = user?.showThisWeekCard ?? true;
+    isProUser = user ? isPro(user) : false;
+    myRecipeCount = myRecipeCountResult;
     recipes = recipeRows.map(toRecipeDto);
     folders = folderRows.map(toFolderDto);
   } catch (err) {
@@ -47,6 +53,9 @@ export default async function HomePage() {
       loadError={loadError}
       collectionImportEnabled={collectionImportEnabled}
       showThisWeekCard={showThisWeekCard}
+      isPro={isProUser}
+      myRecipeCount={myRecipeCount}
+      freeRecipeLimit={FREE_RECIPE_LIMIT}
     />
   );
 }

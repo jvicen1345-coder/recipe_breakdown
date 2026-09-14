@@ -19,6 +19,7 @@ export default async function ProfilePage() {
       name={user.name}
       showThisWeekCard={user.showThisWeekCard}
       emailVerified={user.emailVerified}
+      plan={user.plan}
     />
   );
 }

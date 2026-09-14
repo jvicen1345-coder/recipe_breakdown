@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, Home, Plus, Search, ShoppingCart, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { usePlan } from "./PlanProvider";
+
 const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/grocery-list", label: "Grocery & Pantry", icon: ShoppingCart },
@@ -39,9 +41,11 @@ const NO_NAV_ROUTES = new Set(["/login", "/signup"]);
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { pantryOnboardedAt, stalenessLevel } = usePlan();
   const onHome = pathname === "/";
   const onGroceryPage = pathname === "/grocery-list";
   const onNutritionPage = pathname === "/nutrition";
+  const showStaleDot = Boolean(pantryOnboardedAt) && stalenessLevel !== "fresh";
 
   if (NO_NAV_ROUTES.has(pathname)) return null;
 
@@ -96,7 +100,12 @@ export function Navbar() {
                     active ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose hover:text-rose-deep"
                   }`}
                 >
-                  <Icon size={15} className={active ? "text-coral-deep" : "text-dusty-rose"} />
+                  <span className="relative">
+                    <Icon size={15} className={active ? "text-coral-deep" : "text-dusty-rose"} />
+                    {link.href === "/grocery-list" && showStaleDot && (
+                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    )}
+                  </span>
                   {link.label}
                 </Link>
               );
@@ -169,7 +178,10 @@ export function Navbar() {
           aria-current={onGroceryPage ? "page" : undefined}
         >
           <MobileNavIcon active={onGroceryPage}>
-            <ShoppingCart size={18} />
+            <span className="relative">
+              <ShoppingCart size={18} />
+              {showStaleDot && <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-amber-400" />}
+            </span>
           </MobileNavIcon>
           <span className={`text-[10px] ${onGroceryPage ? "font-semibold" : "font-medium"}`}>Grocery</span>
         </Link>

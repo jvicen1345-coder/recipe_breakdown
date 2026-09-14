@@ -3,7 +3,10 @@ import { Playfair_Display, Quicksand } from "next/font/google";
 import "./globals.css";
 
 import { Navbar } from "@/components/Navbar";
+import { PantryOnboardingProvider } from "@/components/PantryOnboardingProvider";
 import { PantryProvider } from "@/components/PantryProvider";
+import { PlanProvider } from "@/components/PlanProvider";
+import { ProUpsellProvider } from "@/components/ProUpsellProvider";
 import { RecipeModalProvider } from "@/components/RecipeModalProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 
@@ -40,12 +43,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${quicksand.variable} ${playfair.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col pb-16 sm:pb-0">
         <ToastProvider>
-          <PantryProvider>
-            <RecipeModalProvider>
-              <Navbar />
-              {children}
-            </RecipeModalProvider>
-          </PantryProvider>
+          <PlanProvider>
+            <PantryProvider>
+              <PantryOnboardingProvider>
+                <ProUpsellProvider>
+                  <RecipeModalProvider>
+                    <Navbar />
+                    {children}
+                  </RecipeModalProvider>
+                </ProUpsellProvider>
+              </PantryOnboardingProvider>
+            </PantryProvider>
+          </PlanProvider>
         </ToastProvider>
       </body>
     </html>

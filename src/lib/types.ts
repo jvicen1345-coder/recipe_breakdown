@@ -57,6 +57,7 @@ export interface PantryItemDto {
   name: string;
   category: string;
   createdAt: string;
+  lastConfirmedAt: string;
 }
 
 export interface NutritionSnapshot {
@@ -75,6 +76,7 @@ export interface NutritionSnapshot {
     cookedAt: string;
     rating: number | null;
     caloriesPerServing: number | null;
+    orderedViaApp: boolean;
   }[];
   recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[];
 }
@@ -153,11 +155,13 @@ export function toPantryItemDto(item: {
   name: string;
   category: string;
   createdAt: Date;
+  lastConfirmedAt: Date;
 }): PantryItemDto {
   return {
     id: item.id,
     name: item.name,
     category: item.category,
     createdAt: item.createdAt.toISOString(),
+    lastConfirmedAt: item.lastConfirmedAt.toISOString(),
   };
 }

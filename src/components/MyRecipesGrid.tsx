@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 
 import { PillDropdown } from "./PillDropdown";
+import { useProUpsell } from "./ProUpsellProvider";
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
 import { getCookedTimestamps } from "@/lib/clientState";
@@ -38,13 +39,20 @@ export function MyRecipesGrid({
   recipes,
   initialFolders,
   cookTonightFilters,
+  isPro = false,
+  myRecipeCount = 0,
+  freeRecipeLimit = 10,
 }: {
   recipes: RecipeDto[];
   initialFolders: FolderDto[];
   /** Active "Cook something tonight?" pills — recipes matching ANY of these stay in view. */
   cookTonightFilters: Set<string>;
+  isPro?: boolean;
+  myRecipeCount?: number;
+  freeRecipeLimit?: number;
 }) {
   const [folders, setFolders] = useState(initialFolders);
+  const openUpsell = useProUpsell();
   const [search, setSearch] = useState("");
   const [dietFilter, setDietFilter] = useState("all");
   const [mealTypeFilter, setMealTypeFilter] = useState("all");
@@ -197,6 +205,8 @@ export function MyRecipesGrid({
       setNewFolderName("");
       setCreatingFolder(false);
       showToast(`Folder "${data.folder.name}" created 🗂️`);
+    } else if (data?.reason === "folder-limit") {
+      openUpsell("folder-limit");
     } else {
       showToast(data?.error ?? "Couldn't create that folder.");
     }
@@ -220,7 +230,18 @@ export function MyRecipesGrid({
     <div className="flex flex-col gap-6">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="font-serif text-xl font-semibold text-rose-deep">Your Recipes</h2>
-        <span className="text-xs text-dusty-rose">{recipes.length} saved</span>
+        <div className="flex items-center gap-2">
+          {!isPro && (
+            <button
+              type="button"
+              onClick={() => openUpsell("recipe-limit")}
+              className="rounded-full bg-blush px-2.5 py-1 text-[11px] font-medium text-rose-deep shadow-sm transition hover:-translate-y-0.5 hover:bg-blush-dark"
+            >
+              {myRecipeCount}/{freeRecipeLimit} recipes saved
+            </button>
+          )}
+          <span className="text-xs text-dusty-rose">{recipes.length} saved</span>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

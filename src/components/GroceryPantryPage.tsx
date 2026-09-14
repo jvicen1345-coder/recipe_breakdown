@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Refrigerator, ShoppingCart } from "lucide-react";
 
 import { GroceryList } from "./GroceryList";
+import { usePantryOnboarding } from "./PantryOnboardingProvider";
 import { PantryPageClient } from "./PantryPageClient";
+import { usePlan } from "./PlanProvider";
+import { QuickRefreshSheet } from "./QuickRefreshSheet";
 import type { RecipeDto } from "@/lib/types";
 
 type Tab = "grocery" | "pantry";
@@ -16,6 +19,14 @@ const TABS: { value: Tab; label: string; icon: typeof ShoppingCart }[] = [
 
 export function GroceryPantryPage({ recipes }: { recipes: RecipeDto[] }) {
   const [tab, setTab] = useState<Tab>("grocery");
+  const [showQuickRefresh, setShowQuickRefresh] = useState(false);
+  const { pantryOnboardedAt, loading } = usePlan();
+  const openPantryOnboarding = usePantryOnboarding();
+
+  useEffect(() => {
+    if (!loading && !pantryOnboardedAt) openPantryOnboarding();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only fire once plan data has loaded
+  }, [loading, pantryOnboardedAt]);
 
   return (
     <div className="page-fade-in mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -39,7 +50,15 @@ export function GroceryPantryPage({ recipes }: { recipes: RecipeDto[] }) {
         })}
       </div>
 
-      {tab === "grocery" ? <GroceryList initialRecipes={recipes} /> : <PantryPageClient recipes={recipes} />}
+      {tab === "grocery" ? (
+        <GroceryList initialRecipes={recipes} onQuickRefresh={() => setShowQuickRefresh(true)} />
+      ) : (
+        <PantryPageClient recipes={recipes} />
+      )}
+
+      {showQuickRefresh && (
+        <QuickRefreshSheet recipes={recipes} onClose={() => setShowQuickRefresh(false)} />
+      )}
     </div>
   );
 }

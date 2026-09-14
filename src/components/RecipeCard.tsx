@@ -6,6 +6,7 @@ import { Clock3, ChefHat, DollarSign, Utensils } from "lucide-react";
 import { Badge } from "./Badge";
 import { FavoriteButton } from "./FavoriteButton";
 import { usePantry } from "./PantryProvider";
+import { usePlan } from "./PlanProvider";
 import { RecipeThumbnail } from "./RecipeThumbnail";
 import { useRecipeModal } from "./RecipeModalProvider";
 import { useToast } from "./ToastProvider";
@@ -37,7 +38,9 @@ export function RecipeCard({
   const openRecipe = useRecipeModal();
   const showToast = useToast();
   const { names: pantryNames } = usePantry();
+  const { pantryOnboardedAt, stalenessLevel } = usePlan();
   const pantryCount = pantryMatchCount(recipe.ingredients, pantryNames);
+  const pantryStale = Boolean(pantryOnboardedAt) && (stalenessLevel === "banner" || stalenessLevel === "block");
 
   function handleAddToList(e: React.MouseEvent) {
     e.preventDefault();
@@ -113,11 +116,14 @@ export function RecipeCard({
           {recipe.proteinType && recipe.proteinType !== "none" && recipe.dietType === "omnivore" && (
             <Badge>{PROTEIN_LABELS[recipe.proteinType]}</Badge>
           )}
-          {pantryNames.length > 0 && (
-            <Badge className="bg-sage/25 text-sage-dark">
-              🧺 {pantryCount.have}/{pantryCount.total}
-            </Badge>
-          )}
+          {pantryNames.length > 0 &&
+            (pantryStale ? (
+              <Badge className="bg-amber-100 text-amber-800">⚠️ Pantry match may be outdated</Badge>
+            ) : (
+              <Badge className="bg-sage/25 text-sage-dark">
+                🧺 You have {pantryCount.have}/{pantryCount.total} ingredients ✓
+              </Badge>
+            ))}
         </div>
       </div>
     </Link>

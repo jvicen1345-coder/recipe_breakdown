@@ -8,6 +8,8 @@ import { CollectionImport } from "./CollectionImport";
 import { CookTonightSwiper } from "./CookTonightSwiper";
 import { MyRecipesGrid } from "./MyRecipesGrid";
 import { NutritionSnapshotCard } from "./NutritionSnapshotCard";
+import { ProLockBadge } from "./ProLockBadge";
+import { useProUpsell } from "./ProUpsellProvider";
 import { useToast } from "./ToastProvider";
 import { COOK_TONIGHT_FILTERS } from "@/lib/cookTonightFilters";
 import type { FolderDto, RecipeDto } from "@/lib/types";
@@ -24,14 +26,21 @@ export function RecipeLibrary({
   loadError,
   collectionImportEnabled = false,
   showThisWeekCard = true,
+  isPro = false,
+  myRecipeCount = 0,
+  freeRecipeLimit = 10,
 }: {
   initialRecipes: RecipeDto[];
   initialFolders: FolderDto[];
   loadError?: string | null;
   collectionImportEnabled?: boolean;
   showThisWeekCard?: boolean;
+  isPro?: boolean;
+  myRecipeCount?: number;
+  freeRecipeLimit?: number;
 }) {
   const [recipes, setRecipes] = useState(initialRecipes);
+  const [recipeCount, setRecipeCount] = useState(myRecipeCount);
   const [url, setUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [showNotes, setShowNotes] = useState(false);
@@ -42,8 +51,13 @@ export function RecipeLibrary({
   const [showSwiper, setShowSwiper] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const showToast = useToast();
+  const openUpsell = useProUpsell();
 
   function handleOpenSwiper() {
+    if (!isPro) {
+      openUpsell("recipe-swiper");
+      return;
+    }
     if (recipes.length < 2) {
       showToast("Save at least 2 recipes to use the swiper 🌸");
       return;
@@ -81,11 +95,16 @@ export function RecipeLibrary({
       const data = await res.json();
 
       if (!res.ok) {
-        setError({ message: data.error ?? "Something went wrong.", existingRecipeId: data.recipeId });
+        if (data.reason === "recipe-limit") {
+          openUpsell("recipe-limit");
+        } else {
+          setError({ message: data.error ?? "Something went wrong.", existingRecipeId: data.recipeId });
+        }
         return;
       }
 
       setRecipes((prev) => [data.recipe as RecipeDto, ...prev]);
+      setRecipeCount((c) => c + 1);
       setUrl("");
       setNotes("");
       setShowNotes(false);
@@ -250,10 +269,11 @@ export function RecipeLibrary({
       )}
 
       <section className="flex flex-col items-center gap-3 rounded-[1.75rem] bg-gradient-to-r from-blush to-lavender/40 px-5 py-6 text-center">
-        <div>
+        <div className="flex items-center gap-1.5">
           <p className="font-serif text-lg font-semibold text-rose-deep">Feeling indecisive? 🎀</p>
-          <p className="text-xs text-dusty-rose">Swipe through your saved recipes to find tonight&apos;s pick.</p>
+          {!isPro && <ProLockBadge reason="recipe-swiper" />}
         </div>
+        <p className="text-xs text-dusty-rose">Swipe through your saved recipes to find tonight&apos;s pick.</p>
         <button
           type="button"
           onClick={handleOpenSwiper}
@@ -294,6 +314,9 @@ export function RecipeLibrary({
           recipes={recipes}
           initialFolders={initialFolders}
           cookTonightFilters={activeCookTonightFilters}
+          isPro={isPro}
+          myRecipeCount={recipeCount}
+          freeRecipeLimit={freeRecipeLimit}
         />
       </section>
 

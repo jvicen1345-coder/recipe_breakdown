@@ -5,6 +5,7 @@ import { getSessionUserId, requireVerifiedUserId } from "@/lib/auth";
 import { ExternalToolError } from "@/lib/exec";
 import { prisma } from "@/lib/prisma";
 import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
+import { FREE_RECIPE_LIMIT, isPro } from "@/lib/plan";
 import { InvalidTikTokUrlError } from "@/lib/tiktok";
 import { toRecipeDto } from "@/lib/types";
 
@@ -34,8 +35,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
 
+  const user = await prisma.user.findUnique({ where: { id: auth.userId } });
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
+  if (!isPro(user)) {
+    const savedCount = await prisma.recipe.count({ where: { createdByUserId: user.id } });
+    if (savedCount >= FREE_RECIPE_LIMIT) {
+      return NextResponse.json(
+        { error: "You've hit the free plan's 10-recipe limit.", reason: "recipe-limit" },
+        { status: 402 },
+      );
+    }
+  }
+
   try {
-    const recipe = await createRecipeFromUrl(parsed.data.url, parsed.data.notes);
+    const recipe = await createRecipeFromUrl(parsed.data.url, user.id, parsed.data.notes);
     return NextResponse.json({ recipe: toRecipeDto(recipe) }, { status: 201 });
   } catch (err) {
     if (err instanceof InvalidTikTokUrlError) {

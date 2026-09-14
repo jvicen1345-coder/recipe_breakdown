@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, LogOut, MailCheck } from "lucide-react";
+import { ArrowLeft, ChevronRight, LogOut, MailCheck, Sparkles } from "lucide-react";
 
 import { useToast } from "./ToastProvider";
 
@@ -12,12 +12,15 @@ export function ProfileClient({
   name,
   showThisWeekCard: initialShowThisWeekCard,
   emailVerified,
+  plan,
 }: {
   email: string;
   name: string | null;
   showThisWeekCard: boolean;
   emailVerified: boolean;
+  plan: string;
 }) {
+  const isPro = plan === "pro";
   const router = useRouter();
   const showToast = useToast();
   const [showThisWeekCard, setShowThisWeekCard] = useState(initialShowThisWeekCard);
@@ -92,7 +95,14 @@ export function ProfileClient({
       </Link>
 
       <header className="flex flex-col gap-1">
-        <h1 className="font-serif text-3xl font-semibold text-rose-deep">Your profile 🌸</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-serif text-3xl font-semibold text-rose-deep">Your profile 🌸</h1>
+          {isPro && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blush px-2.5 py-1 text-xs font-semibold text-rose-deep">
+              <Sparkles size={11} /> Pro 🌸
+            </span>
+          )}
+        </div>
         <p className="text-sm text-dusty-rose">{name ? `${name} · ${email}` : email}</p>
       </header>
 
@@ -143,6 +153,20 @@ export function ProfileClient({
           </button>
         </label>
       </section>
+
+      <Link
+        href="/profile/subscription"
+        className="flex items-center justify-between gap-3 rounded-[1.75rem] border border-blush-dark/50 bg-white/85 p-5 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} className="text-coral" />
+          <div>
+            <p className="font-serif text-lg font-semibold text-rose-deep">Subscription</p>
+            <p className="text-xs text-dusty-rose">{isPro ? "You're on Cutesy Eats Pro" : "You're on the free plan"}</p>
+          </div>
+        </div>
+        <ChevronRight size={18} className="text-dusty-rose" />
+      </Link>
 
       <section className="flex flex-col gap-3 rounded-[1.75rem] border border-blush-dark/50 bg-white/85 p-5 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)] backdrop-blur-sm">
         <h2 className="font-serif text-lg font-semibold text-rose-deep">Account</h2>
