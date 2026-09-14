@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Home, Plus, Search, ShoppingCart } from "lucide-react";
+import { BarChart3, Home, Plus, Search, ShoppingCart, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
@@ -34,12 +34,16 @@ function MobileNavIcon({ active, children }: { active: boolean; children: React.
   );
 }
 
+const NO_NAV_ROUTES = new Set(["/login", "/signup"]);
+
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const onHome = pathname === "/";
   const onGroceryPage = pathname === "/grocery-list";
   const onNutritionPage = pathname === "/nutrition";
+
+  if (NO_NAV_ROUTES.has(pathname)) return null;
 
   function handleHomeClick(e: React.MouseEvent) {
     if (!onHome) return;
@@ -99,23 +103,44 @@ export function Navbar() {
             })}
           </div>
 
-          <Link
-            href="/#add-recipe"
-            onClick={handleAddRecipeClick}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
-          >
-            <Plus size={14} /> Add Recipe
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/#add-recipe"
+              onClick={handleAddRecipeClick}
+              className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105"
+            >
+              <Plus size={14} /> Add Recipe
+            </Link>
+            <Link
+              href="/profile"
+              aria-label="Profile"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/60 text-dusty-rose transition hover:text-rose-deep"
+            >
+              <User size={16} />
+            </Link>
+          </div>
         </nav>
       </header>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 backdrop-blur-md sm:hidden">
-        <Link href="/" onClick={handleHomeClick} className={mobileNavLinkClass(onHome)} aria-current={onHome ? "page" : undefined}>
-          <MobileNavIcon active={onHome}>
-            <Home size={18} />
-          </MobileNavIcon>
-          <span className={`text-[10px] ${onHome ? "font-semibold" : "font-medium"}`}>Home</span>
+      {/* Slim mobile top bar — just the wordmark + profile access; all other nav lives in the bottom bar. */}
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-blush-dark/40 bg-cream/70 px-4 py-3 backdrop-blur-md sm:hidden">
+        <Link
+          href="/"
+          onClick={handleHomeClick}
+          className="flex shrink-0 items-center font-serif text-lg font-semibold text-rose-deep"
+        >
+          Cutesy Eats
         </Link>
+        <Link
+          href="/profile"
+          aria-label="Profile"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/60 text-dusty-rose transition hover:text-rose-deep"
+        >
+          <User size={15} />
+        </Link>
+      </header>
+
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 backdrop-blur-md sm:hidden">
         <Link
           href="/#recipes"
           onClick={handleSearchClick}
@@ -131,6 +156,12 @@ export function Navbar() {
         >
           <Plus size={18} />
           <span className="text-[10px] font-medium">Add</span>
+        </Link>
+        <Link href="/" onClick={handleHomeClick} className={mobileNavLinkClass(onHome)} aria-current={onHome ? "page" : undefined}>
+          <MobileNavIcon active={onHome}>
+            <Home size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onHome ? "font-semibold" : "font-medium"}`}>Home</span>
         </Link>
         <Link
           href="/grocery-list"

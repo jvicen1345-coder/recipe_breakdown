@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getSessionUserId } from "@/lib/auth";
 import { COMFORT_FOOD_KEYWORDS } from "@/lib/comfortFoodKeywords";
 import { prisma } from "@/lib/prisma";
 import type { Nutrition } from "@/lib/types";
@@ -28,12 +29,15 @@ function getWeekRange(weekOffset: number): { start: Date; end: Date } {
 }
 
 export async function GET(request: Request) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const url = new URL(request.url);
   const weekOffset = Number(url.searchParams.get("weekOffset") ?? "0") || 0;
   const { start, end } = getWeekRange(weekOffset);
 
   const logs = await prisma.cookLog.findMany({
-    where: { cookedAt: { gte: start, lt: end } },
+    where: { userId, cookedAt: { gte: start, lt: end } },
     include: { recipe: true },
     orderBy: { cookedAt: "asc" },
   });
@@ -95,7 +99,7 @@ export async function GET(request: Request) {
   let recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[] = [];
   if (logs.length > 0) {
     const allRecipes = await prisma.recipe.findMany({
-      where: { id: { notIn: [...cookedRecipeIds] } },
+      where: { userId, id: { notIn: [...cookedRecipeIds] } },
       orderBy: { createdAt: "desc" },
     });
 

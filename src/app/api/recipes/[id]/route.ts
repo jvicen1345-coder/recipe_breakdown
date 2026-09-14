@@ -4,6 +4,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UPLOADS_DIR } from "@/lib/pipeline";
 import { toRecipeDto } from "@/lib/types";
@@ -13,8 +14,11 @@ interface Params {
 }
 
 export async function GET(_request: Request, { params }: Params) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { id } = await params;
-  const recipe = await prisma.recipe.findUnique({ where: { id } });
+  const recipe = await prisma.recipe.findFirst({ where: { id, userId } });
   if (!recipe) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }
@@ -27,6 +31,9 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(request: Request, { params }: Params) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { id } = await params;
   const body = await request.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
@@ -34,13 +41,13 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
 
-  const existing = await prisma.recipe.findUnique({ where: { id } });
+  const existing = await prisma.recipe.findFirst({ where: { id, userId } });
   if (!existing) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }
 
   if (parsed.data.folderId) {
-    const folder = await prisma.folder.findUnique({ where: { id: parsed.data.folderId } });
+    const folder = await prisma.folder.findFirst({ where: { id: parsed.data.folderId, userId } });
     if (!folder) {
       return NextResponse.json({ error: "That folder doesn't exist." }, { status: 400 });
     }
@@ -54,8 +61,11 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { id } = await params;
-  const recipe = await prisma.recipe.findUnique({ where: { id } });
+  const recipe = await prisma.recipe.findFirst({ where: { id, userId } });
   if (!recipe) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }

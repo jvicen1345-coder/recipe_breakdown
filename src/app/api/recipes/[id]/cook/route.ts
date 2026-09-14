@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 interface Params {
@@ -12,8 +13,11 @@ const cookSchema = z.object({
 });
 
 export async function POST(request: Request, { params }: Params) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const { id } = await params;
-  const recipe = await prisma.recipe.findUnique({ where: { id } });
+  const recipe = await prisma.recipe.findFirst({ where: { id, userId } });
   if (!recipe) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }
@@ -25,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const cookLog = await prisma.cookLog.create({
-    data: { recipeId: id, rating: parsed.data.rating },
+    data: { recipeId: id, userId, rating: parsed.data.rating },
   });
   const cookCount = await prisma.cookLog.count({ where: { recipeId: id } });
 

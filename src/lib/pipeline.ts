@@ -28,16 +28,16 @@ export class RecipeAlreadyExistsError extends Error {
  *   thumbnail from TikTok's public oEmbed endpoint and analyzes just that (plus
  *   any notes typed in) — no video download, no local disk usage.
  */
-export async function createRecipeFromUrl(url: string, userNotes?: string) {
+export async function createRecipeFromUrl(url: string, userId: string, userNotes?: string) {
   assertTikTokUrl(url);
 
-  const existing = await prisma.recipe.findUnique({ where: { sourceUrl: url } });
+  const existing = await prisma.recipe.findUnique({ where: { userId_sourceUrl: { userId, sourceUrl: url } } });
   if (existing) {
     throw new RecipeAlreadyExistsError(existing.id);
   }
 
   const hasYtDlp = await commandExists(YT_DLP_BIN);
-  return hasYtDlp ? createRecipeFull(url, userNotes) : createRecipeLite(url, userNotes);
+  return hasYtDlp ? createRecipeFull(url, userId, userNotes) : createRecipeLite(url, userId, userNotes);
 }
 
 /**
@@ -49,7 +49,7 @@ export async function isFullPipelineAvailable(): Promise<boolean> {
   return commandExists(YT_DLP_BIN);
 }
 
-async function createRecipeFull(url: string, userNotes?: string) {
+async function createRecipeFull(url: string, userId: string, userNotes?: string) {
   const { metadata, videoPath, workDir } = await downloadTikTok(url);
 
   try {
@@ -81,6 +81,7 @@ async function createRecipeFull(url: string, userNotes?: string) {
     return prisma.recipe.create({
       data: {
         id,
+        userId,
         sourceUrl: metadata.webpageUrl,
         title: analysis.title,
         authorHandle: metadata.uploader,
@@ -108,7 +109,7 @@ async function createRecipeFull(url: string, userNotes?: string) {
   }
 }
 
-async function createRecipeLite(url: string, userNotes?: string) {
+async function createRecipeLite(url: string, userId: string, userNotes?: string) {
   const meta = await fetchTikTokOEmbed(url);
 
   const analysis = await analyzeRecipe({
@@ -123,6 +124,7 @@ async function createRecipeLite(url: string, userNotes?: string) {
   return prisma.recipe.create({
     data: {
       id: randomUUID(),
+      userId,
       sourceUrl: url,
       title: analysis.title,
       authorHandle: meta.authorHandle,

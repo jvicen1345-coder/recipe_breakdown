@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getSessionUserId } from "@/lib/auth";
 import { ExternalToolError } from "@/lib/exec";
 import { prisma } from "@/lib/prisma";
 import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
@@ -16,11 +17,17 @@ const createRecipeSchema = z.object({
 });
 
 export async function GET() {
-  const recipes = await prisma.recipe.findMany({ orderBy: { createdAt: "desc" } });
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
+  const recipes = await prisma.recipe.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
   return NextResponse.json({ recipes: recipes.map(toRecipeDto) });
 }
 
 export async function POST(request: Request) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const body = await request.json().catch(() => null);
   const parsed = createRecipeSchema.safeParse(body);
   if (!parsed.success) {
@@ -28,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const recipe = await createRecipeFromUrl(parsed.data.url, parsed.data.notes);
+    const recipe = await createRecipeFromUrl(parsed.data.url, userId, parsed.data.notes);
     return NextResponse.json({ recipe: toRecipeDto(recipe) }, { status: 201 });
   } catch (err) {
     if (err instanceof InvalidTikTokUrlError) {

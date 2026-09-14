@@ -1,10 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { RecipeDetailContent } from "@/components/RecipeDetailContent";
 import { RecipeThumbnail } from "@/components/RecipeThumbnail";
+import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toRecipeDto } from "@/lib/types";
 
@@ -13,8 +14,11 @@ interface Props {
 }
 
 export default async function RecipeDetailPage({ params }: Props) {
+  const userId = await getSessionUserId();
+  if (!userId) redirect("/login");
+
   const { id } = await params;
-  const record = await prisma.recipe.findUnique({ where: { id } });
+  const record = await prisma.recipe.findFirst({ where: { id, userId } });
   if (!record) notFound();
 
   const recipe = toRecipeDto(record);

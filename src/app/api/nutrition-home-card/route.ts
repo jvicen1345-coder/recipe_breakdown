@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Nutrition } from "@/lib/types";
 
@@ -38,6 +39,9 @@ function getThisWeekStart(): Date {
 }
 
 export async function GET() {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const today = startOfDay(new Date());
   const weekStart = getThisWeekStart();
   const weekEnd = new Date(weekStart);
@@ -48,9 +52,12 @@ export async function GET() {
   streakWindowStart.setDate(today.getDate() - 90);
 
   const [weekLogs, streakWindowLogs, todayLogs] = await Promise.all([
-    prisma.cookLog.findMany({ where: { cookedAt: { gte: weekStart, lt: weekEnd } }, include: { recipe: true } }),
-    prisma.cookLog.findMany({ where: { cookedAt: { gte: streakWindowStart, lt: tomorrow } }, select: { cookedAt: true } }),
-    prisma.cookLog.findMany({ where: { cookedAt: { gte: today, lt: tomorrow } }, include: { recipe: true } }),
+    prisma.cookLog.findMany({ where: { userId, cookedAt: { gte: weekStart, lt: weekEnd } }, include: { recipe: true } }),
+    prisma.cookLog.findMany({
+      where: { userId, cookedAt: { gte: streakWindowStart, lt: tomorrow } },
+      select: { cookedAt: true },
+    }),
+    prisma.cookLog.findMany({ where: { userId, cookedAt: { gte: today, lt: tomorrow } }, include: { recipe: true } }),
   ]);
 
   const hasCookedThisWeek = weekLogs.length > 0;
@@ -127,7 +134,7 @@ export async function GET() {
     )[0][0];
 
     const candidates = await prisma.recipe.findMany({
-      where: { id: { notIn: [...todayCookedIds] } },
+      where: { userId, id: { notIn: [...todayCookedIds] } },
       orderBy: { createdAt: "desc" },
     });
 

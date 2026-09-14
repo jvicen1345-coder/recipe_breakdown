@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toFolderDto } from "@/lib/types";
 
@@ -10,11 +11,17 @@ const createFolderSchema = z.object({
 });
 
 export async function GET() {
-  const folders = await prisma.folder.findMany({ orderBy: { createdAt: "asc" } });
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
+  const folders = await prisma.folder.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
   return NextResponse.json({ folders: folders.map(toFolderDto) });
 }
 
 export async function POST(request: Request) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const body = await request.json().catch(() => null);
   const parsed = createFolderSchema.safeParse(body);
   if (!parsed.success) {
@@ -22,7 +29,7 @@ export async function POST(request: Request) {
   }
 
   const folder = await prisma.folder.create({
-    data: { name: parsed.data.name, emoji: parsed.data.emoji || null },
+    data: { name: parsed.data.name, emoji: parsed.data.emoji || null, userId },
   });
   return NextResponse.json({ folder: toFolderDto(folder) }, { status: 201 });
 }

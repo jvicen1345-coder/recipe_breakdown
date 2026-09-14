@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toPantryItemDto } from "@/lib/types";
 
@@ -10,11 +11,17 @@ const createPantryItemSchema = z.object({
 });
 
 export async function GET() {
-  const items = await prisma.pantryItem.findMany({ orderBy: { name: "asc" } });
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
+  const items = await prisma.pantryItem.findMany({ where: { userId }, orderBy: { name: "asc" } });
   return NextResponse.json({ items: items.map(toPantryItemDto) });
 }
 
 export async function POST(request: Request) {
+  const userId = await getSessionUserId();
+  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
   const body = await request.json().catch(() => null);
   const parsed = createPantryItemSchema.safeParse(body);
   if (!parsed.success) {
@@ -22,14 +29,14 @@ export async function POST(request: Request) {
   }
 
   const existing = await prisma.pantryItem.findFirst({
-    where: { name: { equals: parsed.data.name, mode: "insensitive" } },
+    where: { userId, name: { equals: parsed.data.name, mode: "insensitive" } },
   });
   if (existing) {
     return NextResponse.json({ item: toPantryItemDto(existing) }, { status: 200 });
   }
 
   const item = await prisma.pantryItem.create({
-    data: { name: parsed.data.name, category: parsed.data.category },
+    data: { name: parsed.data.name, category: parsed.data.category, userId },
   });
   return NextResponse.json({ item: toPantryItemDto(item) }, { status: 201 });
 }

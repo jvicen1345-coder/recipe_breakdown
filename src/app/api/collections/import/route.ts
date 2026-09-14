@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { getSessionUserId } from "@/lib/auth";
 import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
 import { toRecipeDto } from "@/lib/types";
 
@@ -14,6 +15,14 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "Not signed in." }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -32,7 +41,7 @@ export async function POST(request: Request) {
 
       for (const url of urls) {
         try {
-          const recipe = await createRecipeFromUrl(url);
+          const recipe = await createRecipeFromUrl(url, userId);
           send({ url, status: "ok", recipe: toRecipeDto(recipe) });
         } catch (err) {
           if (err instanceof RecipeAlreadyExistsError) {

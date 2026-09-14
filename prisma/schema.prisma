@@ -10,9 +10,32 @@ datasource db {
   provider = "postgresql"
 }
 
+// A saved account. userId columns elsewhere are nullable rather than backfilled at
+// migration time — pre-existing rows stay unowned (userId null) until the very first
+// signup claims them (see /api/auth/signup), so a fresh deploy with existing data never
+// needs a hardcoded "legacy owner" account.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  // Whether the homepage "This Week" nutrition card is shown — off by request, on by default.
+  showThisWeekCard Boolean @default(true)
+
+  recipes     Recipe[]
+  folders     Folder[]
+  pantryItems PantryItem[]
+  cookLogs    CookLog[]
+}
+
 model Recipe {
   id          String   @id @default(cuid())
-  sourceUrl   String   @unique
+  sourceUrl   String
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   title         String
   authorHandle  String?
@@ -47,6 +70,11 @@ model Recipe {
   cookLogs CookLog[]
 
   createdAt DateTime @default(now())
+
+  // Two accounts may independently save the same TikTok link, so uniqueness is per-user
+  // rather than global; unowned (userId null) rows can't collide since Postgres treats
+  // NULL as distinct in a unique index.
+  @@unique([userId, sourceUrl])
 }
 
 model Folder {
@@ -55,6 +83,9 @@ model Folder {
   emoji     String?
   createdAt DateTime @default(now())
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   recipes Recipe[]
 }
 
@@ -62,9 +93,14 @@ model Folder {
 // which recipe ingredients they already have on hand.
 model PantryItem {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
   category  String
   createdAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
 }
 
 // One "I made this!" event from Cook Mode — powers cook counts, the "haven't
@@ -76,4 +112,9 @@ model CookLog {
   recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   cookedAt DateTime @default(now())
   rating   Int? // 1-5 stars, optional
+
+  // Denormalized from recipe.userId at creation time so cook-log queries (streaks,
+  // weekly snapshots) can filter directly without joining through Recipe.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

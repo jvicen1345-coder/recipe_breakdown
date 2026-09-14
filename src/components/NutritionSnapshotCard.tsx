@@ -44,7 +44,7 @@ export function NutritionSnapshotCard() {
     >
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-rose-deep">
-          <BarChart3 size={18} className="text-coral" /> This Week 📊
+          <BarChart3 size={18} className="text-coral" /> This Week
         </h2>
         <span className="inline-flex items-center gap-1 text-xs font-medium text-dusty-rose">
           See more <ArrowRight size={12} />
