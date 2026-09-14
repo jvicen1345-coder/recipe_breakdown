@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
 import { HomeDashboardCards } from "./HomeDashboardCards";
+import { RecipeCard } from "./RecipeCard";
 import type { RecipeDto } from "@/lib/types";
 
 const STATUS_MESSAGES = [
@@ -13,6 +14,54 @@ const STATUS_MESSAGES = [
   "Working out ingredients and steps…",
   "Estimating time, difficulty, and cost…",
 ];
+
+const COOK_TONIGHT_FILTERS: { value: string; label: string }[] = [
+  { value: "quick", label: "Quick (<30 min)" },
+  { value: "budget", label: "Budget" },
+  { value: "high-protein", label: "High Protein" },
+  { value: "vegan", label: "Vegan" },
+  { value: "comfort", label: "Comfort Food" },
+];
+
+const COMFORT_FOOD_KEYWORDS = [
+  "mac",
+  "cheese",
+  "casserole",
+  "pizza",
+  "mash",
+  "gravy",
+  "fried chicken",
+  "grilled cheese",
+  "pot pie",
+  "chili",
+  "lasagna",
+  "alfredo",
+  "meatloaf",
+  "biscuit",
+  "pancake",
+  "waffle",
+  "soup",
+  "stew",
+];
+
+function matchesCookTonightFilter(recipe: RecipeDto, filter: string): boolean {
+  switch (filter) {
+    case "quick":
+      return recipe.totalTimeMinutes != null && recipe.totalTimeMinutes < 30;
+    case "budget":
+      return recipe.priceLevel === "budget";
+    case "high-protein":
+      return (recipe.nutrition?.proteinGrams ?? 0) >= 20;
+    case "vegan":
+      return recipe.dietType === "vegan";
+    case "comfort": {
+      const title = recipe.title.toLowerCase();
+      return COMFORT_FOOD_KEYWORDS.some((keyword) => title.includes(keyword));
+    }
+    default:
+      return false;
+  }
+}
 
 export function RecipeLibrary({
   initialRecipes,
@@ -30,6 +79,7 @@ export function RecipeLibrary({
   const [submitting, setSubmitting] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
   const [error, setError] = useState<{ message: string; existingRecipeId?: string } | null>(null);
+  const [activeCookTonightFilters, setActiveCookTonightFilters] = useState<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -76,6 +126,22 @@ export function RecipeLibrary({
       setSubmitting(false);
     }
   }
+
+  function toggleCookTonightFilter(value: string) {
+    setActiveCookTonightFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
+
+  const cookTonightMatches = useMemo(() => {
+    if (activeCookTonightFilters.size === 0) return [];
+    return recipes.filter((recipe) =>
+      [...activeCookTonightFilters].some((filter) => matchesCookTonightFilter(recipe, filter)),
+    );
+  }, [recipes, activeCookTonightFilters]);
 
   return (
     <div className="page-fade-in mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6">
@@ -220,6 +286,45 @@ export function RecipeLibrary({
       )}
 
       <HomeDashboardCards recipes={recipes} />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="font-serif text-xl font-semibold text-rose-deep">Cook something tonight? 🌙</h2>
+        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+          {COOK_TONIGHT_FILTERS.map((filter) => {
+            const active = activeCookTonightFilters.has(filter.value);
+            return (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => toggleCookTonightFilter(filter.value)}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                  active ? "bg-rose-deep text-white" : "bg-blush text-rose-deep hover:bg-blush-dark"
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {activeCookTonightFilters.size === 0 ? (
+          <p className="text-sm text-dusty-rose">
+            Tap a pill to find something to make from your saved recipes ✨
+          </p>
+        ) : cookTonightMatches.length === 0 ? (
+          <p className="text-sm text-dusty-rose">
+            No saved recipes match that yet — try another filter, or save a few more!
+          </p>
+        ) : (
+          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
+            {cookTonightMatches.map((recipe) => (
+              <div key={recipe.id} className="w-44 shrink-0 sm:w-52">
+                <RecipeCard recipe={recipe} />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
