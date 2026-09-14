@@ -3,13 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 
+import { PillDropdown } from "./PillDropdown";
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
 import { getCookedTimestamps } from "@/lib/clientState";
 import { DIET_LABELS } from "@/lib/format";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
-const DIET_FILTER_OPTIONS = Object.entries(DIET_LABELS);
+const DIET_FILTER_OPTIONS = [
+  { value: "all", label: "All diets" },
+  ...Object.entries(DIET_LABELS).map(([value, label]) => ({ value, label })),
+];
 const FOLDER_EMOJI_PRESETS = ["🕯️", "💪", "🍕", "🌸", "🎉", "🥗"];
 const PAGE_SIZE = 24;
 
@@ -21,14 +25,10 @@ const SORT_LABELS: Record<SortOption, string> = {
   time: "Cook Time",
   cost: "Cost",
 };
-
-function filterPillClass(active: boolean): string {
-  return `shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-    active
-      ? "bg-gradient-to-r from-coral to-rose-deep text-white shadow-md"
-      : "bg-blush text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] hover:-translate-y-0.5 hover:bg-blush-dark hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
-  }`;
-}
+const SORT_OPTIONS = (Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 export function MyRecipesGrid({
   recipes,
@@ -282,33 +282,21 @@ export function MyRecipesGrid({
         />
       </div>
 
-      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-        <button type="button" onClick={() => setDietFilter("all")} className={filterPillClass(dietFilter === "all")}>
-          All diets
-        </button>
-        {DIET_FILTER_OPTIONS.map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setDietFilter(value)}
-            className={filterPillClass(dietFilter === value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-        {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setSort(value)}
-            className={filterPillClass(sort === value)}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-2">
+        <PillDropdown
+          label=""
+          value={dietFilter}
+          options={DIET_FILTER_OPTIONS}
+          onChange={setDietFilter}
+          active={dietFilter !== "all"}
+        />
+        <PillDropdown
+          label="Sort: "
+          value={sort}
+          options={SORT_OPTIONS}
+          onChange={setSort}
+          active={sort !== "recent"}
+        />
       </div>
 
       {recipes.length === 0 ? (
