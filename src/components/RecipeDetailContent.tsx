@@ -11,6 +11,7 @@ import { usePantry } from "./PantryProvider";
 import { RecipeChecklist } from "./RecipeChecklist";
 import { useToast } from "./ToastProvider";
 import { isMarkedCooked, markCooked } from "@/lib/clientState";
+import { getCookModeProgress } from "@/lib/cookModeStorage";
 import { pantryMatchCount } from "@/lib/pantryMatch";
 import {
   DIET_LABELS,
@@ -58,8 +59,15 @@ export function RecipeDetailContent({
   const [cooked, setCooked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCookMode, setShowCookMode] = useState(false);
+  const [resumeStep, setResumeStep] = useState<number | null>(null);
   const { names: pantryNames } = usePantry();
   const pantryCount = pantryMatchCount(recipe.ingredients, pantryNames);
+
+  useEffect(() => {
+    if (showCookMode) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring from localStorage, unavailable during SSR
+    setResumeStep(getCookModeProgress(recipe.id));
+  }, [recipe.id, showCookMode]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring from localStorage, unavailable during SSR
@@ -225,7 +233,8 @@ export function RecipeDetailContent({
         onClick={() => setShowCookMode(true)}
         className="shine-on-hover inline-flex items-center justify-center gap-2 self-start rounded-full bg-gradient-to-r from-coral to-rose-deep px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
       >
-        <CookingPot size={16} /> Start Cooking 🍳
+        <CookingPot size={16} />
+        {resumeStep != null ? `Resume Cooking 🍳 (Step ${resumeStep + 1})` : "Start Cooking 🍳"}
       </button>
 
       <RecipeChecklist recipeId={recipe.id} ingredients={scaledIngredients} instructions={recipe.instructions} />

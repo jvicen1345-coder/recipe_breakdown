@@ -58,6 +58,11 @@ vibrate (where supported) when done. The final step becomes a celebration screen
 made this! 💕", and a 5-star rating — which logs a `CookLog` row (used by the nutrition snapshot)
 and marks the recipe cooked.
 
+Exiting mid-recipe (the ✕ button) offers a "Save my spot" switch, on by default — leave it on and
+the button becomes "Resume Cooking (Step X)" next time, picking back up right where you left off
+with a toast confirming it; flip it off before exiting to discard that progress and start over
+(`src/lib/cookModeStorage.ts`).
+
 ### Cook Tonight? Swiper 🌙
 
 A Tinder-style discovery mode ("Feeling indecisive?" on the homepage) for when you don't know what

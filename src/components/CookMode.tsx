@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Timer as TimerIcon, X } from "lucide-react";
 import { ConfettiBurst } from "./ConfettiBurst";
 import { useToast } from "./ToastProvider";
 import { markCooked } from "@/lib/clientState";
+import { clearCookModeProgress, getCookModeProgress, saveCookModeProgress } from "@/lib/cookModeStorage";
 import { detectTimer } from "@/lib/cookTimers";
 import type { RecipeDto } from "@/lib/types";
 
@@ -33,8 +34,12 @@ export function CookMode({
   introMessage?: string;
 }) {
   const totalSteps = recipe.instructions.length;
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(() => {
+    const saved = getCookModeProgress(recipe.id);
+    return saved != null && saved < recipe.instructions.length ? saved : 0;
+  });
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [saveProgressOnExit, setSaveProgressOnExit] = useState(true);
   const [timers, setTimers] = useState<ActiveTimer[]>([]);
   const [showRating, setShowRating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,14 +47,19 @@ export function CookMode({
   const touchStartX = useRef<number | null>(null);
   const nextTimerId = useRef(0);
   const vibratedIds = useRef<Set<string>>(new Set());
+  const resumedFromSaved = useRef(stepIndex > 0);
 
   const isCelebration = stepIndex >= totalSteps;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    if (resumedFromSaved.current) {
+      showToast(`Picking up at Step ${stepIndex + 1} 🌸`);
+    }
     return () => {
       document.body.style.overflow = "";
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -101,6 +111,15 @@ export function CookMode({
     setTimers((prev) => prev.filter((t) => t.id !== id));
   }
 
+  function handleExitConfirmed() {
+    if (saveProgressOnExit) {
+      saveCookModeProgress(recipe.id, stepIndex);
+    } else {
+      clearCookModeProgress(recipe.id);
+    }
+    onClose();
+  }
+
   async function finishCook(rating?: number) {
     setSaving(true);
     try {
@@ -112,6 +131,7 @@ export function CookMode({
     } catch {
       // Cook history is a nice-to-have; the local "made this" mark below still lands either way.
     }
+    clearCookModeProgress(recipe.id);
     markCooked(recipe.id);
     showToast("Marked as cooked! 🎉");
     onClose();
@@ -270,6 +290,32 @@ export function CookMode({
         <div className="overlay-fade-in fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-6">
           <div className="flex w-full max-w-xs flex-col items-center gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
             <p className="font-serif text-lg font-semibold text-rose-deep">Come back when you&apos;re ready 🌸</p>
+
+            {!isCelebration && (
+              <label className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl bg-blush-soft px-4 py-3 text-left">
+                <span className="text-xs font-medium text-rose-deep">
+                  Save my spot
+                  <br />
+                  <span className="text-dusty-rose">Resume at Step {stepIndex + 1} next time</span>
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={saveProgressOnExit}
+                  onClick={() => setSaveProgressOnExit((v) => !v)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                    saveProgressOnExit ? "bg-coral" : "bg-blush-dark"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                      saveProgressOnExit ? "left-5" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </label>
+            )}
+
             <div className="flex w-full gap-2">
               <button
                 type="button"
@@ -280,7 +326,7 @@ export function CookMode({
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleExitConfirmed}
                 className="flex-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105"
               >
                 Exit
