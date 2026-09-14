@@ -78,6 +78,18 @@ export interface NutritionSnapshot {
   recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[];
 }
 
+// Powers only the homepage "This Week" card (src/app/api/nutrition-home-card) — kept
+// separate from NutritionSnapshot (the full /nutrition Week tab) so tweaking the
+// homepage card can never change what the Week tab shows.
+export interface HomeNutritionCard {
+  hasCookedThisWeek: boolean;
+  weekMacroPct: { protein: number; carbs: number; fat: number };
+  dayMarks: { date: string; label: string; cooked: boolean; isToday: boolean }[];
+  streakDays: number;
+  recommendation: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string } | null;
+  message: string;
+}
+
 function safeParseArray<T>(json: string | null): T[] {
   if (!json) return [];
   try {

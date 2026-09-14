@@ -7,6 +7,7 @@ import { PillDropdown } from "./PillDropdown";
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
 import { getCookedTimestamps } from "@/lib/clientState";
+import { COOK_TONIGHT_FILTER_LABELS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
 import { DIET_LABELS } from "@/lib/format";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
@@ -17,11 +18,10 @@ const DIET_FILTER_OPTIONS = [
 const FOLDER_EMOJI_PRESETS = ["🕯️", "💪", "🍕", "🌸", "🎉", "🥗"];
 const PAGE_SIZE = 24;
 
-type SortOption = "recent" | "az" | "time" | "cost";
+type SortOption = "recent" | "time" | "cost";
 
 const SORT_LABELS: Record<SortOption, string> = {
   recent: "Recently Added",
-  az: "A–Z",
   time: "Cook Time",
   cost: "Cost",
 };
@@ -33,9 +33,12 @@ const SORT_OPTIONS = (Object.entries(SORT_LABELS) as [SortOption, string][]).map
 export function MyRecipesGrid({
   recipes,
   initialFolders,
+  cookTonightFilters,
 }: {
   recipes: RecipeDto[];
   initialFolders: FolderDto[];
+  /** Active "Cook something tonight?" pills — recipes matching ANY of these stay in view. */
+  cookTonightFilters: Set<string>;
 }) {
   const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
@@ -54,10 +57,12 @@ export function MyRecipesGrid({
   // Only ever render a page's worth of cards at a time — with a large saved-recipe
   // library this keeps the initial DOM/image load light. Any change to which
   // recipes should be showing starts back at the first page.
+  const cookTonightKey = [...cookTonightFilters].sort().join(",");
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting pagination whenever the active filter/search/sort changes
     setVisibleCount(PAGE_SIZE);
-  }, [search, dietFilter, folderFilter, sort]);
+  }, [search, dietFilter, folderFilter, sort, cookTonightKey]);
 
   // A search of 3+ characters is sent to the smart-search endpoint (debounced) so it
   // can match on ingredients/time/cost/diet/last-cooked, not just the title — but the
@@ -118,7 +123,10 @@ export function MyRecipesGrid({
     const matching = recipes.filter((recipe) => {
       const matchesDiet = dietFilter === "all" || recipe.dietType === dietFilter;
       const matchesFolder = folderFilter === "all" || recipe.folderId === folderFilter;
-      if (!matchesDiet || !matchesFolder) return false;
+      const matchesCookTonight =
+        cookTonightFilters.size === 0 ||
+        [...cookTonightFilters].some((filter) => matchesCookTonightFilter(recipe, filter));
+      if (!matchesDiet || !matchesFolder || !matchesCookTonight) return false;
       if (isSmartSearch) return smartMatchIds!.includes(recipe.id);
       return (
         !query ||
@@ -134,8 +142,6 @@ export function MyRecipesGrid({
 
     return [...matching].sort((a, b) => {
       switch (sort) {
-        case "az":
-          return a.title.localeCompare(b.title);
         case "time":
           return (a.totalTimeMinutes ?? Infinity) - (b.totalTimeMinutes ?? Infinity);
         case "cost":
@@ -144,7 +150,28 @@ export function MyRecipesGrid({
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
-  }, [recipes, search, dietFilter, folderFilter, sort, isSmartSearch, smartMatchIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cookTonightFilters is a Set; cookTonightKey is its stable dependency
+  }, [recipes, search, dietFilter, folderFilter, sort, isSmartSearch, smartMatchIds, cookTonightKey]);
+
+  const filterSummary = isSmartSearch
+    ? `Smart matches for "${search.trim()}"`
+    : (() => {
+        const parts: string[] = [];
+        if (folderFilter !== "all") {
+          const folder = folders.find((f) => f.id === folderFilter);
+          if (folder) parts.push(`in ${folder.emoji ? `${folder.emoji} ` : ""}${folder.name}`);
+        }
+        if (dietFilter !== "all") {
+          const diet = DIET_FILTER_OPTIONS.find((o) => o.value === dietFilter);
+          if (diet) parts.push(diet.label);
+        }
+        if (cookTonightFilters.size > 0) {
+          parts.push([...cookTonightFilters].map((f) => COOK_TONIGHT_FILTER_LABELS[f]).join(" or "));
+        }
+        if (sort !== "recent") parts.push(`sorted by ${SORT_LABELS[sort]}`);
+        const count = `${filteredRecipes.length} recipe${filteredRecipes.length === 1 ? "" : "s"}`;
+        return parts.length > 0 ? `Showing ${count} · ${parts.join(" · ")}` : `Showing all ${count}`;
+      })();
 
   async function handleCreateFolder(e: React.FormEvent) {
     e.preventDefault();
@@ -313,12 +340,10 @@ export function MyRecipesGrid({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {isSmartSearch && (
-            <p className="text-xs text-dusty-rose">
-              <Sparkles size={11} className="mr-1 inline -translate-y-px" />
-              Smart matches for &ldquo;{search.trim()}&rdquo;
-            </p>
-          )}
+          <p className="text-xs text-dusty-rose">
+            {isSmartSearch && <Sparkles size={11} className="mr-1 inline -translate-y-px" />}
+            {filterSummary}
+          </p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {filteredRecipes.slice(0, visibleCount).map((recipe, i) => (
               <div
@@ -331,7 +356,7 @@ export function MyRecipesGrid({
             ))}
             {filteredRecipes.length <= visibleCount && (
               <a
-                href="https://www.tiktok.com/"
+                href="https://www.tiktok.com/tag/recipe"
                 target="_blank"
                 rel="noreferrer"
                 style={{ animationDelay: `${Math.min(filteredRecipes.length, 20) * 50}ms` }}

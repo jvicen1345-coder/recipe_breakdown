@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
@@ -8,9 +8,8 @@ import { CollectionImport } from "./CollectionImport";
 import { CookTonightSwiper } from "./CookTonightSwiper";
 import { MyRecipesGrid } from "./MyRecipesGrid";
 import { NutritionSnapshotCard } from "./NutritionSnapshotCard";
-import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
-import { COMFORT_FOOD_KEYWORDS } from "@/lib/comfortFoodKeywords";
+import { COOK_TONIGHT_FILTERS } from "@/lib/cookTonightFilters";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
 const STATUS_MESSAGES = [
@@ -18,49 +17,6 @@ const STATUS_MESSAGES = [
   "Working out ingredients and steps…",
   "Estimating time, difficulty, and cost…",
 ];
-
-const COOK_TONIGHT_FILTERS: { value: string; label: string }[] = [
-  { value: "quick", label: "Quick (<30 min)" },
-  { value: "budget", label: "Budget" },
-  { value: "high-protein", label: "High Protein" },
-  { value: "low-calorie", label: "Low Calorie" },
-  { value: "vegan", label: "Vegan" },
-  { value: "vegetarian", label: "Vegetarian" },
-  { value: "pescatarian", label: "Pescatarian" },
-  { value: "easy", label: "Easy" },
-  { value: "comfort", label: "Comfort Food" },
-];
-
-const COOK_TONIGHT_FILTER_LABELS: Record<string, string> = Object.fromEntries(
-  COOK_TONIGHT_FILTERS.map((f) => [f.value, f.label]),
-);
-
-function matchesCookTonightFilter(recipe: RecipeDto, filter: string): boolean {
-  switch (filter) {
-    case "quick":
-      return recipe.totalTimeMinutes != null && recipe.totalTimeMinutes < 30;
-    case "budget":
-      return recipe.priceLevel === "budget";
-    case "high-protein":
-      return (recipe.nutrition?.proteinGrams ?? 0) >= 20;
-    case "low-calorie":
-      return recipe.nutrition?.caloriesPerServing != null && recipe.nutrition.caloriesPerServing <= 400;
-    case "vegan":
-      return recipe.dietType === "vegan";
-    case "vegetarian":
-      return recipe.dietType === "vegetarian";
-    case "pescatarian":
-      return recipe.dietType === "pescatarian";
-    case "easy":
-      return recipe.difficulty === "easy";
-    case "comfort": {
-      const title = recipe.title.toLowerCase();
-      return COMFORT_FOOD_KEYWORDS.some((keyword) => title.includes(keyword));
-    }
-    default:
-      return false;
-  }
-}
 
 export function RecipeLibrary({
   initialRecipes,
@@ -147,13 +103,6 @@ export function RecipeLibrary({
       return next;
     });
   }
-
-  const cookTonightMatches = useMemo(() => {
-    if (activeCookTonightFilters.size === 0) return [];
-    return recipes.filter((recipe) =>
-      [...activeCookTonightFilters].some((filter) => matchesCookTonightFilter(recipe, filter)),
-    );
-  }, [recipes, activeCookTonightFilters]);
 
   return (
     <div className="page-fade-in mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6">
@@ -298,7 +247,7 @@ export function RecipeLibrary({
         />
       )}
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-[1.75rem] bg-gradient-to-r from-blush to-lavender/40 px-5 py-4">
+      <section className="flex flex-col items-center gap-3 rounded-[1.75rem] bg-gradient-to-r from-blush to-lavender/40 px-5 py-6 text-center">
         <div>
           <p className="font-serif text-lg font-semibold text-rose-deep">Feeling indecisive? 🎀</p>
           <p className="text-xs text-dusty-rose">Swipe through your saved recipes to find tonight&apos;s pick.</p>
@@ -335,30 +284,15 @@ export function RecipeLibrary({
             );
           })}
         </div>
-
-        {activeCookTonightFilters.size > 0 && cookTonightMatches.length === 0 ? (
-          <p className="text-sm text-dusty-rose">
-            No{" "}
-            {[...activeCookTonightFilters].map((f) => COOK_TONIGHT_FILTER_LABELS[f]).join(" or ")} recipes
-            saved yet — add one above! ✨
-          </p>
-        ) : (
-          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
-            {cookTonightMatches.map((recipe, i) => (
-              <div
-                key={recipe.id}
-                className="card-fade-in w-44 shrink-0 sm:w-52"
-                style={{ animationDelay: `${i * 50}ms` }}
-              >
-                <RecipeCard recipe={recipe} />
-              </div>
-            ))}
-          </div>
-        )}
+        <p className="text-xs text-dusty-rose">Tap a pill to filter Your Recipes below ✨</p>
       </section>
 
       <section id="recipes" className="scroll-mt-24">
-        <MyRecipesGrid recipes={recipes} initialFolders={initialFolders} />
+        <MyRecipesGrid
+          recipes={recipes}
+          initialFolders={initialFolders}
+          cookTonightFilters={activeCookTonightFilters}
+        />
       </section>
 
       {showSwiper && <CookTonightSwiper recipes={recipes} onClose={() => setShowSwiper(false)} />}

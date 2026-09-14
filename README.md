@@ -7,24 +7,28 @@ whether it's vegan/vegetarian/pescatarian/omnivore, and estimated per-serving nu
 
 Saved recipes live across three pages, tied together by the navbar:
 
-- **Home** — everything in one scroll: the "Break it down" input, a Collection-import option, a
-  "Cook something tonight?" pill row (Quick / Budget / High Protein / Low Calorie / Vegan /
-  Vegetarian / Pescatarian / Easy / Comfort Food) that filters your own saved recipes by those
-  criteria — genuinely wired to each recipe's real fields (time, price, protein, nutrition, diet
-  type, difficulty), not placeholder data — and, always below that, the full "Your Recipes" grid:
-  search, filter by diet, sort (Recently Added / A–Z / Cook Time / Cost), organize into folders
+- **Home** — everything in one scroll: the "Break it down" input, a centered "Feeling indecisive?"
+  card with the "Cook Tonight? 🌙" swiper button, a compact "This Week" nutrition card, a "Cook
+  something tonight?" pill row (Quick / Budget / High Protein / Low Calorie / Vegan / Vegetarian /
+  Pescatarian / Easy / Comfort Food) that filters the "Your Recipes" grid below by those criteria —
+  genuinely wired to each recipe's real fields (time, price, protein, nutrition, diet type,
+  difficulty), not placeholder data — and the full "Your Recipes" grid itself: search, filter by
+  diet, sort (Recently Added / Cook Time / Cost) via compact dropdown pills, organize into folders
   (e.g. "Meal Prep 💪", deletable via the × on each folder pill — recipes inside are just
-  unassigned, not deleted), and hover a card for quick "View 👀" / "Save to List 🛒" actions. The
-  navbar no longer has a separate "My Recipes" link; the mobile bottom bar's search icon and the
-  desktop "Home" link both smooth-scroll straight to this grid. The search bar doubles as an
-  LLM-powered smart search: type 3+ characters and, after a short debounce, it also asks Claude to
-  match your saved recipes against the request's *meaning* (ingredients, time, cost, diet, protein,
-  even "haven't made in a while") rather than just the title — a plain substring match on
-  title/author stays live throughout so results never go blank while waiting, and it silently falls
-  back to that substring match if the request fails or `ANTHROPIC_API_KEY` isn't configured. The
-  grid itself only renders 24 cards at a time with a "Load More 🌸" button to reveal 24 more —
-  filtering/sorting/searching still run over your whole saved library, but the DOM/image load stays
-  light even with a large collection; changing any filter resets back to the first page.
+  unassigned, not deleted), and hover a card for quick "View 👀" / "Save to List 🛒" actions. A
+  small "Showing N recipes · …" line above the grid always summarizes whatever combination of
+  search/diet/folder/Cook-Tonight/sort filters is currently active. The navbar no longer has a
+  separate "My Recipes" link; the mobile bottom bar's search icon and the desktop "Home" link both
+  smooth-scroll straight to this grid. The search bar doubles as an LLM-powered smart search: type
+  3+ characters and, after a short debounce, it also asks Claude to match your saved recipes
+  against the request's *meaning* (ingredients, time, cost, diet, protein, even "haven't made in a
+  while") rather than just the title — a plain substring match on title/author stays live
+  throughout so results never go blank while waiting, and it silently falls back to that substring
+  match if the request fails or `ANTHROPIC_API_KEY` isn't configured. The grid itself only renders
+  24 cards at a time with a "Load More 🌸" button to reveal 24 more, plus a dashed "Add new
+  recipes, girly ✨" card linking out to TikTok once every match is loaded — filtering/sorting/
+  searching still run over your whole saved library, but the DOM/image load stays light even with
+  a large collection; changing any filter resets back to the first page.
 - **Grocery & Pantry** — one sage-accented page with an in-page tab switcher between two views:
   - **Grocery List** — built from whatever you've added via a card's "Save to List 🛒" action (this
     is intentionally independent from a recipe's own cook-along ingredient checklist, so checking
@@ -39,8 +43,13 @@ Saved recipes live across three pages, tied together by the navbar:
 - **This Week** — a lightweight nutrition snapshot built only from recipes you've actually cooked
   (via Cook Mode's "I made this!"), never manual logging: weekly calorie/protein/carb/fat totals, a
   daily bar chart, a macro breakdown, the list of what you cooked, and "Recommended for you" picks
-  from your saved-but-uncooked recipes that would balance the week's macros. A compact version of
-  this lives on the homepage too.
+  from your saved-but-uncooked recipes that would balance the week's macros. The compact homepage
+  version is deliberately a different, lighter card (its own `/api/nutrition-home-card` route, kept
+  fully separate from this tab's data): instead of a big calorie number it shows a Mon–Sun row of
+  which days you cooked (with a subtle "🔥 Nd streak" pill for consecutive days), the week's
+  Protein/Carbs/Fat split as bars, and a line recommending a saved-but-uncooked recipe based on
+  which macro you're furthest from and how many calories are left in the day (generic 2000
+  cal/100g protein/250g carb/65g fat reference targets — there's no user profile/goals system).
 
 On mobile, the top nav is replaced by a fixed bottom bar (Home / Search / Add / Grocery / Week) so
 the main actions stay one thumb-tap away — and on mobile, navigation lives *only* in that bottom
@@ -259,6 +268,13 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
   tapper and its hardcoded lookup table
 - `src/app/api/nutrition-snapshot` — aggregates a week's `CookLog` entries into totals, a daily
   breakdown, macro %, an insight line, and balancing recommendations from uncooked saves
-- `src/components/NutritionSnapshotCard.tsx` — the compact "This Week" homepage card
 - `src/components/NutritionSnapshotPageClient.tsx`, `src/app/nutrition/page.tsx` — the full weekly
   nutrition snapshot page with a week selector
+- `src/app/api/nutrition-home-card` — the homepage card's own, separate aggregation: day-cooked
+  marks + streak, week macro %, and a today-remaining-budget recommendation
+- `src/components/NutritionSnapshotCard.tsx` — the compact "This Week" homepage card
+- `src/lib/cookTonightFilters.ts` — the "Cook something tonight?" pill definitions/matcher, shared
+  by the homepage pill row and the Your Recipes grid it filters
+- `src/app/icon.tsx`, `src/app/apple-icon.tsx` — generated "CE" app icons (coral→rose-deep gradient,
+  matching the rest of the app) for browser tabs and "Add to Home Screen"
+- `src/app/manifest.ts` — web app manifest (name, theme color, icon) for installing as an app

@@ -20,6 +20,9 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Cutesy Eats 🌸🍴",
   description: "Turn saved TikTok cooking videos into structured, cookable recipes.",
+  // Names the app on iOS when added to the home screen — pairs with app/icon.tsx,
+  // app/apple-icon.tsx, and app/manifest.ts for the same "CE" gradient icon everywhere.
+  appleWebApp: { capable: true, title: "Cutesy Eats", statusBarStyle: "black-translucent" },
 };
 
 // Pinch-zoom breaks this layout's fixed bottom nav / full-screen overlays (Cook
@@ -29,6 +32,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: "#ff9a76",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

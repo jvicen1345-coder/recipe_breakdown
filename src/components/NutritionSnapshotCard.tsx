@@ -2,20 +2,26 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BarChart3 } from "lucide-react";
+import { ArrowRight, BarChart3, Flame } from "lucide-react";
 
-import type { NutritionSnapshot } from "@/lib/types";
+import type { HomeNutritionCard } from "@/lib/types";
+
+const MACRO_BARS: { key: "protein" | "carbs" | "fat"; label: string; className: string }[] = [
+  { key: "protein", label: "Protein", className: "from-coral to-coral-deep" },
+  { key: "carbs", label: "Carbs", className: "from-lavender to-lavender-dark" },
+  { key: "fat", label: "Fat", className: "from-peach to-peach-dark" },
+];
 
 export function NutritionSnapshotCard() {
-  const [snapshot, setSnapshot] = useState<NutritionSnapshot | null>(null);
+  const [data, setData] = useState<HomeNutritionCard | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/nutrition-snapshot?weekOffset=0")
+    fetch("/api/nutrition-home-card")
       .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled) setSnapshot(data);
+      .then((d) => {
+        if (!cancelled) setData(d);
       })
       .catch(() => {
         // Nutrition snapshot is a nice-to-have homepage widget; skip silently on failure.
@@ -29,10 +35,7 @@ export function NutritionSnapshotCard() {
   }, []);
 
   if (loading) return null;
-  if (!snapshot) return null;
-
-  const hasData = snapshot.totals.calories > 0;
-  const maxDaily = Math.max(1, ...snapshot.daily.map((d) => d.calories));
+  if (!data) return null;
 
   return (
     <Link
@@ -48,40 +51,48 @@ export function NutritionSnapshotCard() {
         </span>
       </div>
 
-      {!hasData ? (
-        <p className="text-sm text-dusty-rose">
-          Cook something and mark it made in Cook Mode to see your week take shape here! 🌸
-        </p>
+      {!data.hasCookedThisWeek ? (
+        <p className="text-sm text-dusty-rose">{data.message}</p>
       ) : (
         <>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {[
-              { label: "Calories", value: snapshot.totals.calories, unit: "" },
-              { label: "Protein", value: snapshot.totals.protein, unit: "g" },
-              { label: "Carbs", value: snapshot.totals.carbs, unit: "g" },
-              { label: "Fat", value: snapshot.totals.fat, unit: "g" },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col gap-0.5 rounded-2xl bg-cream-soft px-2 py-2.5">
-                <span className="font-serif text-lg font-semibold text-rose-deep">
-                  {stat.value}
-                  {stat.unit}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex gap-1.5">
+              {data.dayMarks.map((day) => (
+                <span
+                  key={day.date}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold transition ${
+                    day.cooked ? "bg-gradient-to-br from-coral to-rose-deep text-white" : "bg-blush-soft text-dusty-rose"
+                  } ${day.isToday ? "ring-2 ring-coral-deep ring-offset-1 ring-offset-white" : ""}`}
+                >
+                  {day.label}
                 </span>
-                <span className="text-[10px] font-medium tracking-wide text-dusty-rose uppercase">{stat.label}</span>
+              ))}
+            </div>
+            {data.streakDays > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-peach px-2.5 py-1 text-xs font-semibold text-peach-dark">
+                <Flame size={12} /> {data.streakDays}d streak
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            {MACRO_BARS.map((macro) => (
+              <div key={macro.key} className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] font-medium text-dusty-rose">{macro.label}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-blush">
+                  <div
+                    className={`h-full rounded-full bg-gradient-to-r ${macro.className}`}
+                    style={{ width: `${data.weekMacroPct[macro.key]}%` }}
+                  />
+                </div>
+                <span className="w-9 shrink-0 text-right text-[11px] font-semibold text-rose-deep">
+                  {data.weekMacroPct[macro.key]}%
+                </span>
               </div>
             ))}
           </div>
 
-          <div className="flex h-10 items-end gap-1.5">
-            {snapshot.daily.map((day) => (
-              <div
-                key={day.date}
-                className="flex-1 rounded-t-sm bg-gradient-to-t from-coral to-rose-deep"
-                style={{ height: `${Math.max(6, (day.calories / maxDaily) * 100)}%` }}
-              />
-            ))}
-          </div>
-
-          <p className="text-sm font-medium text-dusty-rose">{snapshot.insight}</p>
+          <p className="text-sm font-medium text-dusty-rose">{data.message}</p>
         </>
       )}
 
