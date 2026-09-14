@@ -10,10 +10,8 @@ datasource db {
   provider = "postgresql"
 }
 
-// A saved account. userId columns elsewhere are nullable rather than backfilled at
-// migration time — pre-existing rows stay unowned (userId null) until the very first
-// signup claims them (see /api/auth/signup), so a fresh deploy with existing data never
-// needs a hardcoded "legacy owner" account.
+// A saved account, shared by everyone who's been let in — this app doesn't have
+// per-user data (see AccessRequest for who's allowed to even create one).
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -23,19 +21,22 @@ model User {
 
   // Whether the homepage "This Week" nutrition card is shown — off by request, on by default.
   showThisWeekCard Boolean @default(true)
+}
 
-  recipes     Recipe[]
-  folders     Folder[]
-  pantryItems PantryItem[]
-  cookLogs    CookLog[]
+// Gates signup: an email must show up here with status "approved" (or match the
+// app owner's email) before /api/auth/signup will let it create a User. Anyone else
+// who tries to sign up gets a pending row created here for the owner to approve
+// from their profile page — see /api/admin/access-requests.
+model AccessRequest {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  status      String   @default("pending") // pending | approved
+  requestedAt DateTime @default(now())
 }
 
 model Recipe {
   id          String   @id @default(cuid())
-  sourceUrl   String
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceUrl   String   @unique
 
   title         String
   authorHandle  String?
@@ -70,11 +71,6 @@ model Recipe {
   cookLogs CookLog[]
 
   createdAt DateTime @default(now())
-
-  // Two accounts may independently save the same TikTok link, so uniqueness is per-user
-  // rather than global; unowned (userId null) rows can't collide since Postgres treats
-  // NULL as distinct in a unique index.
-  @@unique([userId, sourceUrl])
 }
 
 model Folder {
@@ -83,24 +79,16 @@ model Folder {
   emoji     String?
   createdAt DateTime @default(now())
 
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   recipes Recipe[]
 }
 
-// A staple the user keeps stocked (olive oil, garlic, pasta, …), used to check
-// which recipe ingredients they already have on hand.
+// A staple the household keeps stocked (olive oil, garlic, pasta, …), used to check
+// which recipe ingredients are already on hand.
 model PantryItem {
   id        String   @id @default(cuid())
-  name      String
+  name      String   @unique
   category  String
   createdAt DateTime @default(now())
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, name])
 }
 
 // One "I made this!" event from Cook Mode — powers cook counts, the "haven't
@@ -112,9 +100,4 @@ model CookLog {
   recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   cookedAt DateTime @default(now())
   rating   Int? // 1-5 stars, optional
-
-  // Denormalized from recipe.userId at creation time so cook-log queries (streaks,
-  // weekly snapshots) can filter directly without joining through Recipe.
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

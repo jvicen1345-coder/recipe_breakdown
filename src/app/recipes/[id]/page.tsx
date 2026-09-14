@@ -18,7 +18,7 @@ export default async function RecipeDetailPage({ params }: Props) {
   if (!userId) redirect("/login");
 
   const { id } = await params;
-  const record = await prisma.recipe.findFirst({ where: { id, userId } });
+  const record = await prisma.recipe.findUnique({ where: { id } });
   if (!record) notFound();
 
   const recipe = toRecipeDto(record);

@@ -12,7 +12,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { id } = await params;
-  const folder = await prisma.folder.findFirst({ where: { id, userId } });
+  const folder = await prisma.folder.findUnique({ where: { id } });
   if (!folder) {
     return NextResponse.json({ error: "Folder not found." }, { status: 404 });
   }

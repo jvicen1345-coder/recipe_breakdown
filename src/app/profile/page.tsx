@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { ProfileClient } from "@/components/ProfileClient";
-import { getSessionUserId } from "@/lib/auth";
+import { getSessionUserId, isOwnerEmail } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +18,7 @@ export default async function ProfilePage() {
       email={user.email}
       name={user.name}
       showThisWeekCard={user.showThisWeekCard}
+      isOwner={isOwnerEmail(user.email)}
     />
   );
 }

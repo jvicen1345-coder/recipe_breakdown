@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
       for (const url of urls) {
         try {
-          const recipe = await createRecipeFromUrl(url, userId);
+          const recipe = await createRecipeFromUrl(url);
           send({ url, status: "ok", recipe: toRecipeDto(recipe) });
         } catch (err) {
           if (err instanceof RecipeAlreadyExistsError) {

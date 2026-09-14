@@ -20,7 +20,7 @@ export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  const recipes = await prisma.recipe.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
+  const recipes = await prisma.recipe.findMany({ orderBy: { createdAt: "desc" } });
   return NextResponse.json({ recipes: recipes.map(toRecipeDto) });
 }
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const recipe = await createRecipeFromUrl(parsed.data.url, userId, parsed.data.notes);
+    const recipe = await createRecipeFromUrl(parsed.data.url, parsed.data.notes);
     return NextResponse.json({ recipe: toRecipeDto(recipe) }, { status: 201 });
   } catch (err) {
     if (err instanceof InvalidTikTokUrlError) {

@@ -14,7 +14,7 @@ export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  const folders = await prisma.folder.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
+  const folders = await prisma.folder.findMany({ orderBy: { createdAt: "asc" } });
   return NextResponse.json({ folders: folders.map(toFolderDto) });
 }
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   }
 
   const folder = await prisma.folder.create({
-    data: { name: parsed.data.name, emoji: parsed.data.emoji || null, userId },
+    data: { name: parsed.data.name, emoji: parsed.data.emoji || null },
   });
   return NextResponse.json({ folder: toFolderDto(folder) }, { status: 201 });
 }

@@ -22,8 +22,8 @@ export default async function HomePage() {
 
   try {
     const [recipeRows, folderRows, user] = await Promise.all([
-      prisma.recipe.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
-      prisma.folder.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
+      prisma.recipe.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.folder.findMany({ orderBy: { createdAt: "asc" } }),
       prisma.user.findUnique({ where: { id: userId }, select: { showThisWeekCard: true } }),
     ]);
     showThisWeekCard = user?.showThisWeekCard ?? true;

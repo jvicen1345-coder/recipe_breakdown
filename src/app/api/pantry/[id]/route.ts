@@ -12,7 +12,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { id } = await params;
-  const item = await prisma.pantryItem.findFirst({ where: { id, userId } });
+  const item = await prisma.pantryItem.findUnique({ where: { id } });
   if (!item) {
     return NextResponse.json({ error: "Pantry item not found." }, { status: 404 });
   }

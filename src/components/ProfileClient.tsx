@@ -1,20 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, Check, LogOut, Shield } from "lucide-react";
 
 import { useToast } from "./ToastProvider";
+
+interface AccessRequestRow {
+  id: string;
+  email: string;
+  requestedAt: string;
+}
 
 export function ProfileClient({
   email,
   name,
   showThisWeekCard: initialShowThisWeekCard,
+  isOwner,
 }: {
   email: string;
   name: string | null;
   showThisWeekCard: boolean;
+  isOwner: boolean;
 }) {
   const router = useRouter();
   const showToast = useToast();
@@ -92,6 +100,8 @@ export function ProfileClient({
         </label>
       </section>
 
+      {isOwner && <AccessRequestsAdmin />}
+
       <section className="flex flex-col gap-3 rounded-[1.75rem] border border-blush-dark/50 bg-white/85 p-5 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)] backdrop-blur-sm">
         <h2 className="font-serif text-lg font-semibold text-rose-deep">Account</h2>
         <button
@@ -104,5 +114,74 @@ export function ProfileClient({
         </button>
       </section>
     </div>
+  );
+}
+
+/** Owner-only: approve pending signup requests so their email can create an account. */
+function AccessRequestsAdmin() {
+  const showToast = useToast();
+  const [requests, setRequests] = useState<AccessRequestRow[] | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/access-requests")
+      .then((res) => (res.ok ? res.json() : { requests: [] }))
+      .then((data) => {
+        if (!cancelled) setRequests(data.requests ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setRequests([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleApprove(id: string) {
+    setApprovingId(id);
+    try {
+      const res = await fetch(`/api/admin/access-requests/${id}`, { method: "PATCH" });
+      if (!res.ok) throw new Error();
+      setRequests((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
+      showToast("Approved — they can sign up now ✨");
+    } catch {
+      showToast("Couldn't approve that — try again.");
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3 rounded-[1.75rem] border border-blush-dark/50 bg-white/85 p-5 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)] backdrop-blur-sm">
+      <h2 className="flex items-center gap-1.5 font-serif text-lg font-semibold text-rose-deep">
+        <Shield size={16} className="text-coral" /> Access requests
+      </h2>
+
+      {requests === null ? (
+        <p className="text-sm text-dusty-rose">Loading…</p>
+      ) : requests.length === 0 ? (
+        <p className="text-sm text-dusty-rose">No pending requests right now.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {requests.map((r) => (
+            <li
+              key={r.id}
+              className="flex items-center justify-between gap-3 rounded-2xl bg-blush-soft px-4 py-2.5"
+            >
+              <span className="min-w-0 truncate text-sm font-medium text-rose-deep">{r.email}</span>
+              <button
+                type="button"
+                onClick={() => handleApprove(r.id)}
+                disabled={approvingId === r.id}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-coral to-rose-deep px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Check size={12} /> Approve
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

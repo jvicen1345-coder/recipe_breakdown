@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +27,11 @@ export default function SignupPage() {
         body: JSON.stringify({ name: name.trim() || undefined, email, password }),
       });
       const data = await res.json();
+
+      if (res.status === 202 && data.pending) {
+        setPendingMessage(data.message ?? "Request sent — you'll be able to sign in once it's approved.");
+        return;
+      }
       if (!res.ok) {
         setError(data.error ?? "Something went wrong.");
         return;
@@ -39,11 +45,26 @@ export default function SignupPage() {
     }
   }
 
+  if (pendingMessage) {
+    return (
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+        <MailCheck size={36} className="text-coral" />
+        <h1 className="font-serif text-2xl font-semibold text-rose-deep">Request sent 🌸</h1>
+        <p className="text-sm text-dusty-rose">{pendingMessage}</p>
+        <Link href="/login" className="mt-2 text-sm font-semibold text-rose-deep underline-offset-2 hover:underline">
+          Back to login
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-6 px-4 py-16">
       <div className="flex flex-col items-center gap-1 text-center">
-        <h1 className="font-serif text-3xl font-semibold text-rose-deep">Save your own box ✨</h1>
-        <p className="text-sm text-dusty-rose">Create an account to start saving recipes.</p>
+        <h1 className="font-serif text-3xl font-semibold text-rose-deep">Ask to join ✨</h1>
+        <p className="text-sm text-dusty-rose">
+          Cutesy Eats is invite-only right now — enter your info and we&apos;ll let you know once you&apos;re approved.
+        </p>
       </div>
 
       <form
@@ -85,7 +106,9 @@ export default function SignupPage() {
             disabled={submitting}
             className="rounded-full border border-blush-dark/60 bg-white px-4 py-2.5 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30 disabled:opacity-60"
           />
-          <span className="pl-1 text-xs font-normal text-dusty-rose">At least 8 characters.</span>
+          <span className="pl-1 text-xs font-normal text-dusty-rose">
+            At least 8 characters. Only needed once you&apos;re approved.
+          </span>
         </label>
 
         {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-coral-deep">{error}</p>}
@@ -96,12 +119,12 @@ export default function SignupPage() {
           className="mt-1 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-coral to-rose-deep px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <Loader2 size={16} className="animate-spin" />}
-          Create account
+          Request access
         </button>
       </form>
 
       <p className="text-sm text-dusty-rose">
-        Already have an account?{" "}
+        Already approved?{" "}
         <Link href="/login" className="font-semibold text-rose-deep underline-offset-2 hover:underline">
           Log in
         </Link>

@@ -14,7 +14,7 @@ export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  const items = await prisma.pantryItem.findMany({ where: { userId }, orderBy: { name: "asc" } });
+  const items = await prisma.pantryItem.findMany({ orderBy: { name: "asc" } });
   return NextResponse.json({ items: items.map(toPantryItemDto) });
 }
 
@@ -29,14 +29,14 @@ export async function POST(request: Request) {
   }
 
   const existing = await prisma.pantryItem.findFirst({
-    where: { userId, name: { equals: parsed.data.name, mode: "insensitive" } },
+    where: { name: { equals: parsed.data.name, mode: "insensitive" } },
   });
   if (existing) {
     return NextResponse.json({ item: toPantryItemDto(existing) }, { status: 200 });
   }
 
   const item = await prisma.pantryItem.create({
-    data: { name: parsed.data.name, category: parsed.data.category, userId },
+    data: { name: parsed.data.name, category: parsed.data.category },
   });
   return NextResponse.json({ item: toPantryItemDto(item) }, { status: 201 });
 }

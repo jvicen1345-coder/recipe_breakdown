@@ -14,7 +14,7 @@ export default async function GroceryListPage() {
 
   let recipes: RecipeDto[] = [];
   try {
-    const rows = await prisma.recipe.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
+    const rows = await prisma.recipe.findMany({ orderBy: { createdAt: "desc" } });
     recipes = rows.map(toRecipeDto);
   } catch (err) {
     console.error("[grocery-list page] failed to load recipes:", err);

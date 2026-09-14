@@ -52,12 +52,12 @@ export async function GET() {
   streakWindowStart.setDate(today.getDate() - 90);
 
   const [weekLogs, streakWindowLogs, todayLogs] = await Promise.all([
-    prisma.cookLog.findMany({ where: { userId, cookedAt: { gte: weekStart, lt: weekEnd } }, include: { recipe: true } }),
+    prisma.cookLog.findMany({ where: { cookedAt: { gte: weekStart, lt: weekEnd } }, include: { recipe: true } }),
     prisma.cookLog.findMany({
-      where: { userId, cookedAt: { gte: streakWindowStart, lt: tomorrow } },
+      where: { cookedAt: { gte: streakWindowStart, lt: tomorrow } },
       select: { cookedAt: true },
     }),
-    prisma.cookLog.findMany({ where: { userId, cookedAt: { gte: today, lt: tomorrow } }, include: { recipe: true } }),
+    prisma.cookLog.findMany({ where: { cookedAt: { gte: today, lt: tomorrow } }, include: { recipe: true } }),
   ]);
 
   const hasCookedThisWeek = weekLogs.length > 0;
@@ -134,7 +134,7 @@ export async function GET() {
     )[0][0];
 
     const candidates = await prisma.recipe.findMany({
-      where: { userId, id: { notIn: [...todayCookedIds] } },
+      where: { id: { notIn: [...todayCookedIds] } },
       orderBy: { createdAt: "desc" },
     });
 

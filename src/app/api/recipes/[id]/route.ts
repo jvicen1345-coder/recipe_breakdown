@@ -18,7 +18,7 @@ export async function GET(_request: Request, { params }: Params) {
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { id } = await params;
-  const recipe = await prisma.recipe.findFirst({ where: { id, userId } });
+  const recipe = await prisma.recipe.findUnique({ where: { id } });
   if (!recipe) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }
@@ -41,13 +41,13 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
 
-  const existing = await prisma.recipe.findFirst({ where: { id, userId } });
+  const existing = await prisma.recipe.findUnique({ where: { id } });
   if (!existing) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }
 
   if (parsed.data.folderId) {
-    const folder = await prisma.folder.findFirst({ where: { id: parsed.data.folderId, userId } });
+    const folder = await prisma.folder.findUnique({ where: { id: parsed.data.folderId } });
     if (!folder) {
       return NextResponse.json({ error: "That folder doesn't exist." }, { status: 400 });
     }
@@ -65,7 +65,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   const { id } = await params;
-  const recipe = await prisma.recipe.findFirst({ where: { id, userId } });
+  const recipe = await prisma.recipe.findUnique({ where: { id } });
   if (!recipe) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }

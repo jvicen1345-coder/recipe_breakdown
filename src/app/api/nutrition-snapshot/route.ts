@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   const { start, end } = getWeekRange(weekOffset);
 
   const logs = await prisma.cookLog.findMany({
-    where: { userId, cookedAt: { gte: start, lt: end } },
+    where: { cookedAt: { gte: start, lt: end } },
     include: { recipe: true },
     orderBy: { cookedAt: "asc" },
   });
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
   let recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[] = [];
   if (logs.length > 0) {
     const allRecipes = await prisma.recipe.findMany({
-      where: { userId, id: { notIn: [...cookedRecipeIds] } },
+      where: { id: { notIn: [...cookedRecipeIds] } },
       orderBy: { createdAt: "desc" },
     });
 

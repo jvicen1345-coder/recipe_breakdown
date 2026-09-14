@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { hashPassword, setSessionCookie } from "@/lib/auth";
+import { hashPassword, isOwnerEmail, setSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const signupSchema = z.object({
@@ -23,27 +23,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
   }
 
+  // Invite-only: the owner's own email always gets in; everyone else needs an
+  // AccessRequest already marked "approved" (see /api/admin/access-requests).
+  const accessRequest = isOwnerEmail(email) ? null : await prisma.accessRequest.findUnique({ where: { email } });
+  const isApproved = isOwnerEmail(email) || accessRequest?.status === "approved";
+
+  if (!isApproved) {
+    await prisma.accessRequest.upsert({ where: { email }, update: {}, create: { email } });
+    return NextResponse.json(
+      {
+        pending: true,
+        message: "This app is invite-only right now. Your request has been sent — you'll be able to sign in once it's approved.",
+      },
+      { status: 202 },
+    );
+  }
+
   const passwordHash = hashPassword(password);
 
   try {
-    const user = await prisma.$transaction(async (tx) => {
-      const priorUserCount = await tx.user.count();
-      const created = await tx.user.create({ data: { email, passwordHash, name: name || null } });
-
-      // The very first account ever created inherits any recipes/folders/pantry items/cook
-      // logs saved before accounts existed (userId still null) — see the User model's doc
-      // comment in schema.prisma for why this is safe to do unconditionally here.
-      if (priorUserCount === 0) {
-        await Promise.all([
-          tx.recipe.updateMany({ where: { userId: null }, data: { userId: created.id } }),
-          tx.folder.updateMany({ where: { userId: null }, data: { userId: created.id } }),
-          tx.pantryItem.updateMany({ where: { userId: null }, data: { userId: created.id } }),
-          tx.cookLog.updateMany({ where: { userId: null }, data: { userId: created.id } }),
-        ]);
-      }
-      return created;
-    });
-
+    const user = await prisma.user.create({ data: { email, passwordHash, name: name || null } });
     await setSessionCookie(user.id);
     return NextResponse.json(
       { user: { id: user.id, email: user.email, name: user.name, showThisWeekCard: user.showThisWeekCard } },
