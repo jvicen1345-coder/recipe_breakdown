@@ -10,8 +10,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// A saved account, shared by everyone who's been let in — this app doesn't have
-// per-user data (see AccessRequest for who's allowed to even create one).
+// A saved account, shared by everyone who signs up — this app doesn't have per-user data.
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -21,17 +20,6 @@ model User {
 
   // Whether the homepage "This Week" nutrition card is shown — off by request, on by default.
   showThisWeekCard Boolean @default(true)
-}
-
-// Gates signup: an email must show up here with status "approved" (or match the
-// app owner's email) before /api/auth/signup will let it create a User. Anyone else
-// who tries to sign up gets a pending row created here for the owner to approve
-// from their profile page — see /api/admin/access-requests.
-model AccessRequest {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  status      String   @default("pending") // pending | approved
-  requestedAt DateTime @default(now())
 }
 
 model Recipe {

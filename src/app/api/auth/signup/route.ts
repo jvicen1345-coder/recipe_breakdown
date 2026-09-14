@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { hashPassword, isOwnerEmail, setSessionCookie } from "@/lib/auth";
+import { hashPassword, setSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const signupSchema = z.object({
@@ -21,22 +21,6 @@ export async function POST(request: Request) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
-  }
-
-  // Invite-only: the owner's own email always gets in; everyone else needs an
-  // AccessRequest already marked "approved" (see /api/admin/access-requests).
-  const accessRequest = isOwnerEmail(email) ? null : await prisma.accessRequest.findUnique({ where: { email } });
-  const isApproved = isOwnerEmail(email) || accessRequest?.status === "approved";
-
-  if (!isApproved) {
-    await prisma.accessRequest.upsert({ where: { email }, update: {}, create: { email } });
-    return NextResponse.json(
-      {
-        pending: true,
-        message: "This app is invite-only right now. Your request has been sent — you'll be able to sign in once it's approved.",
-      },
-      { status: 202 },
-    );
   }
 
   const passwordHash = hashPassword(password);
