@@ -1,4 +1,4 @@
-import { GroceryList } from "@/components/GroceryList";
+import { GroceryPantryPage } from "@/components/GroceryPantryPage";
 import { prisma } from "@/lib/prisma";
 import { toRecipeDto } from "@/lib/types";
 import type { RecipeDto } from "@/lib/types";
@@ -14,5 +14,5 @@ export default async function GroceryListPage() {
     console.error("[grocery-list page] failed to load recipes:", err);
   }
 
-  return <GroceryList initialRecipes={recipes} />;
+  return <GroceryPantryPage recipes={recipes} />;
 }

@@ -74,7 +74,7 @@ export function PantryPageClient({ recipes }: { recipes: RecipeDto[] }) {
   );
 
   return (
-    <div className="page-fade-in mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-serif text-3xl font-semibold text-sage-dark">My Pantry 🧺</h1>
         <p className="text-sm text-sage-dark/70">Tap staples you keep stocked, or search to add anything else.</p>

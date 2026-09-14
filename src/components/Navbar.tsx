@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Home, Plus, Refrigerator, Search, ShoppingCart } from "lucide-react";
+import { BarChart3, Home, Plus, Search, ShoppingCart } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/grocery-list", label: "Grocery List", icon: ShoppingCart },
-  { href: "/pantry", label: "Pantry", icon: Refrigerator },
+  { href: "/grocery-list", label: "Grocery & Pantry", icon: ShoppingCart },
   { href: "/nutrition", label: "This Week", icon: BarChart3 },
 ];
 
@@ -40,7 +39,6 @@ export function Navbar() {
   const router = useRouter();
   const onHome = pathname === "/";
   const onGroceryPage = pathname === "/grocery-list";
-  const onPantryPage = pathname === "/pantry";
   const onNutritionPage = pathname === "/nutrition";
 
   function handleHomeClick(e: React.MouseEvent) {
@@ -143,16 +141,6 @@ export function Navbar() {
             <ShoppingCart size={18} />
           </MobileNavIcon>
           <span className={`text-[10px] ${onGroceryPage ? "font-semibold" : "font-medium"}`}>Grocery</span>
-        </Link>
-        <Link
-          href="/pantry"
-          className={mobileNavLinkClass(onPantryPage)}
-          aria-current={onPantryPage ? "page" : undefined}
-        >
-          <MobileNavIcon active={onPantryPage}>
-            <Refrigerator size={18} />
-          </MobileNavIcon>
-          <span className={`text-[10px] ${onPantryPage ? "font-semibold" : "font-medium"}`}>Pantry</span>
         </Link>
         <Link
           href="/nutrition"

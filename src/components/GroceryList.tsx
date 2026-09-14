@@ -111,7 +111,7 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
   }
 
   return (
-    <div className="page-fade-in mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="font-serif text-3xl font-semibold text-sage-dark">Grocery List</h1>
         <div className="flex items-center gap-2">

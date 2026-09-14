@@ -5,7 +5,7 @@ step-by-step instructions, make time, difficulty, an estimated grocery cost, the
 whether it's vegan/vegetarian/pescatarian/omnivore, and estimated per-serving nutrition facts
 (calories, protein, carbs, fat, fiber, sugar, sodium).
 
-Saved recipes live across four pages, tied together by the navbar:
+Saved recipes live across three pages, tied together by the navbar:
 
 - **Home** — everything in one scroll: the "Break it down" input, a Collection-import option, a
   "Cook something tonight?" pill row (Quick / Budget / High Protein / Low Calorie / Vegan /
@@ -22,24 +22,26 @@ Saved recipes live across four pages, tied together by the navbar:
   even "haven't made in a while") rather than just the title — a plain substring match on
   title/author stays live throughout so results never go blank while waiting, and it silently falls
   back to that substring match if the request fails or `ANTHROPIC_API_KEY` isn't configured.
-- **Grocery List** — built from whatever you've added via a card's "Save to List 🛒" action (this
-  is intentionally independent from a recipe's own cook-along ingredient checklist, so checking
-  something off while cooking doesn't touch your shopping list and vice versa), grouped into
-  Produce/Proteins/Dairy/Pantry, with its own cross-off checkboxes, a "Copy list" button, and a
-  "Clear list" button to empty it out.
-- **My Pantry** — a sage-accented page for staples you keep stocked. Tap common staples (grouped
-  into Oils & Vinegars / Spices / Grains & Pasta / Dairy / Canned Goods) to toggle them on, or
-  search to add anything else. Once you've added a few items, every recipe card and detail view
-  shows a "🧺 X/Y ingredients" badge, and the pantry page itself surfaces how many saved recipes
-  you're 80%+ of the way to being able to make.
+- **Grocery & Pantry** — one sage-accented page with an in-page tab switcher between two views:
+  - **Grocery List** — built from whatever you've added via a card's "Save to List 🛒" action (this
+    is intentionally independent from a recipe's own cook-along ingredient checklist, so checking
+    something off while cooking doesn't touch your shopping list and vice versa), grouped into
+    Produce/Proteins/Dairy/Pantry, with its own cross-off checkboxes, a "Copy list" button, and a
+    "Clear list" button to empty it out.
+  - **My Pantry** — staples you keep stocked. Tap common staples (grouped into Oils & Vinegars /
+    Spices / Grains & Pasta / Dairy / Canned Goods) to toggle them on, or search to add anything
+    else. Once you've added a few items, every recipe card and detail view shows a "🧺 X/Y
+    ingredients" badge, and this tab surfaces how many saved recipes you're 80%+ of the way to
+    being able to make.
 - **This Week** — a lightweight nutrition snapshot built only from recipes you've actually cooked
   (via Cook Mode's "I made this!"), never manual logging: weekly calorie/protein/carb/fat totals, a
   daily bar chart, a macro breakdown, the list of what you cooked, and "Recommended for you" picks
   from your saved-but-uncooked recipes that would balance the week's macros. A compact version of
   this lives on the homepage too.
 
-On mobile, the top nav is replaced by a fixed bottom bar (Home / Search / Add / Grocery / Pantry /
-Week) so the main actions stay one thumb-tap away.
+On mobile, the top nav is replaced by a fixed bottom bar (Home / Search / Add / Grocery / Week) so
+the main actions stay one thumb-tap away — and on mobile, navigation lives *only* in that bottom
+bar; the top header (logo, links) is desktop-only.
 
 Clicking any recipe card opens a full detail view in a modal (a direct link to `/recipes/[id]` still
 works as a real page) with a servings adjuster that scales every ingredient quantity live, the
@@ -229,7 +231,9 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
   from any recipe card, plus the context that opens it from anywhere in the app
 - `src/components/MyRecipesGrid.tsx` — the "Your Recipes" grid, embedded on the Home page, including
   folder creation/deletion
-- `src/components/GroceryList.tsx`, `src/app/grocery-list/page.tsx` — the Grocery List page
+- `src/components/GroceryPantryPage.tsx`, `src/app/grocery-list/page.tsx` — the combined
+  Grocery/Pantry page and its in-page tab switcher
+- `src/components/GroceryList.tsx` — the Grocery List tab's content
 - `src/app/page.tsx`, `src/components/RecipeLibrary.tsx` — Home (hero, input, dashboard cards, Cook
   Tonight, and the Your Recipes grid all in one page)
 - `src/app/recipes/[id]/page.tsx` — the standalone recipe detail page (direct links/sharing)
@@ -241,7 +245,7 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 - `src/components/PantryProvider.tsx` — app-wide context that fetches/mutates pantry items once
 - `src/lib/pantryMatch.ts` — fuzzy text matching between pantry staples and ingredient text
 - `src/app/api/pantry`, `src/app/api/pantry/[id]` — list/create pantry items; delete one
-- `src/components/PantryPageClient.tsx`, `src/app/pantry/page.tsx` — the My Pantry page
+- `src/components/PantryPageClient.tsx` — the My Pantry tab's content
 - `src/components/BottomSheet.tsx` — shared draggable blush bottom-sheet shell
 - `src/components/SubstitutionSheet.tsx`, `src/lib/substitutions.ts` — the ingredient substitution
   tapper and its hardcoded lookup table
