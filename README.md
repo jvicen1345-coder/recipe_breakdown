@@ -21,7 +21,10 @@ Saved recipes live across three pages, tied together by the navbar:
   match your saved recipes against the request's *meaning* (ingredients, time, cost, diet, protein,
   even "haven't made in a while") rather than just the title — a plain substring match on
   title/author stays live throughout so results never go blank while waiting, and it silently falls
-  back to that substring match if the request fails or `ANTHROPIC_API_KEY` isn't configured.
+  back to that substring match if the request fails or `ANTHROPIC_API_KEY` isn't configured. The
+  grid itself only renders 24 cards at a time with a "Load More 🌸" button to reveal 24 more —
+  filtering/sorting/searching still run over your whole saved library, but the DOM/image load stays
+  light even with a large collection; changing any filter resets back to the first page.
 - **Grocery & Pantry** — one sage-accented page with an in-page tab switcher between two views:
   - **Grocery List** — built from whatever you've added via a card's "Save to List 🛒" action (this
     is intentionally independent from a recipe's own cook-along ingredient checklist, so checking

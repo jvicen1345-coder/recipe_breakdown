@@ -15,14 +15,16 @@ export interface Nutrition {
   sodiumMg: number | null;
 }
 
+// Deliberately omits the Recipe model's `caption`/`transcript` columns — they're only
+// ever read by the analysis pipeline (see analyze.ts), never rendered in the UI, and
+// can be large (full video captions/speech transcripts), so keeping them off this
+// client-facing DTO measurably shrinks every page load and the "Break it down" response.
 export interface RecipeDto {
   id: string;
   sourceUrl: string;
   title: string;
   authorHandle: string | null;
   thumbnailUrl: string | null;
-  caption: string | null;
-  transcript: string | null;
   userNotes: string | null;
   durationSeconds: number | null;
   servings: number | null;
@@ -103,8 +105,6 @@ export function toRecipeDto(recipe: Recipe): RecipeDto {
     title: recipe.title,
     authorHandle: recipe.authorHandle,
     thumbnailUrl: recipe.thumbnailUrl ?? (recipe.thumbnailPath ? `/api/media/${recipe.thumbnailPath}` : null),
-    caption: recipe.caption,
-    transcript: recipe.transcript,
     userNotes: recipe.userNotes,
     durationSeconds: recipe.durationSeconds,
     servings: recipe.servings,

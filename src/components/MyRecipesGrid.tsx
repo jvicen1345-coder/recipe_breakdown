@@ -11,6 +11,7 @@ import type { FolderDto, RecipeDto } from "@/lib/types";
 
 const DIET_FILTER_OPTIONS = Object.entries(DIET_LABELS);
 const FOLDER_EMOJI_PRESETS = ["🕯️", "💪", "🍕", "🌸", "🎉", "🥗"];
+const PAGE_SIZE = 24;
 
 type SortOption = "recent" | "az" | "time" | "cost";
 
@@ -46,8 +47,17 @@ export function MyRecipesGrid({
   const [newFolderEmoji, setNewFolderEmoji] = useState(FOLDER_EMOJI_PRESETS[0]);
   const [smartMatchIds, setSmartMatchIds] = useState<string[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const searchRequestId = useRef(0);
   const showToast = useToast();
+
+  // Only ever render a page's worth of cards at a time — with a large saved-recipe
+  // library this keeps the initial DOM/image load light. Any change to which
+  // recipes should be showing starts back at the first page.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting pagination whenever the active filter/search/sort changes
+    setVisibleCount(PAGE_SIZE);
+  }, [search, dietFilter, folderFilter, sort]);
 
   // A search of 3+ characters is sent to the smart-search endpoint (debounced) so it
   // can match on ingredients/time/cost/diet/last-cooked, not just the title — but the
@@ -322,7 +332,7 @@ export function MyRecipesGrid({
             </p>
           )}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {filteredRecipes.map((recipe, i) => (
+            {filteredRecipes.slice(0, visibleCount).map((recipe, i) => (
               <div
                 key={recipe.id}
                 className="card-fade-in min-w-0"
@@ -332,6 +342,15 @@ export function MyRecipesGrid({
               </div>
             ))}
           </div>
+          {filteredRecipes.length > visibleCount && (
+            <button
+              type="button"
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="self-center rounded-full bg-blush px-6 py-2.5 text-sm font-medium text-rose-deep shadow-sm transition hover:-translate-y-0.5 hover:bg-blush-dark hover:shadow-md"
+            >
+              Load More 🌸 ({filteredRecipes.length - visibleCount} more)
+            </button>
+          )}
         </div>
       )}
     </div>
