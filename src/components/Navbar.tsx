@@ -58,9 +58,8 @@ export function Navbar() {
         <Link
           href="/"
           onClick={handleHomeClick}
-          className="flex shrink-0 items-center gap-1.5 font-serif text-lg font-semibold text-rose-deep"
+          className="flex shrink-0 items-center font-serif text-lg font-semibold text-rose-deep"
         >
-          <span aria-hidden>🌸🍴</span>
           Cutesy Eats
         </Link>
 

@@ -75,14 +75,9 @@ export function HomeDashboardCards({ recipes }: { recipes: RecipeDto[] }) {
 
   const insight = useMemo(() => computeNeglectedProtein(recipes), [recipes]);
 
-  const recentlyAdded = recipes[0] ?? null;
-
-  // Only-one-recipe rule: never repeat the same recipe across multiple widgets.
+  // Never repeat the same recipe across multiple widgets.
   const recipeCards: CardSpec[] = [];
-  if (recentlyAdded) {
-    recipeCards.push({ key: "recent", label: "Recently Added", emoji: "🆕", recipe: recentlyAdded });
-  }
-  const shownIds = new Set(recipeCards.map((c) => c.recipe.id));
+  const shownIds = new Set<string>();
 
   if (recipes.length >= HAVENT_MADE_MIN_RECIPES && neglectedRecipe && !shownIds.has(neglectedRecipe.id)) {
     recipeCards.push({ key: "neglected", label: "Haven't Made in a While", emoji: "⏳", recipe: neglectedRecipe });
