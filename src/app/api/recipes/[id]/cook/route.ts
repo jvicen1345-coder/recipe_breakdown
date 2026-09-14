@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSessionUserId } from "@/lib/auth";
+import { requireVerifiedUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 interface Params {
@@ -13,8 +13,8 @@ const cookSchema = z.object({
 });
 
 export async function POST(request: Request, { params }: Params) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  const auth = await requireVerifiedUserId();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { id } = await params;
   const recipe = await prisma.recipe.findUnique({ where: { id } });

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 
+import { useToast } from "./ToastProvider";
+
 export function DeleteRecipeButton({
   recipeId,
   onDeleted,
@@ -13,6 +15,7 @@ export function DeleteRecipeButton({
   onDeleted?: () => void;
 }) {
   const router = useRouter();
+  const showToast = useToast();
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
@@ -28,6 +31,8 @@ export function DeleteRecipeButton({
       }
     } else {
       setDeleting(false);
+      const data = await res.json().catch(() => null);
+      showToast(data?.error ?? "Couldn't remove that recipe.");
     }
   }
 

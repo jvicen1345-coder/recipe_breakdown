@@ -191,12 +191,14 @@ export function MyRecipesGrid({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newFolderName.trim(), emoji: newFolderEmoji }),
     });
+    const data = await res.json().catch(() => null);
     if (res.ok) {
-      const data = await res.json();
       setFolders((prev) => [...prev, data.folder]);
       setNewFolderName("");
       setCreatingFolder(false);
       showToast(`Folder "${data.folder.name}" created 🗂️`);
+    } else {
+      showToast(data?.error ?? "Couldn't create that folder.");
     }
   }
 
@@ -208,6 +210,9 @@ export function MyRecipesGrid({
       setFolders((prev) => prev.filter((f) => f.id !== folderId));
       setFolderFilter((prev) => (prev === folderId ? "all" : prev));
       showToast(`Folder "${folderName}" deleted 🗑️`);
+    } else {
+      const data = await res.json().catch(() => null);
+      showToast(data?.error ?? "Couldn't delete that folder.");
     }
   }
 

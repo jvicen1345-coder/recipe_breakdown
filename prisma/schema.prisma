@@ -20,6 +20,13 @@ model User {
 
   // Whether the homepage "This Week" nutrition card is shown — off by request, on by default.
   showThisWeekCard Boolean @default(true)
+
+  // New accounts are "guests" (browse-only — see requireVerifiedUserId in lib/auth.ts) until
+  // they click the link emailed to verificationToken. Token is cleared once used; a fresh one
+  // is generated and re-emailed on request from the profile page.
+  emailVerified              Boolean   @default(false)
+  verificationToken          String?   @unique
+  verificationTokenExpiresAt DateTime?
 }
 
 model Recipe {

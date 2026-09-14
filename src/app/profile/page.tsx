@@ -13,5 +13,12 @@ export default async function ProfilePage() {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) redirect("/login");
 
-  return <ProfileClient email={user.email} name={user.name} showThisWeekCard={user.showThisWeekCard} />;
+  return (
+    <ProfileClient
+      email={user.email}
+      name={user.name}
+      showThisWeekCard={user.showThisWeekCard}
+      emailVerified={user.emailVerified}
+    />
+  );
 }

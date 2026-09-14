@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSessionUserId } from "@/lib/auth";
+import { getSessionUserId, requireVerifiedUserId } from "@/lib/auth";
 import { ExternalToolError } from "@/lib/exec";
 import { prisma } from "@/lib/prisma";
 import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
@@ -25,8 +25,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  const auth = await requireVerifiedUserId();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const body = await request.json().catch(() => null);
   const parsed = createRecipeSchema.safeParse(body);

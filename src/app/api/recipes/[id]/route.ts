@@ -4,7 +4,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSessionUserId } from "@/lib/auth";
+import { getSessionUserId, requireVerifiedUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UPLOADS_DIR } from "@/lib/pipeline";
 import { toRecipeDto } from "@/lib/types";
@@ -31,8 +31,8 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(request: Request, { params }: Params) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  const auth = await requireVerifiedUserId();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { id } = await params;
   const body = await request.json().catch(() => null);
@@ -61,8 +61,8 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  const auth = await requireVerifiedUserId();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { id } = await params;
   const recipe = await prisma.recipe.findUnique({ where: { id } });

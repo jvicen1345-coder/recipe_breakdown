@@ -110,6 +110,9 @@ export function RecipeDetailContent({
       if (res.ok) {
         setNotesDirty(false);
         showToast("Notes saved 📝");
+      } else {
+        const data = await res.json().catch(() => null);
+        showToast(data?.error ?? "Couldn't save those notes.");
       }
     } finally {
       setSavingNotes(false);
@@ -117,6 +120,7 @@ export function RecipeDetailContent({
   }
 
   async function handleFolderChange(nextFolderId: string) {
+    const previousFolderId = folderId;
     setFolderId(nextFolderId);
     const res = await fetch(`/api/recipes/${recipe.id}`, {
       method: "PATCH",
@@ -126,6 +130,10 @@ export function RecipeDetailContent({
     if (res.ok) {
       const folder = folders.find((f) => f.id === nextFolderId);
       showToast(folder ? `Moved to ${folder.emoji ?? ""} ${folder.name} 🗂️` : "Removed from folder");
+    } else {
+      setFolderId(previousFolderId);
+      const data = await res.json().catch(() => null);
+      showToast(data?.error ?? "Couldn't move that recipe.");
     }
   }
 

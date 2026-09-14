@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { hashPassword, setSessionCookie } from "@/lib/auth";
+import { hashPassword, issueVerificationToken, setSessionCookie } from "@/lib/auth";
+import { sendVerificationEmail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
 
 const signupSchema = z.object({
@@ -28,8 +29,21 @@ export async function POST(request: Request) {
   try {
     const user = await prisma.user.create({ data: { email, passwordHash, name: name || null } });
     await setSessionCookie(user.id);
+
+    const token = await issueVerificationToken(user.id);
+    const verifyUrl = `${new URL(request.url).origin}/api/auth/verify-email?token=${token}`;
+    await sendVerificationEmail(user.email, verifyUrl);
+
     return NextResponse.json(
-      { user: { id: user.id, email: user.email, name: user.name, showThisWeekCard: user.showThisWeekCard } },
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          showThisWeekCard: user.showThisWeekCard,
+          emailVerified: user.emailVerified,
+        },
+      },
       { status: 201 },
     );
   } catch (err) {

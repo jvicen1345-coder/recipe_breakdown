@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getSessionUserId } from "@/lib/auth";
+import { requireVerifiedUserId } from "@/lib/auth";
 import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
 import { toRecipeDto } from "@/lib/types";
 
@@ -15,10 +15,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) {
-    return new Response(JSON.stringify({ error: "Not signed in." }), {
-      status: 401,
+  const auth = await requireVerifiedUserId();
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
       headers: { "Content-Type": "application/json" },
     });
   }

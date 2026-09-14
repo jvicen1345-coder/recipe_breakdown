@@ -12,7 +12,13 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   return NextResponse.json({
-    user: { id: user.id, email: user.email, name: user.name, showThisWeekCard: user.showThisWeekCard },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      showThisWeekCard: user.showThisWeekCard,
+      emailVerified: user.emailVerified,
+    },
   });
 }
 
@@ -33,6 +39,12 @@ export async function PATCH(request: Request) {
 
   const user = await prisma.user.update({ where: { id: userId }, data: parsed.data });
   return NextResponse.json({
-    user: { id: user.id, email: user.email, name: user.name, showThisWeekCard: user.showThisWeekCard },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      showThisWeekCard: user.showThisWeekCard,
+      emailVerified: user.emailVerified,
+    },
   });
 }

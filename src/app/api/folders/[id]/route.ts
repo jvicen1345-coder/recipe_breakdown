@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionUserId } from "@/lib/auth";
+import { requireVerifiedUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 interface Params {
@@ -8,8 +8,8 @@ interface Params {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  const auth = await requireVerifiedUserId();
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const { id } = await params;
   const folder = await prisma.folder.findUnique({ where: { id } });

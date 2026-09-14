@@ -6,11 +6,16 @@ import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypt
 
 export const SESSION_COOKIE_NAME = "ce_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+export const VERIFICATION_TOKEN_MAX_AGE_MS = 1000 * 60 * 60 * 24; // 24 hours
 
 // Mirrors prisma.config.ts's DATABASE_URL fallback: never crash local dev over a
 // missing env var, but a real AUTH_SECRET must be set in production or sessions
 // (and the password reset flow, if one is ever added) could be forged.
 const AUTH_SECRET = process.env.AUTH_SECRET || "dev-only-insecure-auth-secret-change-me";
+
+export function generateVerificationToken(): string {
+  return randomBytes(32).toString("hex");
+}
 
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");

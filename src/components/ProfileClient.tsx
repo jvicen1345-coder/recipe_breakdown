@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, MailCheck } from "lucide-react";
 
 import { useToast } from "./ToastProvider";
 
@@ -11,16 +11,34 @@ export function ProfileClient({
   email,
   name,
   showThisWeekCard: initialShowThisWeekCard,
+  emailVerified,
 }: {
   email: string;
   name: string | null;
   showThisWeekCard: boolean;
+  emailVerified: boolean;
 }) {
   const router = useRouter();
   const showToast = useToast();
   const [showThisWeekCard, setShowThisWeekCard] = useState(initialShowThisWeekCard);
   const [savingToggle, setSavingToggle] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const verify = params.get("verify");
+    if (verify === "verified") {
+      showToast("Email confirmed — you're all set! 🎉");
+      router.replace("/profile");
+      router.refresh();
+    } else if (verify === "invalid") {
+      showToast("That confirmation link is invalid or expired — try resending it below.");
+      router.replace("/profile");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, reading the URL on mount
+  }, []);
 
   async function handleToggleThisWeekCard() {
     const next = !showThisWeekCard;
@@ -39,6 +57,20 @@ export function ProfileClient({
       showToast("Couldn't save that — try again.");
     } finally {
       setSavingToggle(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    setResending(true);
+    try {
+      const res = await fetch("/api/auth/resend-verification", { method: "POST" });
+      if (!res.ok) throw new Error();
+      setResent(true);
+      showToast("Confirmation email sent 📬");
+    } catch {
+      showToast("Couldn't send that — try again in a bit.");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -63,6 +95,26 @@ export function ProfileClient({
         <h1 className="font-serif text-3xl font-semibold text-rose-deep">Your profile 🌸</h1>
         <p className="text-sm text-dusty-rose">{name ? `${name} · ${email}` : email}</p>
       </header>
+
+      {!emailVerified && (
+        <section className="flex flex-col gap-2 rounded-[1.75rem] border border-coral/40 bg-peach/30 p-5">
+          <h2 className="flex items-center gap-1.5 font-serif text-lg font-semibold text-rose-deep">
+            <MailCheck size={16} className="text-coral" /> You&apos;re a guest for now
+          </h2>
+          <p className="text-sm text-dusty-rose">
+            Confirm <span className="font-semibold text-rose-deep">{email}</span> to add, edit, and cook recipes —
+            you can still browse everything in the meantime.
+          </p>
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={resending || resent}
+            className="mt-1 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resent ? "Confirmation email sent ✓" : resending ? "Sending…" : "Resend confirmation email"}
+          </button>
+        </section>
+      )}
 
       <section className="flex flex-col gap-3 rounded-[1.75rem] border border-blush-dark/50 bg-white/85 p-5 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)] backdrop-blur-sm">
         <h2 className="font-serif text-lg font-semibold text-rose-deep">Homepage</h2>

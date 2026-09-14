@@ -8,7 +8,7 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 // touching the database. This just keeps signed-out visitors off protected pages/APIs
 // and signed-in users off the login/signup forms.
 const PUBLIC_PAGE_ROUTES = new Set(["/login", "/signup"]);
-const PUBLIC_API_ROUTES = new Set(["/api/auth/login", "/api/auth/signup"]);
+const PUBLIC_API_ROUTES = new Set(["/api/auth/login", "/api/auth/signup", "/api/auth/verify-email"]);
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

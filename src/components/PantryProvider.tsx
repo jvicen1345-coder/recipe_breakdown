@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
+import { useToast } from "./ToastProvider";
 import type { PantryItemDto } from "@/lib/types";
 
 interface PantryContextValue {
@@ -24,6 +25,7 @@ export function usePantry() {
 export function PantryProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<PantryItemDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const showToast = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -43,22 +45,37 @@ export function PantryProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const addItem = useCallback(async (name: string, category: string) => {
-    const res = await fetch("/api/pantry", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, category }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setItems((prev) => (prev.some((i) => i.id === data.item.id) ? prev : [...prev, data.item]));
-    }
-  }, []);
+  const addItem = useCallback(
+    async (name: string, category: string) => {
+      const res = await fetch("/api/pantry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, category }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setItems((prev) => (prev.some((i) => i.id === data.item.id) ? prev : [...prev, data.item]));
+      } else {
+        const data = await res.json().catch(() => null);
+        showToast(data?.error ?? "Couldn't add that to your pantry.");
+      }
+    },
+    [showToast],
+  );
 
-  const removeItem = useCallback(async (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    await fetch(`/api/pantry/${id}`, { method: "DELETE" });
-  }, []);
+  const removeItem = useCallback(
+    async (id: string) => {
+      const removed = items.find((i) => i.id === id);
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      const res = await fetch(`/api/pantry/${id}`, { method: "DELETE" });
+      if (!res.ok && removed) {
+        setItems((prev) => (prev.some((i) => i.id === id) ? prev : [...prev, removed]));
+        const data = await res.json().catch(() => null);
+        showToast(data?.error ?? "Couldn't remove that from your pantry.");
+      }
+    },
+    [items, showToast],
+  );
 
   const hasItem = useCallback(
     (name: string) => items.some((i) => i.name.toLowerCase() === name.toLowerCase()),
