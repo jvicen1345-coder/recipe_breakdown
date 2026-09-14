@@ -45,10 +45,6 @@ function loadCookedTimestamps(): Record<string, string> {
   }
 }
 
-export function getAllCookedTimestamps(): Record<string, string> {
-  return loadCookedTimestamps();
-}
-
 export function isMarkedCooked(recipeId: string): boolean {
   return recipeId in loadCookedTimestamps();
 }

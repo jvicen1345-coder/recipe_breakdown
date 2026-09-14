@@ -8,7 +8,7 @@ import { FavoriteButton } from "./FavoriteButton";
 import { RecipeThumbnail } from "./RecipeThumbnail";
 import { useRecipeModal } from "./RecipeModalProvider";
 import { useToast } from "./ToastProvider";
-import { ingredientsStorageKey, saveCheckedIndices } from "@/lib/checklistStorage";
+import { addRecipeToGroceryList } from "@/lib/groceryListStorage";
 import {
   DIET_STYLES,
   DIET_LABELS,
@@ -36,8 +36,7 @@ export function RecipeCard({
   function handleAddToList(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const allIndices = new Set(recipe.ingredients.map((_, i) => i));
-    saveCheckedIndices(ingredientsStorageKey(recipe.id), allIndices);
+    addRecipeToGroceryList(recipe.id, recipe.ingredients.length);
     showToast("Added to grocery list 🛒");
   }
 
@@ -57,10 +56,9 @@ export function RecipeCard({
           className="h-full w-full transition duration-300 group-hover:scale-105"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-black/0 to-black/0" />
-        <FavoriteButton recipeId={recipe.id} className="absolute top-2.5 right-2.5" />
 
         {showQuickActions && (
-          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:opacity-100">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100">
             <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-deep">
               View 👀
             </span>
@@ -73,6 +71,8 @@ export function RecipeCard({
             </button>
           </div>
         )}
+
+        <FavoriteButton recipeId={recipe.id} className="absolute top-2.5 right-2.5 z-10" />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3 sm:p-4">
         <h3 className="font-serif line-clamp-2 text-base leading-snug font-semibold text-rose-deep sm:text-lg">

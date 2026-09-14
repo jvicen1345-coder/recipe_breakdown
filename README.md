@@ -7,18 +7,21 @@ whether it's vegan/vegetarian/pescatarian/omnivore, and estimated per-serving nu
 
 Saved recipes live across two pages, tied together by the navbar:
 
-- **Home** — everything in one scroll: the "Break it down" input, a Collection-import option, up to
-  4 personalized dashboard cards (Recently Added, Haven't Made in a While, Your Favourites 💕, and a
-  "For You" meal-type suggestion — each only appears once it has real, non-repeated data to show), a
-  "Cook something tonight?" pill row (Quick / Budget / High Protein / Vegan / Comfort Food) that
-  filters your own saved recipes by those criteria, and — always below that — the full "Your
-  Recipes" grid: search, filter by diet, sort (Recently Added / A–Z / Cook Time / Cost), organize
-  into folders (e.g. "Meal Prep 💪"), and hover a card for quick "View 👀" / "Save to List 🛒"
-  actions. The navbar's "My Recipes" link and mobile search icon just smooth-scroll to this grid
-  rather than navigating to a separate page.
-- **Grocery List** — auto-built from whatever ingredients you've checked off across your saved
-  recipes, grouped into Produce/Proteins/Dairy/Pantry, with its own cross-off checkboxes and a
-  "Copy list" button.
+- **Home** — everything in one scroll: the "Break it down" input, a Collection-import option, a
+  "Cook something tonight?" pill row (Quick / Budget / High Protein / Low Calorie / Vegan /
+  Vegetarian / Pescatarian / Easy / Comfort Food) that filters your own saved recipes by those
+  criteria — genuinely wired to each recipe's real fields (time, price, protein, nutrition, diet
+  type, difficulty), not placeholder data — and, always below that, the full "Your Recipes" grid:
+  search, filter by diet, sort (Recently Added / A–Z / Cook Time / Cost), organize into folders
+  (e.g. "Meal Prep 💪", deletable via the × on each folder pill — recipes inside are just
+  unassigned, not deleted), and hover a card for quick "View 👀" / "Save to List 🛒" actions. The
+  navbar no longer has a separate "My Recipes" link; the mobile bottom bar's search icon and the
+  desktop "Home" link both smooth-scroll straight to this grid.
+- **Grocery List** — built from whatever you've added via a card's "Save to List 🛒" action (this
+  is intentionally independent from a recipe's own cook-along ingredient checklist, so checking
+  something off while cooking doesn't touch your shopping list and vice versa), grouped into
+  Produce/Proteins/Dairy/Pantry, with its own cross-off checkboxes, a "Copy list" button, and a
+  "Clear list" button to empty it out.
 
 On mobile, the top nav is replaced by a fixed bottom bar (Home / Search / Add / Grocery List) so
 the main actions stay one thumb-tap away.
@@ -174,14 +177,17 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 - `src/app/api/media/[filename]` — serves saved thumbnails
 - `src/lib/scaling.ts` — scales an ingredient quantity string for the servings adjuster
 - `src/lib/groceryCategories.ts` — keyword-based Produce/Proteins/Dairy/Pantry categorization
-- `src/lib/checklistStorage.ts` — shared localStorage contract for per-recipe checked ingredients,
-  used by the cook-along checklist, the grocery list, and the card's "Add to List" action
+- `src/lib/checklistStorage.ts` — localStorage contract for a single recipe's own cook-along
+  checkmarks (ticking off ingredients/steps while actually cooking) — separate from the grocery list
+- `src/lib/groceryListStorage.ts` — localStorage contract for the grocery list itself: which
+  recipe/ingredient pairs are on it and which are crossed off, independent of any recipe's own
+  checklist, plus `clearGroceryList()` for the "Clear list" button
 - `src/components/RecipeDetailContent.tsx` — the recipe detail body (badges, servings adjuster,
   checklist, notes, nutrition, folder) shared by both the modal and the standalone page
 - `src/components/RecipeDetailModal.tsx` / `RecipeModalProvider.tsx` — the modal recipe view opened
   from any recipe card, plus the context that opens it from anywhere in the app
-- `src/components/HomeDashboardCards.tsx` — the 4 threshold-gated personalized dashboard cards
-- `src/components/MyRecipesGrid.tsx` — the "Your Recipes" grid, embedded on the Home page
+- `src/components/MyRecipesGrid.tsx` — the "Your Recipes" grid, embedded on the Home page, including
+  folder creation/deletion
 - `src/components/GroceryList.tsx`, `src/app/grocery-list/page.tsx` — the Grocery List page
 - `src/app/page.tsx`, `src/components/RecipeLibrary.tsx` — Home (hero, input, dashboard cards, Cook
   Tonight, and the Your Recipes grid all in one page)

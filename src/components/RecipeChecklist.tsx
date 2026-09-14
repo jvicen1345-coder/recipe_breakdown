@@ -84,7 +84,7 @@ export function RecipeChecklist({ recipeId, ingredients, instructions }: Props) 
             type="button"
             onClick={() => setTab("ingredients")}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-              tab === "ingredients" ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose"
+              tab === "ingredients" ? "bg-white text-rose-deep shadow-md" : "text-dusty-rose"
             }`}
           >
             Ingredients
@@ -93,7 +93,7 @@ export function RecipeChecklist({ recipeId, ingredients, instructions }: Props) 
             type="button"
             onClick={() => setTab("instructions")}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-              tab === "instructions" ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose"
+              tab === "instructions" ? "bg-white text-rose-deep shadow-md" : "text-dusty-rose"
             }`}
           >
             Instructions
@@ -103,7 +103,7 @@ export function RecipeChecklist({ recipeId, ingredients, instructions }: Props) 
           <button
             type="button"
             onClick={resetAll}
-            className="inline-flex items-center gap-1 rounded-full bg-blush px-3 py-1 text-xs font-medium text-rose-deep transition hover:bg-blush-dark"
+            className="inline-flex items-center gap-1 rounded-full bg-blush px-3 py-1 text-xs font-medium text-rose-deep shadow-sm transition hover:-translate-y-0.5 hover:bg-blush-dark hover:shadow-md"
           >
             <RotateCcw size={12} /> Reset
           </button>

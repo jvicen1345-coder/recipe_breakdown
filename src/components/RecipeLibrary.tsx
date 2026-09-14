@@ -5,7 +5,6 @@ import Link from "next/link";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
-import { HomeDashboardCards } from "./HomeDashboardCards";
 import { MyRecipesGrid } from "./MyRecipesGrid";
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
@@ -21,7 +20,11 @@ const COOK_TONIGHT_FILTERS: { value: string; label: string }[] = [
   { value: "quick", label: "Quick (<30 min)" },
   { value: "budget", label: "Budget" },
   { value: "high-protein", label: "High Protein" },
+  { value: "low-calorie", label: "Low Calorie" },
   { value: "vegan", label: "Vegan" },
+  { value: "vegetarian", label: "Vegetarian" },
+  { value: "pescatarian", label: "Pescatarian" },
+  { value: "easy", label: "Easy" },
   { value: "comfort", label: "Comfort Food" },
 ];
 
@@ -58,8 +61,16 @@ function matchesCookTonightFilter(recipe: RecipeDto, filter: string): boolean {
       return recipe.priceLevel === "budget";
     case "high-protein":
       return (recipe.nutrition?.proteinGrams ?? 0) >= 20;
+    case "low-calorie":
+      return recipe.nutrition?.caloriesPerServing != null && recipe.nutrition.caloriesPerServing <= 400;
     case "vegan":
       return recipe.dietType === "vegan";
+    case "vegetarian":
+      return recipe.dietType === "vegetarian";
+    case "pescatarian":
+      return recipe.dietType === "pescatarian";
+    case "easy":
+      return recipe.difficulty === "easy";
     case "comfort": {
       const title = recipe.title.toLowerCase();
       return COMFORT_FOOD_KEYWORDS.some((keyword) => title.includes(keyword));
@@ -296,8 +307,6 @@ export function RecipeLibrary({
         />
       )}
 
-      <HomeDashboardCards recipes={recipes} />
-
       <section className="flex flex-col gap-3">
         <h2 className="font-serif text-xl font-semibold text-rose-deep">Cook something tonight? 🌙</h2>
         <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
@@ -310,8 +319,8 @@ export function RecipeLibrary({
                 onClick={() => toggleCookTonightFilter(filter.value)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                   active
-                    ? "bg-gradient-to-r from-coral to-rose-deep text-white shadow-sm"
-                    : "bg-blush text-rose-deep hover:bg-blush-dark"
+                    ? "bg-gradient-to-r from-coral to-rose-deep text-white shadow-md"
+                    : "bg-blush text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] hover:-translate-y-0.5 hover:bg-blush-dark hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
                 }`}
               >
                 {filter.label}
@@ -320,11 +329,7 @@ export function RecipeLibrary({
           })}
         </div>
 
-        {activeCookTonightFilters.size === 0 ? (
-          <p className="text-sm text-dusty-rose">
-            Tap a pill to find something to make from your saved recipes ✨
-          </p>
-        ) : cookTonightMatches.length === 0 ? (
+        {activeCookTonightFilters.size > 0 && cookTonightMatches.length === 0 ? (
           <p className="text-sm text-dusty-rose">
             No{" "}
             {[...activeCookTonightFilters].map((f) => COOK_TONIGHT_FILTER_LABELS[f]).join(" or ")} recipes

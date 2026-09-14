@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, ClipboardCopy, RefreshCw } from "lucide-react";
+import { Check, ClipboardCopy, RefreshCw, Trash2 } from "lucide-react";
 
 import { useToast } from "./ToastProvider";
-import { ingredientsStorageKey, loadCheckedIndices } from "@/lib/checklistStorage";
+import {
+  clearGroceryList,
+  loadCrossedOff,
+  loadGroceryItemKeys,
+  saveCrossedOff,
+} from "@/lib/groceryListStorage";
 import {
   categorizeIngredient,
   GROCERY_CATEGORY_META,
@@ -21,40 +26,22 @@ interface GroceryItem {
   recipeTitle: string;
 }
 
-const CROSSED_OFF_KEY = "grocery-crossed-off";
-
-function loadCrossedOff(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(CROSSED_OFF_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? new Set(parsed) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function saveCrossedOff(ids: Set<string>) {
-  try {
-    localStorage.setItem(CROSSED_OFF_KEY, JSON.stringify([...ids]));
-  } catch {
-    // localStorage can throw in private-browsing contexts; crossed-off state just won't persist.
-  }
-}
-
 function buildGroceryItems(recipes: RecipeDto[]): GroceryItem[] {
+  const recipeById = new Map(recipes.map((r) => [r.id, r]));
   const items: GroceryItem[] = [];
-  for (const recipe of recipes) {
-    const checked = loadCheckedIndices(ingredientsStorageKey(recipe.id));
-    recipe.ingredients.forEach((ing, index) => {
-      if (!checked.has(index)) return;
-      items.push({
-        key: `${recipe.id}:${index}`,
-        item: ing.item,
-        quantity: ing.quantity,
-        category: categorizeIngredient(ing.item),
-        recipeTitle: recipe.title,
-      });
+  for (const key of loadGroceryItemKeys()) {
+    const separatorIndex = key.lastIndexOf(":");
+    const recipeId = key.slice(0, separatorIndex);
+    const index = Number(key.slice(separatorIndex + 1));
+    const recipe = recipeById.get(recipeId);
+    const ing = recipe?.ingredients[index];
+    if (!recipe || !ing) continue;
+    items.push({
+      key,
+      item: ing.item,
+      quantity: ing.quantity,
+      category: categorizeIngredient(ing.item),
+      recipeTitle: recipe.title,
     });
   }
   return items;
@@ -71,7 +58,7 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads each recipe's checklist from localStorage, unavailable during SSR
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads from localStorage, unavailable during SSR
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -84,6 +71,14 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
       saveCrossedOff(next);
       return next;
     });
+  }
+
+  function handleClear() {
+    if (!confirm("Clear your whole grocery list?")) return;
+    clearGroceryList();
+    setItems([]);
+    setCrossedOff(new Set());
+    showToast("Grocery list cleared 🧹");
   }
 
   const grouped = useMemo(() => {
@@ -117,24 +112,33 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
 
   return (
     <div className="page-fade-in mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="font-serif text-3xl font-semibold text-sage-dark">Grocery List</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={refresh}
-            className="inline-flex items-center gap-1 rounded-full bg-sage/30 px-3 py-1.5 text-xs font-medium text-sage-dark transition hover:bg-sage/50"
+            className="inline-flex items-center gap-1 rounded-full bg-sage/30 px-3 py-1.5 text-xs font-medium text-sage-dark shadow-sm transition hover:bg-sage/50"
           >
             <RefreshCw size={12} /> Refresh
           </button>
           {items.length > 0 && (
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="inline-flex items-center gap-1 rounded-full bg-sage-dark px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-105"
-            >
-              <ClipboardCopy size={12} /> Copy list
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1 rounded-full bg-sage-dark px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-105"
+              >
+                <ClipboardCopy size={12} /> Copy list
+              </button>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="inline-flex items-center gap-1 rounded-full bg-coral/20 px-3 py-1.5 text-xs font-medium text-coral-deep shadow-sm transition hover:bg-coral/30"
+              >
+                <Trash2 size={12} /> Clear list
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -143,7 +147,7 @@ export function GroceryList({ initialRecipes }: { initialRecipes: RecipeDto[] })
         <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-sage p-16 text-center text-sage-dark">
           <span className="text-4xl">🥬</span>
           <p className="font-serif text-lg">Nothing on your list yet</p>
-          <p className="text-sm">Check off ingredients on a recipe and they&apos;ll show up here.</p>
+          <p className="text-sm">Tap &quot;Save to List&quot; on a recipe and it&apos;ll show up here.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-6">

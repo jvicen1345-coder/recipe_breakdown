@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
@@ -80,6 +80,17 @@ export function MyRecipesGrid({
     }
   }
 
+  async function handleDeleteFolder(e: React.MouseEvent, folderId: string, folderName: string) {
+    e.stopPropagation();
+    if (!confirm(`Delete the "${folderName}" folder? Recipes in it won't be deleted.`)) return;
+    const res = await fetch(`/api/folders/${folderId}`, { method: "DELETE" });
+    if (res.ok) {
+      setFolders((prev) => prev.filter((f) => f.id !== folderId));
+      setFolderFilter((prev) => (prev === folderId ? "all" : prev));
+      showToast(`Folder "${folderName}" deleted 🗑️`);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-baseline justify-between gap-2">
@@ -92,30 +103,44 @@ export function MyRecipesGrid({
           type="button"
           onClick={() => setFolderFilter("all")}
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-            folderFilter === "all" ? "bg-rose-deep text-white" : "bg-blush text-rose-deep hover:bg-blush-dark"
+            folderFilter === "all"
+              ? "bg-rose-deep text-white shadow-md"
+              : "bg-blush text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] hover:-translate-y-0.5 hover:bg-blush-dark hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
           }`}
         >
           All
         </button>
         {folders.map((folder) => (
-          <button
+          <div
             key={folder.id}
-            type="button"
-            onClick={() => setFolderFilter(folder.id)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+            className={`group/folder flex items-center gap-1 rounded-full pr-1 pl-4 text-sm font-medium transition ${
               folderFilter === folder.id
-                ? "bg-rose-deep text-white"
-                : "bg-blush text-rose-deep hover:bg-blush-dark"
+                ? "bg-rose-deep text-white shadow-md"
+                : "bg-blush text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
             }`}
           >
-            {folder.emoji ? `${folder.emoji} ` : ""}
-            {folder.name}
-          </button>
+            <button type="button" onClick={() => setFolderFilter(folder.id)} className="py-1.5">
+              {folder.emoji ? `${folder.emoji} ` : ""}
+              {folder.name}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleDeleteFolder(e, folder.id, folder.name)}
+              aria-label={`Delete ${folder.name} folder`}
+              className={`flex h-5 w-5 items-center justify-center rounded-full transition ${
+                folderFilter === folder.id
+                  ? "text-white/70 hover:bg-white/20 hover:text-white"
+                  : "text-dusty-rose/60 hover:bg-blush-dark hover:text-coral-deep"
+              }`}
+            >
+              <X size={12} />
+            </button>
+          </div>
         ))}
         {creatingFolder ? (
           <form
             onSubmit={handleCreateFolder}
-            className="flex items-center gap-1.5 rounded-full bg-white px-2 py-1 ring-1 ring-blush-dark/50"
+            className="flex items-center gap-1.5 rounded-full bg-white px-2 py-1 shadow-sm ring-1 ring-blush-dark/50"
           >
             <select
               value={newFolderEmoji}
@@ -143,7 +168,7 @@ export function MyRecipesGrid({
           <button
             type="button"
             onClick={() => setCreatingFolder(true)}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-blush-dark px-4 py-1.5 text-sm font-medium text-dusty-rose transition hover:border-coral hover:text-coral-deep"
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-blush-dark bg-white/50 px-4 py-1.5 text-sm font-medium text-dusty-rose shadow-sm transition hover:-translate-y-0.5 hover:border-coral hover:text-coral-deep hover:shadow-md"
           >
             <Plus size={13} /> New Folder
           </button>

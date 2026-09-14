@@ -6,7 +6,6 @@ import { Home, Plus, Search, ShoppingCart } from "lucide-react";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/#recipes", label: "My Recipes" },
   { href: "/grocery-list", label: "Grocery List" },
 ];
 
@@ -26,12 +25,6 @@ export function Navbar() {
     if (!onHome) return;
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function handleRecipesClick(e: React.MouseEvent) {
-    if (!onHome) return;
-    e.preventDefault();
-    document.getElementById("recipes")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function handleAddRecipeClick(e: React.MouseEvent) {
@@ -70,7 +63,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={link.label === "My Recipes" ? handleRecipesClick : undefined}
+                onClick={link.label === "Home" ? handleHomeClick : undefined}
                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                   active ? "bg-white text-rose-deep shadow-sm" : "text-dusty-rose hover:text-rose-deep"
                 }`}

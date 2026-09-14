@@ -1,6 +1,7 @@
-// Shared localStorage contract for per-recipe ingredient/step checkmarks, used by
-// RecipeChecklist (the cook-along UI), RecipeCard's "Add to List" quick action, and
-// the Grocery List page (which reads every recipe's checked ingredients).
+// localStorage contract for RecipeChecklist's per-recipe cook-along checkmarks
+// (ingredients/steps ticked off while actually cooking). Deliberately separate from
+// the grocery list (see groceryListStorage.ts) — checking something off here means
+// "I've got this while cooking," not "put this on my shopping list."
 
 export function ingredientsStorageKey(recipeId: string): string {
   return `recipe-checklist:${recipeId}:ingredients`;
