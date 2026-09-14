@@ -38,6 +38,20 @@ export const DIET_STYLES: Record<string, string> = {
   omnivore: "bg-peach text-peach-dark",
 };
 
+export const MEAL_TYPE_LABELS: Record<string, string> = {
+  breakfast: "Breakfast",
+  lunch: "Lunch",
+  dinner: "Dinner",
+  "quick-bite": "Quick Bite",
+};
+
+export const MEAL_TYPE_STYLES: Record<string, string> = {
+  breakfast: "bg-sage text-sage-dark",
+  lunch: "bg-sage text-sage-dark",
+  dinner: "bg-sage text-sage-dark",
+  "quick-bite": "bg-sage text-sage-dark",
+};
+
 export const TIME_BADGE_STYLE = "bg-lavender text-lavender-dark";
 
 export const PROTEIN_LABELS: Record<string, string> = {

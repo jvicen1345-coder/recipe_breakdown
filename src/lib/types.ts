@@ -32,6 +32,7 @@ export interface RecipeDto {
   difficulty: string | null;
   proteinType: string | null;
   dietType: string | null;
+  mealType: string | null;
   priceLevel: string | null;
   estimatedPriceUsd: number | null;
   ingredients: Ingredient[];
@@ -124,6 +125,7 @@ export function toRecipeDto(recipe: Recipe): RecipeDto {
     difficulty: recipe.difficulty,
     proteinType: recipe.proteinType,
     dietType: recipe.dietType,
+    mealType: recipe.mealType,
     priceLevel: recipe.priceLevel,
     estimatedPriceUsd: recipe.estimatedPriceUsd,
     ingredients: safeParseArray<Ingredient>(recipe.ingredientsJson),

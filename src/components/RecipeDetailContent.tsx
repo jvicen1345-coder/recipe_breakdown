@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChefHat, Clock3, CookingPot, DollarSign, ExternalLink, Flame, Minus, Plus } from "lucide-react";
+import { ChefHat, Clock3, CookingPot, DollarSign, ExternalLink, Flame, Minus, Plus, Utensils } from "lucide-react";
 
 import { Badge } from "./Badge";
 import { ConfettiBurst } from "./ConfettiBurst";
@@ -18,6 +18,8 @@ import {
   DIET_STYLES,
   DIFFICULTY_LABELS,
   DIFFICULTY_STYLES,
+  MEAL_TYPE_LABELS,
+  MEAL_TYPE_STYLES,
   PRICE_LABELS,
   PRICE_STYLES,
   PROTEIN_LABELS,
@@ -155,6 +157,11 @@ export function RecipeDetailContent({
           <Badge className={PRICE_STYLES[recipe.priceLevel]} icon={<DollarSign size={12} />}>
             {PRICE_LABELS[recipe.priceLevel]}
             {price ? ` · ${price}` : ""}
+          </Badge>
+        )}
+        {recipe.mealType && (
+          <Badge className={MEAL_TYPE_STYLES[recipe.mealType]} icon={<Utensils size={12} />}>
+            {MEAL_TYPE_LABELS[recipe.mealType]}
           </Badge>
         )}
         {recipe.dietType && (

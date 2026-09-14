@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock3, ChefHat, DollarSign } from "lucide-react";
+import { Clock3, ChefHat, DollarSign, Utensils } from "lucide-react";
 
 import { Badge } from "./Badge";
 import { FavoriteButton } from "./FavoriteButton";
@@ -16,6 +16,8 @@ import {
   DIET_LABELS,
   DIFFICULTY_LABELS,
   DIFFICULTY_STYLES,
+  MEAL_TYPE_LABELS,
+  MEAL_TYPE_STYLES,
   PROTEIN_LABELS,
   TIME_BADGE_STYLE,
   formatMinutes,
@@ -100,6 +102,11 @@ export function RecipeCard({
             </Badge>
           )}
           {price && <Badge icon={<DollarSign size={12} />}>{price}</Badge>}
+          {recipe.mealType && (
+            <Badge className={MEAL_TYPE_STYLES[recipe.mealType]} icon={<Utensils size={12} />}>
+              {MEAL_TYPE_LABELS[recipe.mealType]}
+            </Badge>
+          )}
           {recipe.dietType && (
             <Badge className={DIET_STYLES[recipe.dietType]}>{DIET_LABELS[recipe.dietType]}</Badge>
           )}

@@ -19,6 +19,7 @@ export const recipeAnalysisSchema = z.object({
     "none",
   ]),
   dietType: z.enum(["vegan", "vegetarian", "pescatarian", "omnivore"]),
+  mealType: z.enum(["breakfast", "lunch", "dinner", "quick-bite"]),
   priceLevel: z.enum(["budget", "moderate", "splurge"]),
   estimatedPriceUsd: z.number().positive().nullable(),
   ingredients: z
@@ -69,6 +70,12 @@ const RECIPE_TOOL: Anthropic.Tool = {
       dietType: {
         type: "string",
         enum: ["vegan", "vegetarian", "pescatarian", "omnivore"],
+      },
+      mealType: {
+        type: "string",
+        enum: ["breakfast", "lunch", "dinner", "quick-bite"],
+        description:
+          "When this dish is typically eaten. Use 'quick-bite' for snacks, small plates, or anything meant to be thrown together fast rather than a sit-down meal.",
       },
       priceLevel: {
         type: "string",
@@ -135,6 +142,7 @@ const RECIPE_TOOL: Anthropic.Tool = {
       "difficulty",
       "proteinType",
       "dietType",
+      "mealType",
       "priceLevel",
       "estimatedPriceUsd",
       "ingredients",
@@ -150,7 +158,7 @@ const SYSTEM_PROMPT = `You are a culinary analyst for a recipe-saving app. Users
 
 You will receive the video's caption/hashtags, an optional speech transcript, optional notes the user typed in by hand, and a handful of frames sampled evenly through the video. Read any on-screen text visible in the frames (ingredient lists, step captions, quantities) and combine it with the caption and transcript to reconstruct the recipe as completely and accurately as possible.
 
-When information is missing or ambiguous, do not leave fields empty — use your general culinary knowledge to make a reasonable estimate (typical quantities, standard technique, usual cook time for that dish) and record any notable assumptions in confidenceNotes. Estimate total hands-on + cook/bake time in minutes, a difficulty rating for a home cook (easy/medium/hard), and an approximate total USD grocery cost to make the whole dish (not per serving) based on typical US grocery prices. Classify the single dominant protein and the overall diet category (vegan/vegetarian/pescatarian/omnivore).
+When information is missing or ambiguous, do not leave fields empty — use your general culinary knowledge to make a reasonable estimate (typical quantities, standard technique, usual cook time for that dish) and record any notable assumptions in confidenceNotes. Estimate total hands-on + cook/bake time in minutes, a difficulty rating for a home cook (easy/medium/hard), and an approximate total USD grocery cost to make the whole dish (not per serving) based on typical US grocery prices. Classify the single dominant protein and the overall diet category (vegan/vegetarian/pescatarian/omnivore), plus which meal it's typically for (breakfast/lunch/dinner/quick-bite — use quick-bite for snacks, small plates, or anything meant to be thrown together fast rather than a sit-down meal).
 
 Also estimate nutrition facts for a single serving (divide the whole dish by the serving count you determined): calories, protein, carbs, fat, fiber, sugar (all in grams except calories), and sodium (in milligrams). Base this on standard nutritional values for the ingredients and quantities involved — reason like a nutrition-label estimate, not a guess pulled from thin air. Only use null for a nutrition field if the dish genuinely has none of it (e.g. fiberGrams could be 0, but don't null out a field just because you're unsure — estimate it).
 

@@ -53,6 +53,7 @@ model Recipe {
   difficulty        String? // easy | medium | hard
   proteinType       String? // chicken | beef | pork | seafood | egg | plant-based | other | none
   dietType          String? // vegan | vegetarian | pescatarian | omnivore
+  mealType          String? // breakfast | lunch | dinner | quick-bite
   priceLevel        String? // budget | moderate | splurge
   estimatedPriceUsd Float?
 

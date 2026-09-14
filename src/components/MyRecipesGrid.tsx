@@ -8,12 +8,16 @@ import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
 import { getCookedTimestamps } from "@/lib/clientState";
 import { COOK_TONIGHT_FILTER_LABELS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
-import { DIET_LABELS } from "@/lib/format";
+import { DIET_LABELS, MEAL_TYPE_LABELS } from "@/lib/format";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
 const DIET_FILTER_OPTIONS = [
   { value: "all", label: "All diets" },
   ...Object.entries(DIET_LABELS).map(([value, label]) => ({ value, label })),
+];
+const MEAL_TYPE_FILTER_OPTIONS = [
+  { value: "all", label: "All meals" },
+  ...Object.entries(MEAL_TYPE_LABELS).map(([value, label]) => ({ value, label })),
 ];
 const FOLDER_EMOJI_PRESETS = ["🕯️", "💪", "🍕", "🌸", "🎉", "🥗"];
 const PAGE_SIZE = 24;
@@ -43,6 +47,7 @@ export function MyRecipesGrid({
   const [folders, setFolders] = useState(initialFolders);
   const [search, setSearch] = useState("");
   const [dietFilter, setDietFilter] = useState("all");
+  const [mealTypeFilter, setMealTypeFilter] = useState("all");
   const [folderFilter, setFolderFilter] = useState("all");
   const [sort, setSort] = useState<SortOption>("recent");
   const [creatingFolder, setCreatingFolder] = useState(false);
@@ -62,7 +67,7 @@ export function MyRecipesGrid({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting pagination whenever the active filter/search/sort changes
     setVisibleCount(PAGE_SIZE);
-  }, [search, dietFilter, folderFilter, sort, cookTonightKey]);
+  }, [search, dietFilter, mealTypeFilter, folderFilter, sort, cookTonightKey]);
 
   // A search of 3+ characters is sent to the smart-search endpoint (debounced) so it
   // can match on ingredients/time/cost/diet/last-cooked, not just the title — but the
@@ -122,11 +127,12 @@ export function MyRecipesGrid({
     const query = search.trim().toLowerCase();
     const matching = recipes.filter((recipe) => {
       const matchesDiet = dietFilter === "all" || recipe.dietType === dietFilter;
+      const matchesMealType = mealTypeFilter === "all" || recipe.mealType === mealTypeFilter;
       const matchesFolder = folderFilter === "all" || recipe.folderId === folderFilter;
       const matchesCookTonight =
         cookTonightFilters.size === 0 ||
         [...cookTonightFilters].some((filter) => matchesCookTonightFilter(recipe, filter));
-      if (!matchesDiet || !matchesFolder || !matchesCookTonight) return false;
+      if (!matchesDiet || !matchesMealType || !matchesFolder || !matchesCookTonight) return false;
       if (isSmartSearch) return smartMatchIds!.includes(recipe.id);
       return (
         !query ||
@@ -151,7 +157,7 @@ export function MyRecipesGrid({
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- cookTonightFilters is a Set; cookTonightKey is its stable dependency
-  }, [recipes, search, dietFilter, folderFilter, sort, isSmartSearch, smartMatchIds, cookTonightKey]);
+  }, [recipes, search, dietFilter, mealTypeFilter, folderFilter, sort, isSmartSearch, smartMatchIds, cookTonightKey]);
 
   const filterSummary = isSmartSearch
     ? `Smart matches for "${search.trim()}"`
@@ -164,6 +170,10 @@ export function MyRecipesGrid({
         if (dietFilter !== "all") {
           const diet = DIET_FILTER_OPTIONS.find((o) => o.value === dietFilter);
           if (diet) parts.push(diet.label);
+        }
+        if (mealTypeFilter !== "all") {
+          const mealType = MEAL_TYPE_FILTER_OPTIONS.find((o) => o.value === mealTypeFilter);
+          if (mealType) parts.push(mealType.label);
         }
         if (cookTonightFilters.size > 0) {
           parts.push([...cookTonightFilters].map((f) => COOK_TONIGHT_FILTER_LABELS[f]).join(" or "));
@@ -310,6 +320,13 @@ export function MyRecipesGrid({
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <PillDropdown
+          label=""
+          value={mealTypeFilter}
+          options={MEAL_TYPE_FILTER_OPTIONS}
+          onChange={setMealTypeFilter}
+          active={mealTypeFilter !== "all"}
+        />
         <PillDropdown
           label=""
           value={dietFilter}
