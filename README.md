@@ -16,7 +16,12 @@ Saved recipes live across two pages, tied together by the navbar:
   (e.g. "Meal Prep 💪", deletable via the × on each folder pill — recipes inside are just
   unassigned, not deleted), and hover a card for quick "View 👀" / "Save to List 🛒" actions. The
   navbar no longer has a separate "My Recipes" link; the mobile bottom bar's search icon and the
-  desktop "Home" link both smooth-scroll straight to this grid.
+  desktop "Home" link both smooth-scroll straight to this grid. The search bar doubles as an
+  LLM-powered smart search: type 3+ characters and, after a short debounce, it also asks Claude to
+  match your saved recipes against the request's *meaning* (ingredients, time, cost, diet, protein,
+  even "haven't made in a while") rather than just the title — a plain substring match on
+  title/author stays live throughout so results never go blank while waiting, and it silently falls
+  back to that substring match if the request fails or `ANTHROPIC_API_KEY` isn't configured.
 - **Grocery List** — built from whatever you've added via a card's "Save to List 🛒" action (this
   is intentionally independent from a recipe's own cook-along ingredient checklist, so checking
   something off while cooking doesn't touch your shopping list and vice versa), grouped into
@@ -174,6 +179,8 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 - `src/app/api/recipes` — list/create recipes; `src/app/api/recipes/[id]` — read/delete/patch one
   (patch supports `personalNotes` and `folderId`)
 - `src/app/api/folders` — list/create folders; `src/app/api/folders/[id]` — delete one
+- `src/app/api/search-recipes` — Claude-powered smart search: given a natural-language query and
+  lightweight recipe summaries, returns matching recipe ids ranked by relevance
 - `src/app/api/media/[filename]` — serves saved thumbnails
 - `src/lib/scaling.ts` — scales an ingredient quantity string for the servings adjuster
 - `src/lib/groceryCategories.ts` — keyword-based Produce/Proteins/Dairy/Pantry categorization

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
+import { getCookedTimestamps } from "@/lib/clientState";
 import { DIET_LABELS } from "@/lib/format";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
@@ -35,19 +36,83 @@ export function MyRecipesGrid({
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderEmoji, setNewFolderEmoji] = useState(FOLDER_EMOJI_PRESETS[0]);
+  const [smartMatchIds, setSmartMatchIds] = useState<string[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const searchRequestId = useRef(0);
   const showToast = useToast();
+
+  // A search of 3+ characters is sent to the smart-search endpoint (debounced) so it
+  // can match on ingredients/time/cost/diet/last-cooked, not just the title — but the
+  // plain title/author substring match below stays live the whole time so results
+  // never go blank while waiting on the network.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- invalidating stale AI results whenever the query changes
+    setSmartMatchIds(null);
+    const query = search.trim();
+    if (query.length < 3 || recipes.length === 0) {
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const requestId = ++searchRequestId.current;
+    const timeout = setTimeout(async () => {
+      try {
+        const cookedTimestamps = getCookedTimestamps();
+        const res = await fetch("/api/search-recipes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query,
+            recipes: recipes.map((recipe) => ({
+              id: recipe.id,
+              title: recipe.title,
+              ingredients: recipe.ingredients.map((i) => i.item),
+              dietType: recipe.dietType,
+              proteinType: recipe.proteinType,
+              difficulty: recipe.difficulty,
+              totalTimeMinutes: recipe.totalTimeMinutes,
+              priceLevel: recipe.priceLevel,
+              estimatedPriceUsd: recipe.estimatedPriceUsd,
+              caloriesPerServing: recipe.nutrition?.caloriesPerServing ?? null,
+              daysSinceCooked: cookedTimestamps[recipe.id]
+                ? Math.floor((Date.now() - new Date(cookedTimestamps[recipe.id]).getTime()) / 86_400_000)
+                : null,
+            })),
+          }),
+        });
+        if (requestId !== searchRequestId.current) return;
+        if (!res.ok) throw new Error("search failed");
+        const data = await res.json();
+        setSmartMatchIds(Array.isArray(data.matchingIds) ? data.matchingIds : []);
+      } catch {
+        if (requestId === searchRequestId.current) setSmartMatchIds(null);
+      } finally {
+        if (requestId === searchRequestId.current) setSearching(false);
+      }
+    }, 600);
+    return () => clearTimeout(timeout);
+  }, [search, recipes]);
+
+  const isSmartSearch = smartMatchIds !== null && search.trim().length >= 3;
 
   const filteredRecipes = useMemo(() => {
     const query = search.trim().toLowerCase();
     const matching = recipes.filter((recipe) => {
-      const matchesSearch =
-        !query ||
-        recipe.title.toLowerCase().includes(query) ||
-        recipe.authorHandle?.toLowerCase().includes(query);
       const matchesDiet = dietFilter === "all" || recipe.dietType === dietFilter;
       const matchesFolder = folderFilter === "all" || recipe.folderId === folderFilter;
-      return matchesSearch && matchesDiet && matchesFolder;
+      if (!matchesDiet || !matchesFolder) return false;
+      if (isSmartSearch) return smartMatchIds!.includes(recipe.id);
+      return (
+        !query ||
+        recipe.title.toLowerCase().includes(query) ||
+        recipe.authorHandle?.toLowerCase().includes(query)
+      );
     });
+
+    if (isSmartSearch) {
+      const order = new Map(smartMatchIds!.map((id, i) => [id, i]));
+      return [...matching].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+    }
 
     return [...matching].sort((a, b) => {
       switch (sort) {
@@ -61,7 +126,7 @@ export function MyRecipesGrid({
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
-  }, [recipes, search, dietFilter, folderFilter, sort]);
+  }, [recipes, search, dietFilter, folderFilter, sort, isSmartSearch, smartMatchIds]);
 
   async function handleCreateFolder(e: React.FormEvent) {
     e.preventDefault();
@@ -177,16 +242,25 @@ export function MyRecipesGrid({
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search
-            size={16}
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-dusty-rose"
-          />
+          {searching ? (
+            <Loader2
+              size={16}
+              className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 animate-spin text-coral"
+            />
+          ) : isSmartSearch ? (
+            <Sparkles size={16} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-coral" />
+          ) : (
+            <Search
+              size={16}
+              className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-dusty-rose"
+            />
+          )}
           <input
             id="recipe-search-input"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search your recipes…"
+            placeholder="Search, or ask e.g. 'quick chicken dinner'…"
             className="w-full rounded-full border border-blush-dark/60 bg-white py-2.5 pr-4 pl-10 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30"
           />
         </div>
@@ -223,19 +297,29 @@ export function MyRecipesGrid({
         </div>
       ) : filteredRecipes.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-blush-dark p-12 text-center text-dusty-rose">
-          No recipes match your search/filter — try something else! ✨
+          {isSmartSearch
+            ? `Nothing matched "${search.trim()}" — try rephrasing! ✨`
+            : "No recipes match your search/filter — try something else! ✨"}
         </div>
       ) : (
-        <div className="columns-2 gap-4 sm:columns-3 lg:columns-4">
-          {filteredRecipes.map((recipe, i) => (
-            <div
-              key={recipe.id}
-              className="card-fade-in mb-4 break-inside-avoid"
-              style={{ animationDelay: `${Math.min(i, 20) * 50}ms` }}
-            >
-              <RecipeCard recipe={recipe} showQuickActions />
-            </div>
-          ))}
+        <div className="flex flex-col gap-3">
+          {isSmartSearch && (
+            <p className="text-xs text-dusty-rose">
+              <Sparkles size={11} className="mr-1 inline -translate-y-px" />
+              Smart matches for &ldquo;{search.trim()}&rdquo;
+            </p>
+          )}
+          <div className="columns-2 gap-4 sm:columns-3 lg:columns-4">
+            {filteredRecipes.map((recipe, i) => (
+              <div
+                key={recipe.id}
+                className="card-fade-in mb-4 break-inside-avoid"
+                style={{ animationDelay: `${Math.min(i, 20) * 50}ms` }}
+              >
+                <RecipeCard recipe={recipe} showQuickActions />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

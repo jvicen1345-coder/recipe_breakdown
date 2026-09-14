@@ -34,7 +34,7 @@ export function toggleFavorite(recipeId: string): boolean {
 // can tell not just whether a recipe has been cooked but how long ago.
 const COOKED_KEY = "recipe-cooked";
 
-function loadCookedTimestamps(): Record<string, string> {
+export function getCookedTimestamps(): Record<string, string> {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(COOKED_KEY);
@@ -46,12 +46,12 @@ function loadCookedTimestamps(): Record<string, string> {
 }
 
 export function isMarkedCooked(recipeId: string): boolean {
-  return recipeId in loadCookedTimestamps();
+  return recipeId in getCookedTimestamps();
 }
 
 export function markCooked(recipeId: string) {
   try {
-    const timestamps = loadCookedTimestamps();
+    const timestamps = getCookedTimestamps();
     timestamps[recipeId] = new Date().toISOString();
     localStorage.setItem(COOKED_KEY, JSON.stringify(timestamps));
   } catch {
