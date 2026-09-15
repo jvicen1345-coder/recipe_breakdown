@@ -124,14 +124,22 @@ async function createRecipeLite(url: string, createdByUserId: string, userNotes?
     framePaths: [],
   });
 
+  const id = randomUUID();
+  // TikTok's oEmbed thumbnail is a signed CDN URL that expires after a while, so it's
+  // downloaded once here and cached locally (same as the full pipeline's extracted
+  // frame) rather than stored as-is. Falls back to the raw URL if the download fails,
+  // so the card still shows something until that link expires too.
+  const thumbnailPath = meta.thumbnailUrl ? await saveThumbnailFromUrl(id, meta.thumbnailUrl) : null;
+
   return prisma.recipe.create({
     data: {
-      id: randomUUID(),
+      id,
       createdByUserId,
       sourceUrl: url,
       title: analysis.title,
       authorHandle: meta.authorHandle,
-      thumbnailUrl: meta.thumbnailUrl,
+      thumbnailPath,
+      thumbnailUrl: thumbnailPath ? null : meta.thumbnailUrl,
       caption: meta.caption,
       userNotes: userNotes?.trim() || null,
       servings: analysis.servings,
@@ -162,6 +170,23 @@ async function saveThumbnailFile(recipeId: string, framePaths: string[]): Promis
     return filename;
   } catch (err) {
     console.error("[pipeline] failed to save thumbnail:", err);
+    return null;
+  }
+}
+
+/** Downloads a remote thumbnail (e.g. TikTok's oEmbed image) into permanent local storage. */
+async function saveThumbnailFromUrl(recipeId: string, url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) throw new Error(`thumbnail fetch failed with status ${res.status}`);
+    const bytes = Buffer.from(await res.arrayBuffer());
+
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
+    const filename = `${recipeId}.jpg`;
+    await fs.writeFile(path.join(UPLOADS_DIR, filename), bytes);
+    return filename;
+  } catch (err) {
+    console.error("[pipeline] failed to download thumbnail:", err);
     return null;
   }
 }
