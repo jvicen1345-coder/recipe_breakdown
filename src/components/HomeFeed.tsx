@@ -243,7 +243,7 @@ export function HomeFeed({
 
         <div className="relative mx-auto flex max-w-xl flex-col items-center gap-3">
           <h1 className="font-serif text-4xl font-semibold text-rose-deep sm:text-5xl">
-            What&apos;s cooking, bestie?
+            What&apos;s cooking, bestie? 🍓
           </h1>
           <p className="text-sm text-foreground/70 sm:text-base">From FYP to your kitchen ✨</p>
         </div>

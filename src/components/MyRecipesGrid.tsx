@@ -4,14 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpDown, Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 
+import { EmojiPickerSheet } from "./EmojiPickerSheet";
 import { useProUpsell } from "./ProUpsellProvider";
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
 import { getCookedTimestamps } from "@/lib/clientState";
 import { MY_RECIPES_FILTERS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
+import { DEFAULT_FOLDER_EMOJI } from "@/lib/emojiData";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
-const FOLDER_EMOJI_PRESETS = ["🕯️", "💪", "🍕", "🌸", "🎉", "🥗"];
 const PAGE_SIZE = 24;
 
 type SortOption = "recent" | "az" | "time" | "cost";
@@ -46,7 +47,8 @@ export function MyRecipesGrid({
   const [sort, setSort] = useState<SortOption>("recent");
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [newFolderEmoji, setNewFolderEmoji] = useState(FOLDER_EMOJI_PRESETS[0]);
+  const [newFolderEmoji, setNewFolderEmoji] = useState(DEFAULT_FOLDER_EMOJI);
+  const [emojiPickerTarget, setEmojiPickerTarget] = useState<"new" | string | null>(null);
   const [smartMatchIds, setSmartMatchIds] = useState<string[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -167,6 +169,28 @@ export function MyRecipesGrid({
       openUpsell("folder-limit");
     } else {
       showToast(data?.error ?? "Couldn't create that folder.");
+    }
+  }
+
+  async function handleChangeFolderEmoji(folderId: string, emoji: string) {
+    const res = await fetch(`/api/folders/${folderId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emoji }),
+    });
+    const data = await res.json().catch(() => null);
+    if (res.ok) {
+      setFolders((prev) => prev.map((f) => (f.id === folderId ? data.folder : f)));
+    } else {
+      showToast(data?.error ?? "Couldn't update that folder's emoji.");
+    }
+  }
+
+  function handleEmojiPicked(emoji: string) {
+    if (emojiPickerTarget === "new") {
+      setNewFolderEmoji(emoji);
+    } else if (emojiPickerTarget) {
+      handleChangeFolderEmoji(emojiPickerTarget, emoji);
     }
   }
 
@@ -292,8 +316,18 @@ export function MyRecipesGrid({
                 : "bg-blush text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
             }`}
           >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEmojiPickerTarget(folder.id);
+              }}
+              aria-label={`Change ${folder.name}'s emoji`}
+              className="py-1.5 transition hover:scale-110"
+            >
+              {folder.emoji || DEFAULT_FOLDER_EMOJI}
+            </button>
             <button type="button" onClick={() => setFolderFilter(folder.id)} className="py-1.5">
-              {folder.emoji ? `${folder.emoji} ` : ""}
               {folder.name}
             </button>
             <button
@@ -315,17 +349,14 @@ export function MyRecipesGrid({
             onSubmit={handleCreateFolder}
             className="flex items-center gap-1.5 rounded-full bg-white px-2 py-1 shadow-sm ring-1 ring-blush-dark/50"
           >
-            <select
-              value={newFolderEmoji}
-              onChange={(e) => setNewFolderEmoji(e.target.value)}
-              className="rounded-full bg-transparent text-sm outline-none"
+            <button
+              type="button"
+              onClick={() => setEmojiPickerTarget("new")}
+              aria-label="Choose folder emoji"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-blush-soft text-base transition hover:scale-110"
             >
-              {FOLDER_EMOJI_PRESETS.map((emoji) => (
-                <option key={emoji} value={emoji}>
-                  {emoji}
-                </option>
-              ))}
-            </select>
+              {newFolderEmoji}
+            </button>
             <input
               autoFocus
               value={newFolderName}
@@ -390,6 +421,18 @@ export function MyRecipesGrid({
             </button>
           )}
         </div>
+      )}
+
+      {emojiPickerTarget && (
+        <EmojiPickerSheet
+          value={
+            emojiPickerTarget === "new"
+              ? newFolderEmoji
+              : (folders.find((f) => f.id === emojiPickerTarget)?.emoji ?? DEFAULT_FOLDER_EMOJI)
+          }
+          onSelect={handleEmojiPicked}
+          onClose={() => setEmojiPickerTarget(null)}
+        />
       )}
     </div>
   );
