@@ -67,6 +67,14 @@ export const TIME_BAND_PILL_LABEL: Record<TimeBand, string> = {
   latenight: "Late night cook 🌙",
 };
 
+/** Shown on the ghost placeholder in this slot when no saved recipe matches the current time band. */
+export const TIME_BAND_GHOST_HINT: Record<TimeBand, string> = {
+  breakfast: "Save a recipe under 20 min to unlock a breakfast idea here",
+  lunch: "Save a 20–45 min recipe to unlock a lunch idea here",
+  dinner: "Save something you haven't cooked yet to unlock tonight's pick",
+  latenight: "Save a quick or comfort-food recipe to unlock a late-night pick",
+};
+
 export function getTimeBand(): TimeBand {
   const hour = new Date().getHours();
   if (hour < 11) return "breakfast";
@@ -116,6 +124,21 @@ export const MACRO_PILL_LABEL: Record<MacroBucket, string> = {
   "low-calorie": "Treat yourself 🍝",
   "no-data": "Try something new ✨",
 };
+
+/** Shown on the ghost placeholder in this slot when no saved recipe matches this week's macro bucket. */
+export const MACRO_GHOST_HINT: Record<MacroBucket, string> = {
+  "high-carb": "Save a high-protein recipe (with nutrition info) to unlock this pick",
+  "low-protein": "Save a high-protein recipe (with nutrition info) to unlock this pick",
+  "high-calorie": "Save a lighter recipe (with nutrition info) to unlock this pick",
+  "low-calorie": "Save a comfort-food or higher-calorie recipe to unlock this pick",
+  "no-data": "Save one more recipe to unlock a pick here",
+};
+
+/** Shown on Card 2's ghost placeholder — the reason differs depending on why it's empty. */
+export function getOverdueGhostHint(savedCount: number): string {
+  if (savedCount < 2) return "Save 1 more recipe to unlock a comeback pick";
+  return "You've made everything recently — nothing's overdue yet";
+}
 
 /** Categorizes this week's cooking data into the macro bucket the homepage macro card responds to. */
 export function pickMacroBucket(

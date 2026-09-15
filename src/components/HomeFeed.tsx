@@ -19,6 +19,9 @@ import { COOK_TONIGHT_FILTERS, matchesCookTonightFilter } from "@/lib/cookTonigh
 import { formatMinutes } from "@/lib/format";
 import {
   getGreeting,
+  getOverdueGhostHint,
+  getTimeBand,
+  MACRO_GHOST_HINT,
   MACRO_PILL_LABEL,
   mySavedRecipes,
   pickFavoriteRecipes,
@@ -28,6 +31,7 @@ import {
   pickRecentlyAdded,
   pickTimeBasedRecipe,
   pickTopProteinTag,
+  TIME_BAND_GHOST_HINT,
   TIME_BAND_PILL_LABEL,
 } from "@/lib/homeFeed";
 import type { HomeNutritionCard, RecipeDto } from "@/lib/types";
@@ -90,11 +94,42 @@ function RecommendationPill({ label, bgClass }: { label: string; bgClass: string
   );
 }
 
-function RecommendationCard({ entry, fullWidth }: { entry: RecommendationEntry; fullWidth?: boolean }) {
+function RecommendationCard({ entry }: { entry: RecommendationEntry }) {
   return (
-    <div className={`flex flex-col gap-1 ${fullWidth ? "col-span-2" : ""}`}>
+    <div className="flex flex-col gap-1">
       <RecommendationPill label={entry.pillLabel} bgClass={entry.pillBgClass} />
       <RecipeCard recipe={entry.recipe} showQuickActions />
+    </div>
+  );
+}
+
+interface GhostEntry {
+  key: string;
+  pillLabel: string;
+  pillBgClass: string;
+  hint: string;
+}
+
+function GhostCard({ entry }: { entry: GhostEntry }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <RecommendationPill label={entry.pillLabel} bgClass={`${entry.pillBgClass} opacity-50`} />
+      <button
+        type="button"
+        onClick={() => {
+          const el = document.getElementById("add-recipe-input") as HTMLInputElement | null;
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          el?.focus({ preventScroll: true });
+        }}
+        className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-dashed border-blush-dark/40 bg-white/40 text-left transition hover:border-coral/50 hover:bg-white/60"
+      >
+        <div className="flex aspect-[4/5] w-full items-center justify-center bg-blush-soft/40">
+          <span className="text-4xl opacity-40">🔒</span>
+        </div>
+        <div className="flex flex-1 items-center p-3 sm:p-4">
+          <p className="text-xs text-dusty-rose">{entry.hint}</p>
+        </div>
+      </button>
     </div>
   );
 }
@@ -240,32 +275,70 @@ export function HomeFeed({
     : "no-data";
   const card4Recipe = hydrated && nutritionWeek ? pickMacroRecipe(macroCandidates, macroBucket) : null;
 
-  const recommendationEntries: RecommendationEntry[] = [];
+  type GridSlot = { type: "real"; entry: RecommendationEntry } | { type: "ghost"; entry: GhostEntry };
+  const gridSlots: GridSlot[] = [];
+
   if (card1Recipe) {
-    recommendationEntries.push({ key: "recent", recipe: card1Recipe, pillLabel: "New Save ✨", pillBgClass: "bg-blush" });
+    gridSlots.push({
+      type: "real",
+      entry: { key: "recent", recipe: card1Recipe, pillLabel: "New Save ✨", pillBgClass: "bg-blush" },
+    });
   }
+
   if (card2Recipe) {
-    recommendationEntries.push({
-      key: "overdue",
-      recipe: card2Recipe,
-      pillLabel: "Make it again 👀",
-      pillBgClass: "bg-lavender",
+    gridSlots.push({
+      type: "real",
+      entry: { key: "overdue", recipe: card2Recipe, pillLabel: "Make it again 👀", pillBgClass: "bg-lavender" },
+    });
+  } else if (hydrated) {
+    gridSlots.push({
+      type: "ghost",
+      entry: {
+        key: "overdue-ghost",
+        pillLabel: "Make it again 👀",
+        pillBgClass: "bg-lavender",
+        hint: getOverdueGhostHint(saved.length),
+      },
     });
   }
+
   if (card3Recipe && timeBasedPick) {
-    recommendationEntries.push({
-      key: "timebased",
-      recipe: card3Recipe,
-      pillLabel: TIME_BAND_PILL_LABEL[timeBasedPick.band],
-      pillBgClass: "bg-peach",
+    gridSlots.push({
+      type: "real",
+      entry: {
+        key: "timebased",
+        recipe: card3Recipe,
+        pillLabel: TIME_BAND_PILL_LABEL[timeBasedPick.band],
+        pillBgClass: "bg-peach",
+      },
+    });
+  } else if (hydrated) {
+    const band = getTimeBand();
+    gridSlots.push({
+      type: "ghost",
+      entry: {
+        key: "timebased-ghost",
+        pillLabel: TIME_BAND_PILL_LABEL[band],
+        pillBgClass: "bg-peach",
+        hint: TIME_BAND_GHOST_HINT[band],
+      },
     });
   }
+
   if (card4Recipe) {
-    recommendationEntries.push({
-      key: "macro",
-      recipe: card4Recipe,
-      pillLabel: MACRO_PILL_LABEL[macroBucket],
-      pillBgClass: "bg-coral/25",
+    gridSlots.push({
+      type: "real",
+      entry: { key: "macro", recipe: card4Recipe, pillLabel: MACRO_PILL_LABEL[macroBucket], pillBgClass: "bg-coral/25" },
+    });
+  } else if (hydrated) {
+    gridSlots.push({
+      type: "ghost",
+      entry: {
+        key: "macro-ghost",
+        pillLabel: MACRO_PILL_LABEL[macroBucket],
+        pillBgClass: "bg-coral/25",
+        hint: MACRO_GHOST_HINT[macroBucket],
+      },
     });
   }
 
@@ -456,23 +529,15 @@ export function HomeFeed({
             <section className="card-fade-in flex flex-col gap-4" style={{ animationDelay: nextDelay() }}>
               <h2 className="font-serif text-2xl font-semibold text-rose-deep">{getGreeting()} 👋</h2>
 
-              {recommendationEntries.length === 1 && (
-                <div className="flex justify-center">
-                  <div className="w-full max-w-xs">
-                    <RecommendationCard entry={recommendationEntries[0]} />
-                  </div>
-                </div>
-              )}
-
-              {recommendationEntries.length > 1 && (
+              {gridSlots.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
-                  {recommendationEntries.map((entry, i) => (
-                    <RecommendationCard
-                      key={entry.key}
-                      entry={entry}
-                      fullWidth={recommendationEntries.length === 3 && i === 2}
-                    />
-                  ))}
+                  {gridSlots.map((slot) =>
+                    slot.type === "real" ? (
+                      <RecommendationCard key={slot.entry.key} entry={slot.entry} />
+                    ) : (
+                      <GhostCard key={slot.entry.key} entry={slot.entry} />
+                    ),
+                  )}
                 </div>
               )}
             </section>
