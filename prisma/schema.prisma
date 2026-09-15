@@ -14,7 +14,11 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
+  // Null for accounts created via "Continue with Google" that never set a password.
+  passwordHash String?
+  // Google's stable per-account "sub" id, set once a Google sign-in has linked this
+  // account (either created it, or matched it to an existing email/password account).
+  googleId     String?  @unique
   name         String?
   createdAt    DateTime @default(now())
 

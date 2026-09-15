@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { oauthErrorMessage } from "@/lib/oauthErrorMessages";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +14,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Read via the browser API in an effect (not useSearchParams) so this page can
+  // stay statically prerendered instead of needing a Suspense boundary.
+  useEffect(() => {
+    const message = oauthErrorMessage(new URLSearchParams(window.location.search).get("error"));
+    if (message) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- surfacing an error passed via redirect query param, unavailable during SSR
+      setError(message);
+      router.replace("/login");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -84,6 +99,14 @@ export default function LoginPage() {
           {submitting && <Loader2 size={16} className="animate-spin" />}
           Log in
         </button>
+
+        <div className="flex items-center gap-3 text-xs text-dusty-rose/70">
+          <span className="h-px flex-1 bg-blush-dark/40" />
+          or
+          <span className="h-px flex-1 bg-blush-dark/40" />
+        </div>
+
+        <GoogleAuthButton />
       </form>
 
       <p className="text-sm text-dusty-rose">

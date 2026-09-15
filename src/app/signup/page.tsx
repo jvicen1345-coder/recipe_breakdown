@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+
 export default function SignupPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -98,6 +100,14 @@ export default function SignupPage() {
           {submitting && <Loader2 size={16} className="animate-spin" />}
           Create account
         </button>
+
+        <div className="flex items-center gap-3 text-xs text-dusty-rose/70">
+          <span className="h-px flex-1 bg-blush-dark/40" />
+          or
+          <span className="h-px flex-1 bg-blush-dark/40" />
+        </div>
+
+        <GoogleAuthButton />
       </form>
 
       <p className="text-sm text-dusty-rose">
