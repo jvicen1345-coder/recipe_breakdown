@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, BookOpen, Home, Plus, ShoppingCart, User } from "lucide-react";
@@ -77,8 +78,9 @@ export function Navbar() {
           <Link
             href="/"
             onClick={handleHomeClick}
-            className="flex shrink-0 items-center font-serif text-lg font-semibold text-rose-deep"
+            className="flex shrink-0 items-center gap-2 font-serif text-lg font-semibold text-rose-deep"
           >
+            <Image src="/logo-mark.png" alt="" width={32} height={32} className="h-8 w-8" priority />
             Cutesy Eats
           </Link>
 
@@ -132,8 +134,9 @@ export function Navbar() {
         <Link
           href="/"
           onClick={handleHomeClick}
-          className="flex shrink-0 items-center font-serif text-lg font-semibold text-rose-deep"
+          className="flex shrink-0 items-center gap-2 font-serif text-lg font-semibold text-rose-deep"
         >
+          <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7" priority />
           Cutesy Eats
         </Link>
         <Link
