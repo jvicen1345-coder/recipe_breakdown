@@ -91,7 +91,7 @@ export function MadeItFlow({
         showToast(data?.error ?? "Couldn't post that — try again.");
         return;
       }
-      showToast(`Shared to the community! +1 point 🌸 (${data.points} total)`);
+      showToast(`Shared to the community! +1 point 🌸 (${data.points} total) — heading to TikTok next…`);
       await onFinish(rating, { silent: true });
       armReturnToast();
       window.location.href = creatorProfileUrl();
@@ -244,13 +244,13 @@ export function MadeItFlow({
                 disabled={!uploadedPhoto || uploading || sharing}
                 className="w-full rounded-full bg-gradient-to-r from-coral to-rose-deep px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {sharing ? "Sharing…" : "Share to Cutesy Eats 🌸"}
+                {sharing ? "Sharing…" : "Share to Cutesy Eats + TikTok 🌸"}
               </button>
               <p className="text-center text-[11px] text-dusty-rose/70">
-                Earns +1 point{" "}
+                Posting to Cutesy Eats earns +1 point 🌸{" "}
                 {recipe.authorHandle
-                  ? `— you'll be taken to @${recipe.authorHandle} on TikTok after`
-                  : "— you'll be taken back to the original video after"}
+                  ? `— then we'll take you to @${recipe.authorHandle} on TikTok to share it there too`
+                  : "— then we'll take you back to the original video to share it there too"}
               </p>
             </div>
           )}
