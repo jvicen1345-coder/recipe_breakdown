@@ -195,9 +195,9 @@ export function RecipeDetailContent({
         )}
         {pantryNames.length > 0 &&
           (pantryStale ? (
-            <Badge className="bg-amber-100 text-amber-800">⚠️ Pantry match may be outdated</Badge>
+            <Badge wrap className="bg-amber-100 text-amber-800">⚠️ Pantry match may be outdated</Badge>
           ) : (
-            <Badge className="bg-sage/25 text-sage-dark">
+            <Badge wrap className="bg-sage/25 text-sage-dark">
               🧺 You have {pantryCount.have}/{pantryCount.total} ingredients ✓
             </Badge>
           ))}
