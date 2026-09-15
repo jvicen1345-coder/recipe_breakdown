@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Clock3, Loader2 } from "lucide-react";
 
-import { BlindDateReveal } from "./BlindDateReveal";
 import { CollectionImport } from "./CollectionImport";
 import { CookMode } from "./CookMode";
 import { CookTonightSwiper } from "./CookTonightSwiper";
@@ -155,7 +154,6 @@ export function HomeFeed({
   const [error, setError] = useState<{ message: string; existingRecipeId?: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [showSwiper, setShowSwiper] = useState(false);
-  const [showBlindDate, setShowBlindDate] = useState(false);
   const [showGirlDinner, setShowGirlDinner] = useState(false);
   const [cookRecipe, setCookRecipe] = useState<RecipeDto | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -252,14 +250,6 @@ export function HomeFeed({
       return;
     }
     setShowSwiper(true);
-  }
-
-  function handleOpenBlindDate() {
-    if (recipes.length < 1) {
-      showToast("Save a recipe first for us to set you up 🌸");
-      return;
-    }
-    setShowBlindDate(true);
   }
 
   const saved = mySavedRecipes(recipes, currentUserId);
@@ -595,13 +585,6 @@ export function HomeFeed({
                   </button>
                   <button
                     type="button"
-                    onClick={handleOpenBlindDate}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-lavender-dark to-lavender px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
-                  >
-                    🙈 Blind Date
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setShowGirlDinner(true)}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-coral-deep to-peach-dark px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
                   >
@@ -667,7 +650,6 @@ export function HomeFeed({
       )}
 
       {showSwiper && <CookTonightSwiper recipes={recipes} onClose={() => setShowSwiper(false)} />}
-      {showBlindDate && <BlindDateReveal recipes={recipes} onClose={() => setShowBlindDate(false)} />}
       {showGirlDinner && (
         <GirlDinnerMode recipes={recipes.filter(matchesGirlDinner)} onClose={() => setShowGirlDinner(false)} />
       )}
