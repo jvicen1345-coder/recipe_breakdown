@@ -99,6 +99,28 @@ body {
   animation-delay: 1.4s;
 }
 
+@keyframes recipe-float-x {
+  0%,
+  100% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+
+.floaty-x {
+  animation: recipe-float-x 4s ease-in-out infinite;
+}
+
+.floaty-x-slow {
+  animation: recipe-float-x 5.5s ease-in-out infinite;
+}
+
+.floaty-x-fast {
+  animation: recipe-float-x 3s ease-in-out infinite;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
