@@ -20,11 +20,11 @@ function stringHash(seed: string): number {
   return Math.abs(hash);
 }
 
-export function getGreeting(): string {
+export function getGreeting(name?: string | null): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  const timeOfDay = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const firstName = name?.trim().split(/\s+/)[0];
+  return firstName ? `${timeOfDay}, ${firstName}!` : `${timeOfDay}!`;
 }
 
 /** Most recently saved recipe. */
