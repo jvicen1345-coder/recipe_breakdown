@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Clock3, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Clock3, Loader2, Sparkles } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
 import { CookMode } from "./CookMode";
@@ -488,6 +488,21 @@ export function HomeFeed({
           }
         />
       )}
+
+      <Link
+        href="/community"
+        className="card-fade-in flex items-center gap-4 rounded-[1.75rem] bg-gradient-to-r from-lavender/50 to-blush p-5 shadow-[0_10px_30px_-14px_rgba(192,120,140,0.45)] ring-1 ring-blush-dark/40 transition hover:-translate-y-0.5"
+        style={{ animationDelay: nextDelay() }}
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/70 text-coral-deep">
+          <Sparkles size={20} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-serif text-base font-semibold text-rose-deep">See what the community&apos;s cooking</p>
+          <p className="text-xs text-dusty-rose">Real photos, real ratings 🌸</p>
+        </div>
+        <ArrowRight size={18} className="shrink-0 text-dusty-rose" />
+      </Link>
 
       {isEmpty ? (
         <>

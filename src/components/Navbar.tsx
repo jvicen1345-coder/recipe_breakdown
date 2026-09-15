@@ -172,12 +172,9 @@ export function Navbar() {
           onClick={handleAddRecipeClick}
           className="flex flex-1 flex-col items-center gap-0.5 py-2 text-coral-deep"
         >
-          <span className="flex flex-col items-center gap-1">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-coral to-rose-deep text-white shadow-[0_4px_10px_-4px_rgba(224,122,95,0.7)]">
-              <Plus size={16} />
-            </span>
-            <span className="h-1 w-1 rounded-full bg-transparent" />
-          </span>
+          <MobileNavIcon active={false}>
+            <Plus size={18} />
+          </MobileNavIcon>
           <span className="text-[10px] font-semibold">Add</span>
         </Link>
         <Link
