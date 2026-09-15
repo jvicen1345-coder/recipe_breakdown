@@ -3,6 +3,7 @@ import { Playfair_Display, Quicksand } from "next/font/google";
 import "./globals.css";
 
 import { Navbar } from "@/components/Navbar";
+import { PageTransition } from "@/components/PageTransition";
 import { PantryOnboardingProvider } from "@/components/PantryOnboardingProvider";
 import { PantryProvider } from "@/components/PantryProvider";
 import { PlanProvider } from "@/components/PlanProvider";
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <ProUpsellProvider>
                   <RecipeModalProvider>
                     <Navbar />
-                    {children}
+                    <PageTransition>{children}</PageTransition>
                   </RecipeModalProvider>
                 </ProUpsellProvider>
               </PantryOnboardingProvider>

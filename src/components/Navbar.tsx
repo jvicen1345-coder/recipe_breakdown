@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Home, Plus, Search, ShoppingCart, User } from "lucide-react";
+import { BarChart3, BookOpen, Home, Plus, ShoppingCart, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { usePlan } from "./PlanProvider";
 
 const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/recipes", label: "Recipes", icon: BookOpen },
   { href: "/grocery-list", label: "Grocery & Pantry", icon: ShoppingCart },
   { href: "/nutrition", label: "This Week", icon: BarChart3 },
 ];
@@ -28,10 +29,13 @@ function mobileNavLinkClass(active: boolean): string {
 
 function MobileNavIcon({ active, children }: { active: boolean; children: React.ReactNode }) {
   return (
-    <span
-      className={`flex h-7 w-7 items-center justify-center rounded-full transition ${active ? "bg-blush" : ""}`}
-    >
-      {children}
+    <span className="flex flex-col items-center gap-1">
+      <span
+        className={`flex h-7 w-7 items-center justify-center rounded-full transition ${active ? "bg-blush" : ""}`}
+      >
+        {children}
+      </span>
+      <span className={`h-1 w-1 rounded-full transition ${active ? "bg-coral-deep" : "bg-transparent"}`} />
     </span>
   );
 }
@@ -43,6 +47,7 @@ export function Navbar() {
   const router = useRouter();
   const { pantryOnboardedAt, stalenessLevel } = usePlan();
   const onHome = pathname === "/";
+  const onRecipesPage = pathname === "/recipes";
   const onGroceryPage = pathname === "/grocery-list";
   const onNutritionPage = pathname === "/nutrition";
   const showStaleDot = Boolean(pantryOnboardedAt) && stalenessLevel !== "fresh";
@@ -61,15 +66,6 @@ export function Navbar() {
       focusInput("add-recipe-input");
     } else {
       router.push("/#add-recipe");
-    }
-  }
-
-  function handleSearchClick(e: React.MouseEvent) {
-    e.preventDefault();
-    if (onHome) {
-      focusInput("recipe-search-input");
-    } else {
-      router.push("/#recipes");
     }
   }
 
@@ -150,13 +146,21 @@ export function Navbar() {
       </header>
 
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 backdrop-blur-md sm:hidden">
+        <Link href="/" onClick={handleHomeClick} className={mobileNavLinkClass(onHome)} aria-current={onHome ? "page" : undefined}>
+          <MobileNavIcon active={onHome}>
+            <Home size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onHome ? "font-bold" : "font-medium"}`}>Home</span>
+        </Link>
         <Link
-          href="/#recipes"
-          onClick={handleSearchClick}
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-dusty-rose"
+          href="/recipes"
+          className={mobileNavLinkClass(onRecipesPage)}
+          aria-current={onRecipesPage ? "page" : undefined}
         >
-          <Search size={18} />
-          <span className="text-[10px] font-medium">Search</span>
+          <MobileNavIcon active={onRecipesPage}>
+            <BookOpen size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onRecipesPage ? "font-bold" : "font-medium"}`}>Recipes</span>
         </Link>
         <Link
           href="/#add-recipe"
@@ -165,12 +169,6 @@ export function Navbar() {
         >
           <Plus size={18} />
           <span className="text-[10px] font-medium">Add</span>
-        </Link>
-        <Link href="/" onClick={handleHomeClick} className={mobileNavLinkClass(onHome)} aria-current={onHome ? "page" : undefined}>
-          <MobileNavIcon active={onHome}>
-            <Home size={18} />
-          </MobileNavIcon>
-          <span className={`text-[10px] ${onHome ? "font-semibold" : "font-medium"}`}>Home</span>
         </Link>
         <Link
           href="/grocery-list"
@@ -183,7 +181,7 @@ export function Navbar() {
               {showStaleDot && <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-amber-400" />}
             </span>
           </MobileNavIcon>
-          <span className={`text-[10px] ${onGroceryPage ? "font-semibold" : "font-medium"}`}>Grocery</span>
+          <span className={`text-[10px] ${onGroceryPage ? "font-bold" : "font-medium"}`}>Grocery</span>
         </Link>
         <Link
           href="/nutrition"
@@ -193,7 +191,7 @@ export function Navbar() {
           <MobileNavIcon active={onNutritionPage}>
             <BarChart3 size={18} />
           </MobileNavIcon>
-          <span className={`text-[10px] ${onNutritionPage ? "font-semibold" : "font-medium"}`}>Week</span>
+          <span className={`text-[10px] ${onNutritionPage ? "font-bold" : "font-medium"}`}>Week</span>
         </Link>
       </div>
     </>

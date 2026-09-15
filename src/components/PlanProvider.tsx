@@ -7,6 +7,7 @@ import { getStalenessLevel, type StalenessLevel } from "@/lib/pantryStaleness";
 interface PlanState {
   isPro: boolean;
   loading: boolean;
+  name: string | null;
   groceryCadence: string | null;
   pantryOnboardedAt: string | null;
   pantryLastConfirmedAt: string | null;
@@ -28,6 +29,7 @@ export function usePlan() {
 // through both the recipe modal and the full detail page separately.
 export function PlanProvider({ children }: { children: React.ReactNode }) {
   const [isPro, setIsPro] = useState(false);
+  const [name, setName] = useState<string | null>(null);
   const [groceryCadence, setGroceryCadence] = useState<string | null>(null);
   const [pantryOnboardedAt, setPantryOnboardedAt] = useState<string | null>(null);
   const [pantryLastConfirmedAt, setPantryLastConfirmedAt] = useState<string | null>(null);
@@ -41,6 +43,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (cancelled) return;
         setIsPro(data?.user?.plan === "pro");
+        setName(data?.user?.name ?? null);
         setGroceryCadence(data?.user?.groceryCadence ?? null);
         setPantryOnboardedAt(data?.user?.pantryOnboardedAt ?? null);
         setPantryLastConfirmedAt(data?.user?.pantryLastConfirmedAt ?? null);
@@ -59,6 +62,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   const value: PlanState = {
     isPro,
     loading,
+    name,
     groceryCadence,
     pantryOnboardedAt,
     pantryLastConfirmedAt,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/auth";
+import { computeWeekInsight } from "@/lib/nutritionInsight";
 import { prisma } from "@/lib/prisma";
 import type { Nutrition } from "@/lib/types";
 
@@ -62,11 +63,12 @@ export async function GET() {
 
   const hasCookedThisWeek = weekLogs.length > 0;
 
-  // --- Week macro split (for the macro bars) ---
-  const weekTotals = { protein: 0, carbs: 0, fat: 0 };
+  // --- Week macro split (for the macro bars/tiles) ---
+  const weekTotals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
   for (const log of weekLogs) {
     const n = safeParseNutrition(log.recipe.nutritionJson);
     if (!n) continue;
+    weekTotals.calories += n.caloriesPerServing ?? 0;
     weekTotals.protein += n.proteinGrams ?? 0;
     weekTotals.carbs += n.carbsGrams ?? 0;
     weekTotals.fat += n.fatGrams ?? 0;
@@ -179,14 +181,32 @@ export async function GET() {
       : `${caloriesLeft} cal left today — plenty of room for something new ✨`;
   }
 
+  const insight = computeWeekInsight(weekMacroPct, weekTotals.calories / 7, weekLogs.length);
+
   const body: {
     hasCookedThisWeek: boolean;
     weekMacroPct: typeof weekMacroPct;
+    totals: { calories: number; protein: number; carbs: number; fat: number };
     dayMarks: typeof dayMarks;
     streakDays: number;
     recommendation: typeof recommendation;
     message: string;
-  } = { hasCookedThisWeek, weekMacroPct, dayMarks, streakDays, recommendation, message };
+    insight: string;
+  } = {
+    hasCookedThisWeek,
+    weekMacroPct,
+    totals: {
+      calories: Math.round(weekTotals.calories),
+      protein: Math.round(weekTotals.protein),
+      carbs: Math.round(weekTotals.carbs),
+      fat: Math.round(weekTotals.fat),
+    },
+    dayMarks,
+    streakDays,
+    recommendation,
+    message,
+    insight,
+  };
 
   return NextResponse.json(body);
 }

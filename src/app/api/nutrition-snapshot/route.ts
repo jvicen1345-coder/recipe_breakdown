@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/auth";
 import { COMFORT_FOOD_KEYWORDS } from "@/lib/comfortFoodKeywords";
+import { computeWeekInsight } from "@/lib/nutritionInsight";
 import { prisma } from "@/lib/prisma";
 import type { Nutrition } from "@/lib/types";
 
@@ -72,6 +73,9 @@ export async function GET(request: Request) {
       cookedAt: log.cookedAt.toISOString(),
       rating: log.rating,
       caloriesPerServing: nutrition?.caloriesPerServing ?? null,
+      proteinGrams: nutrition?.proteinGrams ?? null,
+      carbsGrams: nutrition?.carbsGrams ?? null,
+      fatGrams: nutrition?.fatGrams ?? null,
       orderedViaApp: log.recipe.lastOrderedViaAppAt != null,
     });
   }
@@ -90,12 +94,7 @@ export async function GET(request: Request) {
   const highCarb = logs.length > 0 && macroPct.carbs >= 50;
   const highProtein = logs.length > 0 && macroPct.protein >= 35;
   const lowCalorie = logs.length > 0 && avgDailyCalories < 350;
-
-  let insight = "No cooking logged this week yet — mark a recipe as made to see your snapshot! 🌸";
-  if (highCarb) insight = "High carb week 🍝 — a protein-forward save could help balance it out.";
-  else if (highProtein) insight = "High protein week 💪 — nicely balanced, keep it up!";
-  else if (lowCalorie) insight = "Lighter week 🥗 — maybe treat yourself to something cozy.";
-  else if (logs.length > 0) insight = "Nicely balanced week ✨";
+  const insight = computeWeekInsight(macroPct, avgDailyCalories, logs.length);
 
   let recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[] = [];
   if (logs.length > 0) {

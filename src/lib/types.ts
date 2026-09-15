@@ -43,6 +43,10 @@ export interface RecipeDto {
   personalNotes: string | null;
   folderId: string | null;
   createdAt: string;
+  // Whoever saved this recipe — attribution only (see prisma/schema.prisma), used
+  // client-side to personalize the homepage feed to "recipes I saved" without
+  // narrowing what's visible (the library itself stays fully shared).
+  createdByUserId: string | null;
 }
 
 export interface FolderDto {
@@ -76,6 +80,9 @@ export interface NutritionSnapshot {
     cookedAt: string;
     rating: number | null;
     caloriesPerServing: number | null;
+    proteinGrams: number | null;
+    carbsGrams: number | null;
+    fatGrams: number | null;
     orderedViaApp: boolean;
   }[];
   recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[];
@@ -87,10 +94,12 @@ export interface NutritionSnapshot {
 export interface HomeNutritionCard {
   hasCookedThisWeek: boolean;
   weekMacroPct: { protein: number; carbs: number; fat: number };
+  totals: { calories: number; protein: number; carbs: number; fat: number };
   dayMarks: { date: string; label: string; cooked: boolean; isToday: boolean }[];
   streakDays: number;
   recommendation: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string } | null;
   message: string;
+  insight: string;
 }
 
 function safeParseArray<T>(json: string | null): T[] {
@@ -138,6 +147,7 @@ export function toRecipeDto(recipe: Recipe): RecipeDto {
     personalNotes: recipe.personalNotes,
     folderId: recipe.folderId,
     createdAt: recipe.createdAt.toISOString(),
+    createdByUserId: recipe.createdByUserId,
   };
 }
 

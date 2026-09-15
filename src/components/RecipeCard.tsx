@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Clock3, ChefHat, DollarSign, Utensils } from "lucide-react";
+import { ChefHat, Clock3, DollarSign, Utensils } from "lucide-react";
 
 import { Badge } from "./Badge";
+import { CookMode } from "./CookMode";
 import { FavoriteButton } from "./FavoriteButton";
 import { usePantry } from "./PantryProvider";
 import { usePlan } from "./PlanProvider";
+import { useProUpsell } from "./ProUpsellProvider";
 import { RecipeThumbnail } from "./RecipeThumbnail";
 import { useRecipeModal } from "./RecipeModalProvider";
 import { useToast } from "./ToastProvider";
@@ -38,7 +41,9 @@ export function RecipeCard({
   const openRecipe = useRecipeModal();
   const showToast = useToast();
   const { names: pantryNames } = usePantry();
-  const { pantryOnboardedAt, stalenessLevel } = usePlan();
+  const { pantryOnboardedAt, stalenessLevel, isPro } = usePlan();
+  const openUpsell = useProUpsell();
+  const [showCookMode, setShowCookMode] = useState(false);
   const pantryCount = pantryMatchCount(recipe.ingredients, pantryNames);
   const pantryStale = Boolean(pantryOnboardedAt) && (stalenessLevel === "banner" || stalenessLevel === "block");
 
@@ -49,7 +54,18 @@ export function RecipeCard({
     showToast("Added to grocery list 🛒");
   }
 
+  function handleCook(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isPro) {
+      openUpsell("cook-mode");
+      return;
+    }
+    setShowCookMode(true);
+  }
+
   return (
+    <>
     <Link
       href={`/recipes/${recipe.id}`}
       onClick={(e) => {
@@ -68,15 +84,19 @@ export function RecipeCard({
 
         {showQuickActions && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100">
-            <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-deep">
-              View 👀
-            </span>
+            <button
+              type="button"
+              onClick={handleCook}
+              className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-deep shadow-sm transition hover:bg-white"
+            >
+              Cook 🍳
+            </button>
             <button
               type="button"
               onClick={handleAddToList}
               className="rounded-full bg-sage px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-sage-dark"
             >
-              Save to List 🛒
+              Add to list 🛒
             </button>
           </div>
         )}
@@ -127,5 +147,7 @@ export function RecipeCard({
         </div>
       </div>
     </Link>
+    {showCookMode && <CookMode recipe={recipe} onClose={() => setShowCookMode(false)} />}
+    </>
   );
 }

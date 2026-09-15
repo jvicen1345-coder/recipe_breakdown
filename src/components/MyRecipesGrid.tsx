@@ -1,61 +1,47 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Plus, Search, Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpDown, Loader2, Plus, Search, Sparkles, X } from "lucide-react";
 
-import { PillDropdown } from "./PillDropdown";
 import { useProUpsell } from "./ProUpsellProvider";
 import { RecipeCard } from "./RecipeCard";
 import { useToast } from "./ToastProvider";
 import { getCookedTimestamps } from "@/lib/clientState";
-import { COOK_TONIGHT_FILTER_LABELS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
-import { DIET_LABELS, MEAL_TYPE_LABELS } from "@/lib/format";
+import { MY_RECIPES_FILTERS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
 import type { FolderDto, RecipeDto } from "@/lib/types";
 
-const DIET_FILTER_OPTIONS = [
-  { value: "all", label: "All diets" },
-  ...Object.entries(DIET_LABELS).map(([value, label]) => ({ value, label })),
-];
-const MEAL_TYPE_FILTER_OPTIONS = [
-  { value: "all", label: "All meals" },
-  ...Object.entries(MEAL_TYPE_LABELS).map(([value, label]) => ({ value, label })),
-];
 const FOLDER_EMOJI_PRESETS = ["🕯️", "💪", "🍕", "🌸", "🎉", "🥗"];
 const PAGE_SIZE = 24;
 
-type SortOption = "recent" | "time" | "cost";
+type SortOption = "recent" | "az" | "time" | "cost";
 
+const SORT_ORDER: SortOption[] = ["recent", "az", "time", "cost"];
 const SORT_LABELS: Record<SortOption, string> = {
   recent: "Recently Added",
+  az: "A–Z",
   time: "Cook Time",
   cost: "Cost",
 };
-const SORT_OPTIONS = (Object.entries(SORT_LABELS) as [SortOption, string][]).map(([value, label]) => ({
-  value,
-  label,
-}));
 
 export function MyRecipesGrid({
-  recipes,
+  initialRecipes,
   initialFolders,
-  cookTonightFilters,
   isPro = false,
   myRecipeCount = 0,
   freeRecipeLimit = 10,
 }: {
-  recipes: RecipeDto[];
+  initialRecipes: RecipeDto[];
   initialFolders: FolderDto[];
-  /** Active "Cook something tonight?" pills — recipes matching ANY of these stay in view. */
-  cookTonightFilters: Set<string>;
   isPro?: boolean;
   myRecipeCount?: number;
   freeRecipeLimit?: number;
 }) {
+  const recipes = initialRecipes;
   const [folders, setFolders] = useState(initialFolders);
   const openUpsell = useProUpsell();
   const [search, setSearch] = useState("");
-  const [dietFilter, setDietFilter] = useState("all");
-  const [mealTypeFilter, setMealTypeFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [folderFilter, setFolderFilter] = useState("all");
   const [sort, setSort] = useState<SortOption>("recent");
   const [creatingFolder, setCreatingFolder] = useState(false);
@@ -67,15 +53,10 @@ export function MyRecipesGrid({
   const searchRequestId = useRef(0);
   const showToast = useToast();
 
-  // Only ever render a page's worth of cards at a time — with a large saved-recipe
-  // library this keeps the initial DOM/image load light. Any change to which
-  // recipes should be showing starts back at the first page.
-  const cookTonightKey = [...cookTonightFilters].sort().join(",");
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting pagination whenever the active filter/search/sort changes
     setVisibleCount(PAGE_SIZE);
-  }, [search, dietFilter, mealTypeFilter, folderFilter, sort, cookTonightKey]);
+  }, [search, activeFilter, folderFilter, sort]);
 
   // A search of 3+ characters is sent to the smart-search endpoint (debounced) so it
   // can match on ingredients/time/cost/diet/last-cooked, not just the title — but the
@@ -134,13 +115,9 @@ export function MyRecipesGrid({
   const filteredRecipes = useMemo(() => {
     const query = search.trim().toLowerCase();
     const matching = recipes.filter((recipe) => {
-      const matchesDiet = dietFilter === "all" || recipe.dietType === dietFilter;
-      const matchesMealType = mealTypeFilter === "all" || recipe.mealType === mealTypeFilter;
+      const matchesActiveFilter = activeFilter === "all" || matchesCookTonightFilter(recipe, activeFilter);
       const matchesFolder = folderFilter === "all" || recipe.folderId === folderFilter;
-      const matchesCookTonight =
-        cookTonightFilters.size === 0 ||
-        [...cookTonightFilters].some((filter) => matchesCookTonightFilter(recipe, filter));
-      if (!matchesDiet || !matchesMealType || !matchesFolder || !matchesCookTonight) return false;
+      if (!matchesActiveFilter || !matchesFolder) return false;
       if (isSmartSearch) return smartMatchIds!.includes(recipe.id);
       return (
         !query ||
@@ -156,6 +133,8 @@ export function MyRecipesGrid({
 
     return [...matching].sort((a, b) => {
       switch (sort) {
+        case "az":
+          return a.title.localeCompare(b.title);
         case "time":
           return (a.totalTimeMinutes ?? Infinity) - (b.totalTimeMinutes ?? Infinity);
         case "cost":
@@ -164,32 +143,11 @@ export function MyRecipesGrid({
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cookTonightFilters is a Set; cookTonightKey is its stable dependency
-  }, [recipes, search, dietFilter, mealTypeFilter, folderFilter, sort, isSmartSearch, smartMatchIds, cookTonightKey]);
+  }, [recipes, search, activeFilter, folderFilter, sort, isSmartSearch, smartMatchIds]);
 
-  const filterSummary = isSmartSearch
-    ? `Smart matches for "${search.trim()}"`
-    : (() => {
-        const parts: string[] = [];
-        if (folderFilter !== "all") {
-          const folder = folders.find((f) => f.id === folderFilter);
-          if (folder) parts.push(`in ${folder.emoji ? `${folder.emoji} ` : ""}${folder.name}`);
-        }
-        if (dietFilter !== "all") {
-          const diet = DIET_FILTER_OPTIONS.find((o) => o.value === dietFilter);
-          if (diet) parts.push(diet.label);
-        }
-        if (mealTypeFilter !== "all") {
-          const mealType = MEAL_TYPE_FILTER_OPTIONS.find((o) => o.value === mealTypeFilter);
-          if (mealType) parts.push(mealType.label);
-        }
-        if (cookTonightFilters.size > 0) {
-          parts.push([...cookTonightFilters].map((f) => COOK_TONIGHT_FILTER_LABELS[f]).join(" or "));
-        }
-        if (sort !== "recent") parts.push(`sorted by ${SORT_LABELS[sort]}`);
-        const count = `${filteredRecipes.length} recipe${filteredRecipes.length === 1 ? "" : "s"}`;
-        return parts.length > 0 ? `Showing ${count} · ${parts.join(" · ")}` : `Showing all ${count}`;
-      })();
+  function cycleSort() {
+    setSort((prev) => SORT_ORDER[(SORT_ORDER.indexOf(prev) + 1) % SORT_ORDER.length]);
+  }
 
   async function handleCreateFolder(e: React.FormEvent) {
     e.preventDefault();
@@ -226,10 +184,28 @@ export function MyRecipesGrid({
     }
   }
 
+  if (recipes.length === 0) {
+    return (
+      <div className="page-fade-in mx-auto flex w-full max-w-3xl flex-col items-center gap-3 px-4 py-16 text-center">
+        <span className="text-5xl">🥣</span>
+        <h1 className="font-serif text-2xl font-semibold text-rose-deep">Your recipe box is empty 🌸</h1>
+        <p className="text-sm text-dusty-rose">Head home to paste your first TikTok link ✨</p>
+        <Link
+          href="/"
+          className="mt-2 rounded-full bg-gradient-to-r from-coral to-rose-deep px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+        >
+          Go save something →
+        </Link>
+      </div>
+    );
+  }
+
+  const showGhostCard = filteredRecipes.length <= visibleCount && filteredRecipes.length % 2 === 1;
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="page-fade-in mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-serif text-xl font-semibold text-rose-deep">Your Recipes</h2>
+        <h1 className="font-serif text-2xl font-semibold text-rose-deep">Your Recipes</h1>
         <div className="flex items-center gap-2">
           {!isPro && (
             <button
@@ -240,11 +216,62 @@ export function MyRecipesGrid({
               {myRecipeCount}/{freeRecipeLimit} recipes saved
             </button>
           )}
-          <span className="text-xs text-dusty-rose">{recipes.length} saved</span>
+          <span className="text-xs text-dusty-rose">{recipes.length} saved 🌸</span>
         </div>
       </div>
 
+      <div className="relative">
+        {searching ? (
+          <Loader2
+            size={16}
+            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 animate-spin text-coral"
+          />
+        ) : isSmartSearch ? (
+          <Sparkles size={16} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-coral" />
+        ) : (
+          <Search
+            size={16}
+            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-dusty-rose"
+          />
+        )}
+        <input
+          id="recipe-search-input"
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search, or ask e.g. 'quick chicken dinner'…"
+          className="w-full rounded-full border border-blush-dark/60 bg-white py-2.5 pr-4 pl-10 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30"
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
+        {MY_RECIPES_FILTERS.map((filter) => {
+          const active = activeFilter === filter.value;
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => setActiveFilter(filter.value)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                active
+                  ? "bg-gradient-to-r from-coral to-rose-deep text-white shadow-md"
+                  : "bg-blush text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] hover:-translate-y-0.5 hover:bg-blush-dark hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
+              }`}
+            >
+              {filter.label}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={cycleSort}
+          className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-sm font-medium text-rose-deep shadow-[0_2px_6px_-1px_rgba(192,120,140,0.35)] ring-1 ring-blush-dark/40 transition hover:-translate-y-0.5 hover:shadow-[0_4px_10px_-1px_rgba(192,120,140,0.45)]"
+        >
+          <ArrowUpDown size={13} /> {SORT_LABELS[sort]}
+        </button>
+      </div>
+
+      <div className="no-scrollbar flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setFolderFilter("all")}
@@ -321,61 +348,7 @@ export function MyRecipesGrid({
         )}
       </div>
 
-      <div className="relative">
-        {searching ? (
-          <Loader2
-            size={16}
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 animate-spin text-coral"
-          />
-        ) : isSmartSearch ? (
-          <Sparkles size={16} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-coral" />
-        ) : (
-          <Search
-            size={16}
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-dusty-rose"
-          />
-        )}
-        <input
-          id="recipe-search-input"
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search, or ask e.g. 'quick chicken dinner'…"
-          className="w-full rounded-full border border-blush-dark/60 bg-white py-2.5 pr-4 pl-10 text-sm outline-none focus:border-coral focus:ring-2 focus:ring-coral/30"
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <PillDropdown
-          label=""
-          value={mealTypeFilter}
-          options={MEAL_TYPE_FILTER_OPTIONS}
-          onChange={setMealTypeFilter}
-          active={mealTypeFilter !== "all"}
-        />
-        <PillDropdown
-          label=""
-          value={dietFilter}
-          options={DIET_FILTER_OPTIONS}
-          onChange={setDietFilter}
-          active={dietFilter !== "all"}
-        />
-        <PillDropdown
-          label="Sort: "
-          value={sort}
-          options={SORT_OPTIONS}
-          onChange={setSort}
-          active={sort !== "recent"}
-        />
-      </div>
-
-      {recipes.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-blush-dark p-16 text-center text-dusty-rose">
-          <span className="text-4xl">🌸</span>
-          <p className="font-serif text-lg text-rose-deep">Your recipe box is empty</p>
-          <p className="text-sm">Paste a link above to fill it up ✨</p>
-        </div>
-      ) : filteredRecipes.length === 0 ? (
+      {filteredRecipes.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-blush-dark p-12 text-center text-dusty-rose">
           {isSmartSearch
             ? `Nothing matched "${search.trim()}" — try rephrasing! ✨`
@@ -383,10 +356,6 @@ export function MyRecipesGrid({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <p className="text-xs text-dusty-rose">
-            {isSmartSearch && <Sparkles size={11} className="mr-1 inline -translate-y-px" />}
-            {filterSummary}
-          </p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {filteredRecipes.slice(0, visibleCount).map((recipe, i) => (
               <div
@@ -397,7 +366,7 @@ export function MyRecipesGrid({
                 <RecipeCard recipe={recipe} showQuickActions />
               </div>
             ))}
-            {filteredRecipes.length <= visibleCount && (
+            {showGhostCard && (
               <a
                 href="https://www.tiktok.com/tag/recipe"
                 target="_blank"
@@ -406,7 +375,7 @@ export function MyRecipesGrid({
                 className="card-fade-in flex min-w-0 flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-blush-dark bg-white/40 p-6 text-center transition hover:-translate-y-1 hover:border-coral hover:bg-white/70"
               >
                 <span className="text-3xl">✨</span>
-                <p className="font-serif text-base font-semibold text-rose-deep">Add new recipes</p>
+                <p className="font-serif text-base font-semibold text-rose-deep">Add recipe</p>
                 <p className="text-xs text-dusty-rose">Find something on TikTok →</p>
               </a>
             )}
