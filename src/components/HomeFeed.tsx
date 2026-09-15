@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ChefHat, Clock3, Loader2 } from "lucide-react";
+import { AlertTriangle, Clock3, Loader2 } from "lucide-react";
 
 import { CollectionImport } from "./CollectionImport";
 import { CookMode } from "./CookMode";
@@ -15,17 +15,17 @@ import { useRecipeModal } from "./RecipeModalProvider";
 import { useToast } from "./ToastProvider";
 import { getMostRecentCookProgress } from "@/lib/cookModeStorage";
 import { COOK_TONIGHT_FILTERS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
-import { formatMinutes } from "@/lib/format";
+import { formatMinutes, MEAL_TYPE_LABELS } from "@/lib/format";
 import {
   getGreeting,
-  getTodayCardPrompt,
   mySavedRecipes,
   pickFavoriteRecipes,
-  pickStaleRecipes,
-  pickTodayCardRecipe,
+  pickMealTimeRecipe,
+  pickMostOverdueRecipe,
+  pickRecentlyAdded,
   pickTopProteinTag,
 } from "@/lib/homeFeed";
-import type { RecipeDto } from "@/lib/types";
+import type { HomeNutritionCard, RecipeDto } from "@/lib/types";
 
 const STATUS_MESSAGES = [
   "Reading the caption and hashtags…",
@@ -68,6 +68,32 @@ function HorizontalRow({ recipes, onOpen }: { recipes: RecipeDto[]; onOpen: (r: 
   );
 }
 
+interface FeedGridEntry {
+  key: string;
+  label: string;
+  subtitle: string;
+  recipe: RecipeDto;
+}
+
+function FeedGridCard({ entry, onOpen }: { entry: FeedGridEntry; onOpen: (r: RecipeDto) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(entry.recipe)}
+      className="flex items-center gap-3 rounded-2xl bg-white/75 p-3 text-left shadow-[0_8px_24px_-12px_rgba(192,120,140,0.45)] ring-1 ring-blush-dark/40 transition hover:-translate-y-0.5"
+    >
+      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-blush-soft">
+        <RecipeThumbnail src={entry.recipe.thumbnailUrl} alt={entry.recipe.title} className="h-full w-full" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold tracking-wide text-coral-deep uppercase">{entry.label}</p>
+        <p className="truncate font-serif text-sm font-semibold text-rose-deep">{entry.recipe.title}</p>
+        <p className="truncate text-xs text-dusty-rose">{entry.subtitle}</p>
+      </div>
+    </button>
+  );
+}
+
 export function HomeFeed({
   initialRecipes,
   loadError,
@@ -95,6 +121,7 @@ export function HomeFeed({
   const [cookRecipe, setCookRecipe] = useState<RecipeDto | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [continueRecipe, setContinueRecipe] = useState<{ recipe: RecipeDto; stepIndex: number } | null>(null);
+  const [macroPick, setMacroPick] = useState<HomeNutritionCard["recommendation"] | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const showToast = useToast();
   const openUpsell = useProUpsell();
@@ -109,6 +136,21 @@ export function HomeFeed({
       if (recipe) setContinueRecipe({ recipe, stepIndex: progress.stepIndex });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- computed once on mount from localStorage
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/nutrition-home-card")
+      .then((res) => res.json())
+      .then((d: HomeNutritionCard) => {
+        if (!cancelled) setMacroPick(d.recommendation ?? null);
+      })
+      .catch(() => {
+        // The macro-pick card is a nice-to-have; skip silently on failure.
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -173,21 +215,41 @@ export function HomeFeed({
     setShowSwiper(true);
   }
 
-  function handleStartCooking(recipe: RecipeDto) {
-    if (!isPro) {
-      openUpsell("cook-mode");
-      return;
-    }
-    setCookRecipe(recipe);
-  }
-
   const saved = mySavedRecipes(recipes, currentUserId);
   const isEmpty = hydrated && saved.length === 0;
 
-  const todayCardRecipe = hydrated ? pickTodayCardRecipe(saved) : null;
   const tagInsight = hydrated ? pickTopProteinTag(saved) : null;
-  const staleRecipes = hydrated ? pickStaleRecipes(saved) : [];
   const favoriteRecipes = hydrated ? pickFavoriteRecipes(recipes) : [];
+
+  const recentlyAdded = hydrated ? pickRecentlyAdded(saved) : null;
+  const overdueRecipe = hydrated ? pickMostOverdueRecipe(saved) : null;
+  const mealTimeInsight = hydrated ? pickMealTimeRecipe(saved) : null;
+  const macroPickRecipe = hydrated && macroPick ? (recipes.find((r) => r.id === macroPick.recipeId) ?? null) : null;
+
+  const feedGridEntries: FeedGridEntry[] = [];
+  if (recentlyAdded) {
+    feedGridEntries.push({ key: "recent", label: "New save ✨", subtitle: "Fresh in your box", recipe: recentlyAdded });
+  }
+  if (overdueRecipe) {
+    feedGridEntries.push({
+      key: "overdue",
+      label: "Comeback ⏰",
+      subtitle: "Haven't made this in a while",
+      recipe: overdueRecipe,
+    });
+  }
+  if (mealTimeInsight) {
+    feedGridEntries.push({
+      key: "mealtime",
+      label: `${MEAL_TYPE_LABELS[mealTimeInsight.mealType] ?? "Right now"} pick 🍽️`,
+      subtitle: "Good for this time of day",
+      recipe: mealTimeInsight.recipe,
+    });
+  }
+  if (macroPickRecipe && macroPick) {
+    feedGridEntries.push({ key: "macro", label: "Fuel up 💪", subtitle: macroPick.reason, recipe: macroPickRecipe });
+  }
+
   const activeFilterMatches =
     hydrated && activeFilter ? saved.filter((r) => matchesCookTonightFilter(r, activeFilter)) : [];
   const activeFilterMeta = COOK_TONIGHT_FILTERS.find((f) => f.value === activeFilter);
@@ -375,51 +437,11 @@ export function HomeFeed({
             <section className="card-fade-in flex flex-col gap-4" style={{ animationDelay: nextDelay() }}>
               <h2 className="font-serif text-2xl font-semibold text-rose-deep">{getGreeting()} 👋</h2>
 
-              {todayCardRecipe && (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openRecipe(todayCardRecipe)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") openRecipe(todayCardRecipe);
-                  }}
-                  className="group flex cursor-pointer flex-col overflow-hidden rounded-[1.75rem] bg-white/75 text-left shadow-[0_10px_30px_-14px_rgba(192,120,140,0.45)] ring-1 ring-blush-dark/50 backdrop-blur-sm transition hover:-translate-y-0.5 sm:flex-row"
-                >
-                  <div className="aspect-[16/9] w-full shrink-0 overflow-hidden bg-blush-soft sm:aspect-square sm:w-48">
-                    <RecipeThumbnail
-                      src={todayCardRecipe.thumbnailUrl}
-                      alt={todayCardRecipe.title}
-                      className="h-full w-full transition duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="flex flex-1 flex-col justify-center gap-2 p-5">
-                    <p className="text-xs font-semibold tracking-wide text-coral-deep uppercase">
-                      {getTodayCardPrompt()}
-                    </p>
-                    <p className="font-serif text-lg font-semibold text-rose-deep">{todayCardRecipe.title}</p>
-                    <div className="flex flex-wrap gap-3 text-xs text-dusty-rose">
-                      {todayCardRecipe.totalTimeMinutes != null && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock3 size={12} /> {formatMinutes(todayCardRecipe.totalTimeMinutes)}
-                        </span>
-                      )}
-                      {todayCardRecipe.difficulty && (
-                        <span className="inline-flex items-center gap-1">
-                          <ChefHat size={12} /> {todayCardRecipe.difficulty}
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStartCooking(todayCardRecipe);
-                      }}
-                      className="mt-1 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
-                    >
-                      Start Cooking 🍳
-                    </button>
-                  </div>
+              {feedGridEntries.length > 0 && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {feedGridEntries.map((entry) => (
+                    <FeedGridCard key={entry.key} entry={entry} onOpen={openRecipe} />
+                  ))}
                 </div>
               )}
             </section>
@@ -505,14 +527,6 @@ export function HomeFeed({
                 </h2>
                 <p className="-mt-2 text-xs text-dusty-rose">Because you keep saving {tagInsight.label} dishes</p>
                 <HorizontalRow recipes={tagInsight.recipes} onOpen={openRecipe} />
-              </section>
-            )}
-
-            {staleRecipes.length > 0 && (
-              <section className="card-fade-in flex flex-col gap-3" style={{ animationDelay: nextDelay() }}>
-                <h2 className="font-serif text-xl font-semibold text-rose-deep">Haven&apos;t made this in a while ⏰</h2>
-                <p className="-mt-2 text-xs text-dusty-rose">Time for a comeback 👀</p>
-                <HorizontalRow recipes={staleRecipes} onOpen={openRecipe} />
               </section>
             )}
 

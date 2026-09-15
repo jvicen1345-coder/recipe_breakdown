@@ -26,20 +26,52 @@ export function getGreeting(): string {
   return "Good evening";
 }
 
-export function getTodayCardPrompt(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "What are you making for dinner tonight? 🌙";
-  if (hour < 20) return "Still deciding on dinner? 🍽️";
-  return "Saving something for tomorrow? ✨";
+/** Most recently saved recipe. */
+export function pickRecentlyAdded(saved: RecipeDto[]): RecipeDto | null {
+  if (saved.length === 0) return null;
+  return [...saved].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 }
 
-/** Uncooked recipe featured on the "today card" — rotates daily instead of on every reload. */
-export function pickTodayCardRecipe(saved: RecipeDto[]): RecipeDto | null {
+/** The single saved recipe that's gone longest without a repeat cook (14+ days). */
+export function pickMostOverdueRecipe(saved: RecipeDto[], minDays = 14): RecipeDto | null {
+  const cooked = getCookedTimestamps();
+  const now = Date.now();
+  const stale = saved
+    .filter((r) => {
+      const ts = cooked[r.id];
+      if (!ts) return false;
+      return (now - new Date(ts).getTime()) / 86_400_000 >= minDays;
+    })
+    .sort((a, b) => new Date(cooked[a.id]).getTime() - new Date(cooked[b.id]).getTime());
+  return stale[0] ?? null;
+}
+
+/** Maps the current hour to a recipe mealType, mirroring how people actually eat. */
+export function getCurrentMealType(): string {
+  const hour = new Date().getHours();
+  if (hour < 11) return "breakfast";
+  if (hour < 15) return "lunch";
+  if (hour < 21) return "dinner";
+  return "quick-bite";
+}
+
+export interface MealTimeInsight {
+  mealType: string;
+  recipe: RecipeDto;
+}
+
+/** A saved recipe matching the current meal time — rotates daily, falls back to any saved pick. */
+export function pickMealTimeRecipe(saved: RecipeDto[]): MealTimeInsight | null {
+  if (saved.length === 0) return null;
   const cooked = getCookedTimestamps();
   const uncooked = saved.filter((r) => !(r.id in cooked));
-  if (uncooked.length === 0) return null;
+  const pool = uncooked.length > 0 ? uncooked : saved;
+  const mealType = getCurrentMealType();
+  const matches = pool.filter((r) => r.mealType === mealType);
+  const list = matches.length > 0 ? matches : pool;
   const dayKey = new Date().toISOString().slice(0, 10);
-  return uncooked[stringHash(dayKey) % uncooked.length];
+  const recipe = list[stringHash(dayKey + mealType) % list.length];
+  return { mealType, recipe };
 }
 
 export interface ProteinTagInsight {
