@@ -4,8 +4,14 @@ import { X } from "lucide-react";
 
 import { RecipeThumbnail } from "./RecipeThumbnail";
 import { useRecipeModal } from "./RecipeModalProvider";
+import { openDoorDashWithFallback, trackAffiliateClick } from "@/lib/delivery";
 import { GIRL_DINNER_STAPLES } from "@/lib/girlDinnerStaples";
 import type { RecipeDto } from "@/lib/types";
+
+function handleOrderDoorDash() {
+  trackAffiliateClick({ retailer: "doordash", source: "girl_dinner", ingredientCount: 0 });
+  openDoorDashWithFallback();
+}
 
 export function GirlDinnerMode({ recipes, onClose }: { recipes: RecipeDto[]; onClose: () => void }) {
   const openRecipe = useRecipeModal();
@@ -69,6 +75,24 @@ export function GirlDinnerMode({ recipes, onClose }: { recipes: RecipeDto[]; onC
             ))}
           </div>
         </section>
+
+        <div className="flex flex-col items-center gap-3 border-t border-blush-dark/40 pt-6 text-center">
+          <p className="font-serif text-sm font-semibold text-rose-deep">
+            Not feeling like cooking at all?
+            <br />
+            No judgment, bestie 🌸
+          </p>
+          <button
+            type="button"
+            onClick={handleOrderDoorDash}
+            className="w-full rounded-full bg-gradient-to-r from-[#FF3008] to-[#e02200] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+          >
+            Just order DoorDash 🛵
+          </button>
+          <p className="font-serif text-xs italic text-dusty-rose">
+            &ldquo;sometimes girl dinner is letting someone else cook&rdquo; ✨
+          </p>
+        </div>
 
         <button
           type="button"

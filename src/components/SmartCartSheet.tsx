@@ -58,6 +58,7 @@ export function SmartCartSheet({
           items: selected.map((i) => i.item),
           contributingRecipeIds,
           pantrySavedCount: savedCount,
+          source: "smart_cart",
         }),
       });
       if (!res.ok) {

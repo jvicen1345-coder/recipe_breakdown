@@ -7,8 +7,11 @@ import { usePantry } from "./PantryProvider";
 import { usePlan } from "./PlanProvider";
 import { ProLockBadge } from "./ProLockBadge";
 import { useProUpsell } from "./ProUpsellProvider";
+import { RetailerSelector } from "./RetailerSelector";
+import { ShopConfirmOverlay } from "./ShopConfirmOverlay";
 import { SmartCartSheet } from "./SmartCartSheet";
 import { useToast } from "./ToastProvider";
+import { cleanIngredient, DELIVERY_PROVIDER_META, openRetailerWithFallback, trackAffiliateClick, type DeliveryProvider } from "@/lib/delivery";
 import {
   clearGroceryList,
   loadCrossedOff,
@@ -22,6 +25,8 @@ import {
   type GroceryCategory,
 } from "@/lib/groceryCategories";
 import { daysSince } from "@/lib/pantryStaleness";
+import { buildShopClipboardText } from "@/lib/shopClipboard";
+import { useShoppingReturnToast } from "@/lib/useShoppingReturnToast";
 import type { RecipeDto } from "@/lib/types";
 
 export interface GroceryItem {
@@ -67,12 +72,46 @@ export function GroceryList({
   const [crossedOff, setCrossedOff] = useState<Set<string>>(new Set());
   const [showSmartCart, setShowSmartCart] = useState(false);
   const [showStaleBlock, setShowStaleBlock] = useState(false);
+  const [pendingShop, setPendingShop] = useState<DeliveryProvider | null>(null);
   const showToast = useToast();
+  const armReturnToast = useShoppingReturnToast();
   const { names: pantryNames } = usePantry();
   const { isPro, pantryOnboardedAt, pantryLastConfirmedAt, stalenessLevel } = usePlan();
   const openUpsell = useProUpsell();
   const showStaleBanner = Boolean(pantryOnboardedAt) && (stalenessLevel === "banner" || stalenessLevel === "block");
   const staleDays = daysSince(pantryLastConfirmedAt);
+
+  const uncheckedItems = useMemo(() => items.filter((i) => !crossedOff.has(i.key)), [items, crossedOff]);
+
+  async function handleSelectRetailer(provider: DeliveryProvider) {
+    if (uncheckedItems.length === 0) {
+      showToast("Your list is empty — nothing to shop for yet 🌸");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildShopClipboardText(uncheckedItems));
+    } catch {
+      // Silent by design — the retailer hand-off below still works either way.
+    }
+
+    trackAffiliateClick({
+      retailer: provider,
+      source: "grocery_list",
+      ingredientCount: uncheckedItems.length,
+      items: uncheckedItems.map((i) => i.item),
+    });
+    setPendingShop(provider);
+  }
+
+  function confirmShop() {
+    const provider = pendingShop;
+    setPendingShop(null);
+    if (!provider) return;
+    const firstIngredient = uncheckedItems[0] ? cleanIngredient(uncheckedItems[0].item) : "";
+    armReturnToast();
+    openRetailerWithFallback(provider, firstIngredient);
+  }
 
   function handleOrderWhatINeed() {
     if (!isPro) {
@@ -187,6 +226,21 @@ export function GroceryList({
         </div>
       </div>
 
+      {items.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-3xl bg-white p-5 shadow-[0_10px_30px_-14px_rgba(192,120,140,0.45)] ring-1 ring-sage/40">
+          <div>
+            <h2 className="font-serif text-lg font-semibold text-sage-dark">Ready to shop? 🛒</h2>
+            <p className="text-xs text-sage-dark/70">
+              {uncheckedItems.length} ingredient{uncheckedItems.length === 1 ? "" : "s"} on your list
+            </p>
+          </div>
+          <RetailerSelector onSelect={handleSelectRetailer} />
+          <p className="text-center text-[11px] text-sage-dark/60">
+            Your list is copied to clipboard when you tap 🌸
+          </p>
+        </div>
+      )}
+
       {showStaleBanner && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">
           <span className="flex items-center gap-2">
@@ -253,6 +307,10 @@ export function GroceryList({
             );
           })}
         </div>
+      )}
+
+      {pendingShop && (
+        <ShopConfirmOverlay retailerLabel={DELIVERY_PROVIDER_META[pendingShop].label} onConfirm={confirmShop} />
       )}
 
       {showSmartCart && (

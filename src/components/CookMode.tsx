@@ -8,6 +8,7 @@ import { useToast } from "./ToastProvider";
 import { markCooked } from "@/lib/clientState";
 import { clearCookModeProgress, getCookModeProgress, saveCookModeProgress } from "@/lib/cookModeStorage";
 import { detectTimer } from "@/lib/cookTimers";
+import { openDoorDashWithFallback, trackAffiliateClick } from "@/lib/delivery";
 import type { RecipeDto } from "@/lib/types";
 
 interface ActiveTimer {
@@ -118,6 +119,11 @@ export function CookMode({
       clearCookModeProgress(recipe.id);
     }
     onClose();
+  }
+
+  function handleOrderInstead() {
+    trackAffiliateClick({ retailer: "doordash", source: "cook_mode_exit", ingredientCount: 0, recipeId: recipe.id });
+    openDoorDashWithFallback();
   }
 
   async function finishCook(rating?: number) {
@@ -332,6 +338,16 @@ export function CookMode({
                 Exit
               </button>
             </div>
+
+            {!isCelebration && stepIndex >= 3 && (
+              <button
+                type="button"
+                onClick={handleOrderInstead}
+                className="text-xs font-medium text-dusty-rose/70 underline-offset-2 hover:underline"
+              >
+                Or order it instead? 🛵
+              </button>
+            )}
           </div>
         </div>
       )}

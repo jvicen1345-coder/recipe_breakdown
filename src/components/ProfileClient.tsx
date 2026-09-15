@@ -232,6 +232,15 @@ export function ProfileClient({
           <LogOut size={15} /> Log out
         </button>
       </section>
+
+      <section className="flex flex-col gap-2 rounded-[1.75rem] border border-blush-dark/50 bg-white/85 p-5 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)] backdrop-blur-sm">
+        <h2 className="font-serif text-lg font-semibold text-rose-deep">About affiliate links 🌸</h2>
+        <p className="text-xs text-dusty-rose">
+          Cutesy Eats participates in affiliate programs with Instacart, Amazon Associates, Walmart, and DoorDash.
+          When you shop through links in our app we may earn a small commission at no extra cost to you. This helps
+          keep Cutesy Eats running 🌸
+        </p>
+      </section>
     </div>
   );
 }

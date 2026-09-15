@@ -12,7 +12,7 @@ import { usePlan } from "./PlanProvider";
 import { ProLockBadge } from "./ProLockBadge";
 import { useProUpsell } from "./ProUpsellProvider";
 import { RecipeChecklist } from "./RecipeChecklist";
-import { ShopRecipeSheet } from "./ShopRecipeSheet";
+import { ShopThisRecipeSection } from "./ShopThisRecipeSection";
 import { useToast } from "./ToastProvider";
 import { isMarkedCooked, markCooked } from "@/lib/clientState";
 import { getCookModeProgress } from "@/lib/cookModeStorage";
@@ -65,9 +65,8 @@ export function RecipeDetailContent({
   const [cooked, setCooked] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showCookMode, setShowCookMode] = useState(false);
-  const [showShopSheet, setShowShopSheet] = useState(false);
   const [resumeStep, setResumeStep] = useState<number | null>(null);
-  const { names: pantryNames } = usePantry();
+  const { names: pantryNames, loading: pantryLoading } = usePantry();
   const pantryCount = pantryMatchCount(recipe.ingredients, pantryNames);
   const { isPro, pantryOnboardedAt, stalenessLevel } = usePlan();
   const pantryStale = Boolean(pantryOnboardedAt) && (stalenessLevel === "banner" || stalenessLevel === "block");
@@ -79,14 +78,6 @@ export function RecipeDetailContent({
       return;
     }
     setShowCookMode(true);
-  }
-
-  function handleShopClick() {
-    if (!isPro) {
-      openUpsell("shop-recipe");
-      return;
-    }
-    setShowShopSheet(true);
   }
 
   useEffect(() => {
@@ -280,20 +271,18 @@ export function RecipeDetailContent({
           {resumeStep != null ? `Resume Cooking 🍳 (Step ${resumeStep + 1})` : "Start Cooking 🍳"}
         </button>
         {!isPro && <ProLockBadge reason="cook-mode" />}
-        <button
-          type="button"
-          onClick={handleShopClick}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-rose-deep shadow-[0_2px_10px_-2px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/60 transition hover:-translate-y-0.5 hover:shadow-md"
-        >
-          Shop ingredients 🛒
-        </button>
-        {!isPro && <ProLockBadge reason="shop-recipe" />}
       </div>
 
       <RecipeChecklist recipeId={recipe.id} ingredients={scaledIngredients} instructions={recipe.instructions} />
 
+      <ShopThisRecipeSection
+        recipeId={recipe.id}
+        ingredients={scaledIngredients}
+        pantryNames={pantryNames}
+        pantryLoading={pantryLoading}
+      />
+
       {showCookMode && <CookMode recipe={recipe} onClose={() => setShowCookMode(false)} />}
-      {showShopSheet && <ShopRecipeSheet recipe={recipe} onClose={() => setShowShopSheet(false)} />}
 
       <div>
         <button

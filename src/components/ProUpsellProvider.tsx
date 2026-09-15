@@ -14,7 +14,6 @@ export type UpsellReason =
   | "cook-mode"
   | "recipe-swiper"
   | "nutrition-snapshot"
-  | "shop-recipe"
   | "smart-cart"
   | "general";
 
@@ -39,10 +38,6 @@ const UPSELL_COPY: Record<UpsellReason, { title: string; subtext: string }> = {
   "nutrition-snapshot": {
     title: "Weekly nutrition snapshots are a Pro perk 📊",
     subtext: "Upgrade to Cutesy Eats Pro to unlock your weekly snapshot, Cook Mode, and smarter grocery lists.",
-  },
-  "shop-recipe": {
-    title: "Shop ingredients is a Pro perk 🛒",
-    subtext: "Upgrade to Cutesy Eats Pro to send ingredients straight to Instacart or Amazon Fresh — plus Cook Mode.",
   },
   "smart-cart": {
     title: "Smart Cart is a Pro perk 🛒",

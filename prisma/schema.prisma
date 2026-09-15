@@ -160,10 +160,13 @@ model PantryItem {
 // stat on the subscription page.
 model CartOrder {
   id        String   @id @default(cuid())
-  provider  String // instacart | amazon-fresh
+  provider  String // instacart | amazon-fresh | walmart | kroger | doordash
   itemsJson String // JSON: string[] of ingredient names sent to the delivery app
   recipeId  String?
   recipe    Recipe?  @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  // Which UI surface sent the click — recipe_page | grocery_list | smart_cart | girl_dinner |
+  // cook_mode_exit. Powers affiliate-click analytics (which context converts best).
+  source    String?
   createdAt DateTime @default(now())
 }
 
