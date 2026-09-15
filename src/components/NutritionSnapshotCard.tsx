@@ -41,7 +41,7 @@ export function NutritionSnapshotCard({ onStartCooking }: { onStartCooking?: () 
   return (
     <div className="flex h-full flex-col gap-3 rounded-[1.9rem] bg-white p-5 shadow-[0_10px_30px_-18px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/30">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-serif text-base font-semibold text-rose-deep">This Week 📊</span>
+        <span className="font-serif text-base font-semibold text-rose-deep">This Week</span>
         <Link
           href="/nutrition"
           className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-dusty-rose hover:text-rose-deep"
@@ -66,11 +66,6 @@ export function NutritionSnapshotCard({ onStartCooking }: { onStartCooking?: () 
         </div>
       ) : (
         <Link href="/nutrition" className="flex flex-1 flex-col gap-3">
-          <p className="line-clamp-1 font-serif text-lg leading-snug font-semibold text-rose-deep">
-            <span aria-hidden>✨ </span>
-            {data.insight}
-          </p>
-
           <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
             {MACRO_TILES.map((tile) => (
               <span key={tile.key} className="flex items-center gap-1.5 text-sm font-semibold text-rose-deep">
