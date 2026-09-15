@@ -51,7 +51,6 @@ export function Navbar() {
   const onHome = pathname === "/";
   const onRecipesPage = pathname === "/recipes";
   const onGroceryPage = pathname === "/grocery-list";
-  const onCommunityPage = pathname === "/community";
   const onNutritionPage = pathname === "/nutrition";
   const showStaleDot = Boolean(pantryOnboardedAt) && stalenessLevel !== "fresh";
 
@@ -189,16 +188,6 @@ export function Navbar() {
             </span>
           </MobileNavIcon>
           <span className={`text-[10px] ${onGroceryPage ? "font-bold" : "font-semibold"}`}>Grocery</span>
-        </Link>
-        <Link
-          href="/community"
-          className={mobileNavLinkClass(onCommunityPage)}
-          aria-current={onCommunityPage ? "page" : undefined}
-        >
-          <MobileNavIcon active={onCommunityPage}>
-            <Sparkles size={18} />
-          </MobileNavIcon>
-          <span className={`text-[10px] ${onCommunityPage ? "font-bold" : "font-semibold"}`}>Community</span>
         </Link>
         <Link
           href="/nutrition"
