@@ -3,6 +3,7 @@
 import { createContext, useContext, useState } from "react";
 
 import { RecipeDetailModal } from "./RecipeDetailModal";
+import { markViewed } from "@/lib/clientState";
 import type { RecipeDto } from "@/lib/types";
 
 const RecipeModalContext = createContext<((recipe: RecipeDto) => void) | null>(null);
@@ -18,8 +19,13 @@ export function useRecipeModal() {
 export function RecipeModalProvider({ children }: { children: React.ReactNode }) {
   const [selected, setSelected] = useState<RecipeDto | null>(null);
 
+  function openRecipe(recipe: RecipeDto) {
+    markViewed(recipe.id);
+    setSelected(recipe);
+  }
+
   return (
-    <RecipeModalContext.Provider value={setSelected}>
+    <RecipeModalContext.Provider value={openRecipe}>
       {children}
       {selected && (
         <RecipeDetailModal

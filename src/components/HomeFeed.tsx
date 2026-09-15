@@ -10,20 +10,25 @@ import { CookTonightSwiper } from "./CookTonightSwiper";
 import { NutritionSnapshotCard } from "./NutritionSnapshotCard";
 import { ProLockBadge } from "./ProLockBadge";
 import { useProUpsell } from "./ProUpsellProvider";
+import { RecipeCard } from "./RecipeCard";
 import { RecipeThumbnail } from "./RecipeThumbnail";
 import { useRecipeModal } from "./RecipeModalProvider";
 import { useToast } from "./ToastProvider";
 import { getMostRecentCookProgress } from "@/lib/cookModeStorage";
 import { COOK_TONIGHT_FILTERS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
-import { formatMinutes, MEAL_TYPE_LABELS } from "@/lib/format";
+import { formatMinutes } from "@/lib/format";
 import {
   getGreeting,
+  MACRO_PILL_LABEL,
   mySavedRecipes,
   pickFavoriteRecipes,
-  pickMealTimeRecipe,
-  pickMostOverdueRecipe,
+  pickMacroBucket,
+  pickMacroRecipe,
+  pickOverdueOrNeverCooked,
   pickRecentlyAdded,
+  pickTimeBasedRecipe,
   pickTopProteinTag,
+  TIME_BAND_PILL_LABEL,
 } from "@/lib/homeFeed";
 import type { HomeNutritionCard, RecipeDto } from "@/lib/types";
 
@@ -68,29 +73,29 @@ function HorizontalRow({ recipes, onOpen }: { recipes: RecipeDto[]; onOpen: (r: 
   );
 }
 
-interface FeedGridEntry {
+interface RecommendationEntry {
   key: string;
-  label: string;
-  subtitle: string;
   recipe: RecipeDto;
+  pillLabel: string;
+  pillBgClass: string;
 }
 
-function FeedGridCard({ entry, onOpen }: { entry: FeedGridEntry; onOpen: (r: RecipeDto) => void }) {
+function RecommendationPill({ label, bgClass }: { label: string; bgClass: string }) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(entry.recipe)}
-      className="flex items-center gap-3 rounded-2xl bg-white/75 p-3 text-left shadow-[0_8px_24px_-12px_rgba(192,120,140,0.45)] ring-1 ring-blush-dark/40 transition hover:-translate-y-0.5"
+    <span
+      className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-medium text-rose-deep ${bgClass}`}
     >
-      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-blush-soft">
-        <RecipeThumbnail src={entry.recipe.thumbnailUrl} alt={entry.recipe.title} className="h-full w-full" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold tracking-wide text-coral-deep uppercase">{entry.label}</p>
-        <p className="truncate font-serif text-sm font-semibold text-rose-deep">{entry.recipe.title}</p>
-        <p className="truncate text-xs text-dusty-rose">{entry.subtitle}</p>
-      </div>
-    </button>
+      {label}
+    </span>
+  );
+}
+
+function RecommendationCard({ entry, fullWidth }: { entry: RecommendationEntry; fullWidth?: boolean }) {
+  return (
+    <div className={`flex flex-col gap-1 ${fullWidth ? "col-span-2" : ""}`}>
+      <RecommendationPill label={entry.pillLabel} bgClass={entry.pillBgClass} />
+      <RecipeCard recipe={entry.recipe} showQuickActions />
+    </div>
   );
 }
 
@@ -121,7 +126,7 @@ export function HomeFeed({
   const [cookRecipe, setCookRecipe] = useState<RecipeDto | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [continueRecipe, setContinueRecipe] = useState<{ recipe: RecipeDto; stepIndex: number } | null>(null);
-  const [macroPick, setMacroPick] = useState<HomeNutritionCard["recommendation"] | null>(null);
+  const [nutritionWeek, setNutritionWeek] = useState<HomeNutritionCard | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const showToast = useToast();
   const openUpsell = useProUpsell();
@@ -143,7 +148,7 @@ export function HomeFeed({
     fetch("/api/nutrition-home-card")
       .then((res) => res.json())
       .then((d: HomeNutritionCard) => {
-        if (!cancelled) setMacroPick(d.recommendation ?? null);
+        if (!cancelled) setNutritionWeek(d);
       })
       .catch(() => {
         // The macro-pick card is a nice-to-have; skip silently on failure.
@@ -221,33 +226,47 @@ export function HomeFeed({
   const tagInsight = hydrated ? pickTopProteinTag(saved) : null;
   const favoriteRecipes = hydrated ? pickFavoriteRecipes(recipes) : [];
 
-  const recentlyAdded = hydrated ? pickRecentlyAdded(saved) : null;
-  const overdueRecipe = hydrated ? pickMostOverdueRecipe(saved) : null;
-  const mealTimeInsight = hydrated ? pickMealTimeRecipe(saved) : null;
-  const macroPickRecipe = hydrated && macroPick ? (recipes.find((r) => r.id === macroPick.recipeId) ?? null) : null;
+  const card1Recipe = hydrated ? pickRecentlyAdded(saved) : null;
+  const card2Recipe = hydrated ? pickOverdueOrNeverCooked(saved, card1Recipe?.id ?? null) : null;
+  const timeBasedPick = hydrated
+    ? pickTimeBasedRecipe(saved, [card1Recipe?.id, card2Recipe?.id])
+    : null;
+  const card3Recipe = timeBasedPick?.recipe ?? null;
 
-  const feedGridEntries: FeedGridEntry[] = [];
-  if (recentlyAdded) {
-    feedGridEntries.push({ key: "recent", label: "New save ✨", subtitle: "Fresh in your box", recipe: recentlyAdded });
+  const usedIds = new Set([card1Recipe?.id, card2Recipe?.id, card3Recipe?.id].filter((id): id is string => id != null));
+  const macroCandidates = hydrated ? saved.filter((r) => !usedIds.has(r.id)) : [];
+  const macroBucket = nutritionWeek
+    ? pickMacroBucket(nutritionWeek.weekMacroPct, nutritionWeek.totals.calories / 7, nutritionWeek.hasCookedThisWeek)
+    : "no-data";
+  const card4Recipe = hydrated && nutritionWeek ? pickMacroRecipe(macroCandidates, macroBucket) : null;
+
+  const recommendationEntries: RecommendationEntry[] = [];
+  if (card1Recipe) {
+    recommendationEntries.push({ key: "recent", recipe: card1Recipe, pillLabel: "New Save ✨", pillBgClass: "bg-blush" });
   }
-  if (overdueRecipe) {
-    feedGridEntries.push({
+  if (card2Recipe) {
+    recommendationEntries.push({
       key: "overdue",
-      label: "Comeback ⏰",
-      subtitle: "Haven't made this in a while",
-      recipe: overdueRecipe,
+      recipe: card2Recipe,
+      pillLabel: "Make it again 👀",
+      pillBgClass: "bg-lavender",
     });
   }
-  if (mealTimeInsight) {
-    feedGridEntries.push({
-      key: "mealtime",
-      label: `${MEAL_TYPE_LABELS[mealTimeInsight.mealType] ?? "Right now"} pick 🍽️`,
-      subtitle: "Good for this time of day",
-      recipe: mealTimeInsight.recipe,
+  if (card3Recipe && timeBasedPick) {
+    recommendationEntries.push({
+      key: "timebased",
+      recipe: card3Recipe,
+      pillLabel: TIME_BAND_PILL_LABEL[timeBasedPick.band],
+      pillBgClass: "bg-peach",
     });
   }
-  if (macroPickRecipe && macroPick) {
-    feedGridEntries.push({ key: "macro", label: "Fuel up 💪", subtitle: macroPick.reason, recipe: macroPickRecipe });
+  if (card4Recipe) {
+    recommendationEntries.push({
+      key: "macro",
+      recipe: card4Recipe,
+      pillLabel: MACRO_PILL_LABEL[macroBucket],
+      pillBgClass: "bg-coral/25",
+    });
   }
 
   const activeFilterMatches =
@@ -437,10 +456,22 @@ export function HomeFeed({
             <section className="card-fade-in flex flex-col gap-4" style={{ animationDelay: nextDelay() }}>
               <h2 className="font-serif text-2xl font-semibold text-rose-deep">{getGreeting()} 👋</h2>
 
-              {feedGridEntries.length > 0 && (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {feedGridEntries.map((entry) => (
-                    <FeedGridCard key={entry.key} entry={entry} onOpen={openRecipe} />
+              {recommendationEntries.length === 1 && (
+                <div className="flex justify-center">
+                  <div className="w-full max-w-xs">
+                    <RecommendationCard entry={recommendationEntries[0]} />
+                  </div>
+                </div>
+              )}
+
+              {recommendationEntries.length > 1 && (
+                <div className="grid grid-cols-2 gap-4">
+                  {recommendationEntries.map((entry, i) => (
+                    <RecommendationCard
+                      key={entry.key}
+                      entry={entry}
+                      fullWidth={recommendationEntries.length === 3 && i === 2}
+                    />
                   ))}
                 </div>
               )}

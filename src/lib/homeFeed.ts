@@ -4,7 +4,8 @@
 // highlights. "Cooked" status uses the same per-browser localStorage timestamps
 // the Cook Tonight swiper already relies on (see clientState.ts), not the shared
 // CookLog table, so it's consistent with existing recency logic elsewhere.
-import { getCookedTimestamps, getFavoriteIds } from "./clientState";
+import { getCookedTimestamps, getFavoriteIds, getViewedTimestamps } from "./clientState";
+import { matchesCookTonightFilter } from "./cookTonightFilters";
 import { PROTEIN_LABELS } from "./format";
 import type { RecipeDto } from "./types";
 
@@ -32,46 +33,135 @@ export function pickRecentlyAdded(saved: RecipeDto[]): RecipeDto | null {
   return [...saved].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 }
 
-/** The single saved recipe that's gone longest without a repeat cook (14+ days). */
-export function pickMostOverdueRecipe(saved: RecipeDto[], minDays = 14): RecipeDto | null {
+/**
+ * The saved recipe (other than `excludeId`) that's gone longest without a repeat
+ * cook — never-cooked recipes count as "most overdue" and sort first. Returns null
+ * if every remaining candidate was cooked within the last 7 days (nothing's overdue).
+ */
+export function pickOverdueOrNeverCooked(saved: RecipeDto[], excludeId: string | null): RecipeDto | null {
   const cooked = getCookedTimestamps();
-  const now = Date.now();
-  const stale = saved
-    .filter((r) => {
-      const ts = cooked[r.id];
-      if (!ts) return false;
-      return (now - new Date(ts).getTime()) / 86_400_000 >= minDays;
-    })
-    .sort((a, b) => new Date(cooked[a.id]).getTime() - new Date(cooked[b.id]).getTime());
-  return stale[0] ?? null;
+  const pool = saved.filter((r) => r.id !== excludeId);
+  if (pool.length === 0) return null;
+
+  const ranked = pool
+    .map((recipe) => ({ recipe, cookedAt: cooked[recipe.id] ? new Date(cooked[recipe.id]).getTime() : null }))
+    .sort((a, b) => {
+      if (a.cookedAt === null && b.cookedAt === null) return 0;
+      if (a.cookedAt === null) return -1;
+      if (b.cookedAt === null) return 1;
+      return a.cookedAt - b.cookedAt;
+    });
+
+  const top = ranked[0];
+  const sevenDaysAgo = Date.now() - 7 * 86_400_000;
+  if (top.cookedAt !== null && top.cookedAt >= sevenDaysAgo) return null;
+  return top.recipe;
 }
 
-/** Maps the current hour to a recipe mealType, mirroring how people actually eat. */
-export function getCurrentMealType(): string {
+export type TimeBand = "breakfast" | "lunch" | "dinner" | "latenight";
+
+export const TIME_BAND_PILL_LABEL: Record<TimeBand, string> = {
+  breakfast: "Quick breakfast save ☀️",
+  lunch: "Lunch idea 🥗",
+  dinner: "Dinner tonight? 🌙",
+  latenight: "Late night cook 🌙",
+};
+
+export function getTimeBand(): TimeBand {
   const hour = new Date().getHours();
   if (hour < 11) return "breakfast";
-  if (hour < 15) return "lunch";
-  if (hour < 21) return "dinner";
-  return "quick-bite";
+  if (hour < 14) return "lunch";
+  if (hour < 18) return "dinner";
+  return "latenight";
 }
 
-export interface MealTimeInsight {
-  mealType: string;
+function matchesTimeBand(recipe: RecipeDto, band: TimeBand, cooked: Record<string, string>): boolean {
+  switch (band) {
+    case "breakfast":
+      return recipe.totalTimeMinutes != null && recipe.totalTimeMinutes < 20;
+    case "lunch":
+      return recipe.totalTimeMinutes != null && recipe.totalTimeMinutes >= 20 && recipe.totalTimeMinutes <= 45;
+    case "dinner":
+      return !(recipe.id in cooked);
+    case "latenight":
+      return (
+        (recipe.totalTimeMinutes != null && recipe.totalTimeMinutes < 20) ||
+        matchesCookTonightFilter(recipe, "comfort")
+      );
+  }
+}
+
+export interface TimeBasedPick {
+  band: TimeBand;
   recipe: RecipeDto;
 }
 
-/** A saved recipe matching the current meal time — rotates daily, falls back to any saved pick. */
-export function pickMealTimeRecipe(saved: RecipeDto[]): MealTimeInsight | null {
-  if (saved.length === 0) return null;
+/** The best saved match for the current time-of-day window, excluding already-used recipes. */
+export function pickTimeBasedRecipe(saved: RecipeDto[], excludeIds: (string | null | undefined)[]): TimeBasedPick | null {
+  const band = getTimeBand();
   const cooked = getCookedTimestamps();
-  const uncooked = saved.filter((r) => !(r.id in cooked));
-  const pool = uncooked.length > 0 ? uncooked : saved;
-  const mealType = getCurrentMealType();
-  const matches = pool.filter((r) => r.mealType === mealType);
-  const list = matches.length > 0 ? matches : pool;
+  const excluded = new Set(excludeIds.filter((id): id is string => id != null));
+  const pool = saved.filter((r) => !excluded.has(r.id) && matchesTimeBand(r, band, cooked));
+  if (pool.length === 0) return null;
   const dayKey = new Date().toISOString().slice(0, 10);
-  const recipe = list[stringHash(dayKey + mealType) % list.length];
-  return { mealType, recipe };
+  return { band, recipe: pool[stringHash(dayKey + band) % pool.length] };
+}
+
+export type MacroBucket = "high-carb" | "high-calorie" | "low-protein" | "low-calorie" | "no-data";
+
+export const MACRO_PILL_LABEL: Record<MacroBucket, string> = {
+  "high-carb": "Protein boost 💪",
+  "high-calorie": "Keep it light 🥗",
+  "low-protein": "Fuel up 🔥",
+  "low-calorie": "Treat yourself 🍝",
+  "no-data": "Try something new ✨",
+};
+
+/** Categorizes this week's cooking data into the macro bucket the homepage macro card responds to. */
+export function pickMacroBucket(
+  weekMacroPct: { protein: number; carbs: number; fat: number },
+  avgDailyCalories: number,
+  hasCookedThisWeek: boolean,
+): MacroBucket {
+  if (!hasCookedThisWeek) return "no-data";
+  if (weekMacroPct.carbs >= 50) return "high-carb";
+  if (avgDailyCalories >= 2200) return "high-calorie";
+  if (weekMacroPct.protein < 15) return "low-protein";
+  if (avgDailyCalories < 350) return "low-calorie";
+  return "no-data";
+}
+
+/** Picks the saved recipe (from the remaining candidates) that best answers this week's macro bucket. */
+export function pickMacroRecipe(candidates: RecipeDto[], bucket: MacroBucket): RecipeDto | null {
+  if (candidates.length === 0) return null;
+
+  if (bucket === "high-carb" || bucket === "low-protein") {
+    const withProtein = candidates.filter((r) => r.nutrition?.proteinGrams != null);
+    if (withProtein.length === 0) return null;
+    return [...withProtein].sort((a, b) => b.nutrition!.proteinGrams! - a.nutrition!.proteinGrams!)[0];
+  }
+
+  if (bucket === "high-calorie") {
+    const withCalories = candidates.filter((r) => r.nutrition?.caloriesPerServing != null);
+    if (withCalories.length === 0) return null;
+    return [...withCalories].sort((a, b) => a.nutrition!.caloriesPerServing! - b.nutrition!.caloriesPerServing!)[0];
+  }
+
+  if (bucket === "low-calorie") {
+    const comfort = candidates.filter((r) => matchesCookTonightFilter(r, "comfort"));
+    if (comfort.length > 0) return comfort[0];
+    const withCalories = candidates.filter((r) => r.nutrition?.caloriesPerServing != null);
+    if (withCalories.length === 0) return null;
+    return [...withCalories].sort((a, b) => b.nutrition!.caloriesPerServing! - a.nutrition!.caloriesPerServing!)[0];
+  }
+
+  // "no-data" — least recently viewed save (never-viewed counts as longest overdue).
+  const viewed = getViewedTimestamps();
+  return [...candidates].sort((a, b) => {
+    const aViewed = viewed[a.id] ? new Date(viewed[a.id]).getTime() : -Infinity;
+    const bViewed = viewed[b.id] ? new Date(viewed[b.id]).getTime() : -Infinity;
+    return aViewed - bViewed;
+  })[0];
 }
 
 export interface ProteinTagInsight {

@@ -58,3 +58,28 @@ export function markCooked(recipeId: string) {
     // localStorage can throw in private-browsing contexts; the mark just won't persist.
   }
 }
+
+// Maps recipe id -> ISO timestamp of the most recent time its detail view was opened —
+// powers the homepage macro card's "least recently viewed" fallback pick.
+const VIEWED_KEY = "recipe-viewed";
+
+export function getViewedTimestamps(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(VIEWED_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function markViewed(recipeId: string) {
+  try {
+    const timestamps = getViewedTimestamps();
+    timestamps[recipeId] = new Date().toISOString();
+    localStorage.setItem(VIEWED_KEY, JSON.stringify(timestamps));
+  } catch {
+    // localStorage can throw in private-browsing contexts; the mark just won't persist.
+  }
+}
