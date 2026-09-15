@@ -69,10 +69,10 @@ export const TIME_BAND_PILL_LABEL: Record<TimeBand, string> = {
 
 /** Shown on the ghost placeholder in this slot when no saved recipe matches the current time band. */
 export const TIME_BAND_GHOST_HINT: Record<TimeBand, string> = {
-  breakfast: "Save a recipe under 20 min to unlock a breakfast idea here",
-  lunch: "Save a 20–45 min recipe to unlock a lunch idea here",
-  dinner: "Save something you haven't cooked yet to unlock tonight's pick",
-  latenight: "Save a quick or comfort-food recipe to unlock a late-night pick",
+  breakfast: "Save a quick breakfast-y save (under 20 min) and a cute morning pick will bloom here ☀️",
+  lunch: "Save a lunchtime fave (20–45 min) and a sweet midday pick will show up here 🥗",
+  dinner: "Save something new and I'll pick out tonight's dinner for you 🌙",
+  latenight: "Save a cozy or speedy recipe for a little late-night treat pick 🌙",
 };
 
 export function getTimeBand(): TimeBand {
@@ -127,17 +127,17 @@ export const MACRO_PILL_LABEL: Record<MacroBucket, string> = {
 
 /** Shown on the ghost placeholder in this slot when no saved recipe matches this week's macro bucket. */
 export const MACRO_GHOST_HINT: Record<MacroBucket, string> = {
-  "high-carb": "Save a high-protein recipe (with nutrition info) to unlock this pick",
-  "low-protein": "Save a high-protein recipe (with nutrition info) to unlock this pick",
-  "high-calorie": "Save a lighter recipe (with nutrition info) to unlock this pick",
-  "low-calorie": "Save a comfort-food or higher-calorie recipe to unlock this pick",
-  "no-data": "Save one more recipe to unlock a pick here",
+  "high-carb": "Save a protein-packed recipe (with nutrition info) and I'll cheer you on here 💪",
+  "low-protein": "Save a protein-packed recipe (with nutrition info) and I'll cheer you on here 💪",
+  "high-calorie": "Save a lighter save (with nutrition info) and a fresh little pick will bloom here 🥗",
+  "low-calorie": "Save a cozy comfort-food fave for a sweet treat pick here 🍝",
+  "no-data": "Save one more recipe and a little surprise pick will pop up here ✨",
 };
 
 /** Shown on Card 2's ghost placeholder — the reason differs depending on why it's empty. */
 export function getOverdueGhostHint(savedCount: number): string {
-  if (savedCount < 2) return "Save 1 more recipe to unlock a comeback pick";
-  return "You've made everything recently — nothing's overdue yet";
+  if (savedCount < 2) return "Save 1 more recipe and a comeback pick will show up here 👀";
+  return "You've been on such a roll, bestie — nothing's due for a comeback yet 💕";
 }
 
 /** Categorizes this week's cooking data into the macro bucket the homepage macro card responds to. */

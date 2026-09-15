@@ -121,14 +121,9 @@ function GhostCard({ entry }: { entry: GhostEntry }) {
           el?.scrollIntoView({ behavior: "smooth", block: "center" });
           el?.focus({ preventScroll: true });
         }}
-        className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-dashed border-blush-dark/40 bg-white/40 text-left transition hover:border-coral/50 hover:bg-white/60"
+        className="ghost-shimmer relative flex h-full min-h-[260px] flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-blush-dark/40 bg-blush-soft/40 p-5 text-center transition hover:border-coral/50 hover:bg-blush-soft/60"
       >
-        <div className="flex aspect-[4/5] w-full items-center justify-center bg-blush-soft/40">
-          <span className="text-4xl opacity-40">🔒</span>
-        </div>
-        <div className="flex flex-1 items-center p-3 sm:p-4">
-          <p className="text-xs text-dusty-rose">{entry.hint}</p>
-        </div>
+        <p className="font-serif text-sm leading-snug text-rose-deep/80 italic">{entry.hint}</p>
       </button>
     </div>
   );
