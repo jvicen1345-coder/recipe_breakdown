@@ -15,9 +15,15 @@ export const COOK_TONIGHT_FILTERS: { value: string; label: string }[] = [
 export const MY_RECIPES_FILTERS: { value: string; label: string }[] = [
   { value: "all", label: "All" },
   { value: "quick", label: "Quick" },
-  { value: "budget", label: "Budget" },
+  { value: "date-night", label: "Date Night" },
+  { value: "big-groups", label: "Big Groups" },
   { value: "vegan", label: "Vegan" },
+  { value: "vegetarian", label: "Vegetarian" },
+  { value: "pescatarian", label: "Pescatarian" },
+  { value: "omnivore", label: "Omnivore" },
+  { value: "budget", label: "Budget" },
   { value: "high-protein", label: "High Protein" },
+  { value: "comfort", label: "Comfort Food" },
 ];
 
 export const COOK_TONIGHT_FILTER_LABELS: Record<string, string> = Object.fromEntries(
@@ -46,6 +52,17 @@ export function matchesCookTonightFilter(recipe: RecipeDto, filter: string): boo
       return (recipe.nutrition?.proteinGrams ?? 0) >= 20;
     case "vegan":
       return recipe.dietType === "vegan";
+    case "vegetarian":
+      return recipe.dietType === "vegetarian";
+    case "pescatarian":
+      return recipe.dietType === "pescatarian";
+    case "omnivore":
+      return recipe.dietType === "omnivore";
+    // A nicer dinner worth making a night of — save-worthy price tier, not just any weeknight meal.
+    case "date-night":
+      return recipe.mealType === "dinner" && recipe.priceLevel === "splurge";
+    case "big-groups":
+      return recipe.servings != null && recipe.servings >= 6;
     case "comfort": {
       const title = recipe.title.toLowerCase();
       return COMFORT_FOOD_KEYWORDS.some((keyword) => title.includes(keyword));
