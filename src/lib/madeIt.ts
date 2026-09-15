@@ -4,7 +4,7 @@ import { awardPoints } from "./community";
 import { HEART_POINT_CAP, REPORT_HIDE_THRESHOLD } from "./madeItConstants";
 import { prisma } from "./prisma";
 
-export { MAX_CAPTION_LENGTH, POINTS_PER_MADE_IT_POST, TIKTOK_COMMENT_STARTERS, CUTESY_EATS_TAG } from "./madeItConstants";
+export { MAX_CAPTION_LENGTH, POINTS_PER_MADE_IT_POST } from "./madeItConstants";
 
 /**
  * Records a new heart (idempotent per user via the DB's unique constraint) and, if
