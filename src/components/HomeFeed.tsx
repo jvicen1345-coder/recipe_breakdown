@@ -8,6 +8,7 @@ import { CollectionImport } from "./CollectionImport";
 import { CookMode } from "./CookMode";
 import { CookTonightSwiper } from "./CookTonightSwiper";
 import { NutritionSnapshotCard } from "./NutritionSnapshotCard";
+import { usePlan } from "./PlanProvider";
 import { ProLockBadge } from "./ProLockBadge";
 import { useProUpsell } from "./ProUpsellProvider";
 import { RecipeThumbnail } from "./RecipeThumbnail";
@@ -32,6 +33,14 @@ const STATUS_MESSAGES = [
   "Working out ingredients and steps…",
   "Estimating time, difficulty, and cost…",
 ];
+
+const COOK_TONIGHT_FILTER_EMOJI: Record<string, string> = {
+  quick: "⚡",
+  budget: "💰",
+  "high-protein": "💪",
+  vegan: "🌱",
+  comfort: "🍲",
+};
 
 const EDITORIAL_PICKS = [
   { emoji: "🍝", title: "Creamy Garlic Pasta", query: "creamy garlic pasta recipe" },
@@ -99,6 +108,7 @@ export function HomeFeed({
   const showToast = useToast();
   const openUpsell = useProUpsell();
   const openRecipe = useRecipeModal();
+  const { name } = usePlan();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reads localStorage (favorites/cooked/cook-progress), unavailable during SSR
@@ -373,7 +383,7 @@ export function HomeFeed({
         hydrated && (
           <>
             <section className="card-fade-in flex flex-col gap-4" style={{ animationDelay: nextDelay() }}>
-              <h2 className="font-serif text-2xl font-semibold text-rose-deep">{getGreeting()} 👋</h2>
+              <h2 className="font-serif text-2xl font-semibold text-rose-deep">{getGreeting(name)} 👋</h2>
 
               {todayCardRecipe && (
                 <div
@@ -491,7 +501,8 @@ export function HomeFeed({
               {activeFilterMeta && activeFilterMatches.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <p className="text-xs font-semibold text-dusty-rose">
-                    Your {activeFilterMeta.label.toLowerCase()} saves {activeFilterMeta.value === "vegan" ? "🌱" : "⚡"}
+                    Your {activeFilterMeta.label.toLowerCase()} saves{" "}
+                    {COOK_TONIGHT_FILTER_EMOJI[activeFilterMeta.value] ?? "⚡"}
                   </p>
                   <HorizontalRow recipes={activeFilterMatches} onOpen={openRecipe} />
                 </div>
