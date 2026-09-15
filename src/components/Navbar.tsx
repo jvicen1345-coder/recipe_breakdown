@@ -150,12 +150,12 @@ export function Navbar() {
         </Link>
       </header>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 backdrop-blur-md sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-blush-dark/40 bg-cream/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-14px_rgba(192,120,140,0.45)] backdrop-blur-md sm:hidden">
         <Link href="/" onClick={handleHomeClick} className={mobileNavLinkClass(onHome)} aria-current={onHome ? "page" : undefined}>
           <MobileNavIcon active={onHome}>
             <Home size={18} />
           </MobileNavIcon>
-          <span className={`text-[10px] ${onHome ? "font-bold" : "font-medium"}`}>Home</span>
+          <span className={`text-[10px] ${onHome ? "font-bold" : "font-semibold"}`}>Home</span>
         </Link>
         <Link
           href="/recipes"
@@ -165,15 +165,20 @@ export function Navbar() {
           <MobileNavIcon active={onRecipesPage}>
             <BookOpen size={18} />
           </MobileNavIcon>
-          <span className={`text-[10px] ${onRecipesPage ? "font-bold" : "font-medium"}`}>Recipes</span>
+          <span className={`text-[10px] ${onRecipesPage ? "font-bold" : "font-semibold"}`}>Recipes</span>
         </Link>
         <Link
           href="/#add-recipe"
           onClick={handleAddRecipeClick}
           className="flex flex-1 flex-col items-center gap-0.5 py-2 text-coral-deep"
         >
-          <Plus size={18} />
-          <span className="text-[10px] font-medium">Add</span>
+          <span className="flex flex-col items-center gap-1">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-coral to-rose-deep text-white shadow-[0_4px_10px_-4px_rgba(224,122,95,0.7)]">
+              <Plus size={16} />
+            </span>
+            <span className="h-1 w-1 rounded-full bg-transparent" />
+          </span>
+          <span className="text-[10px] font-semibold">Add</span>
         </Link>
         <Link
           href="/grocery-list"
@@ -186,7 +191,7 @@ export function Navbar() {
               {showStaleDot && <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-amber-400" />}
             </span>
           </MobileNavIcon>
-          <span className={`text-[10px] ${onGroceryPage ? "font-bold" : "font-medium"}`}>Grocery</span>
+          <span className={`text-[10px] ${onGroceryPage ? "font-bold" : "font-semibold"}`}>Grocery</span>
         </Link>
         <Link
           href="/community"
@@ -196,7 +201,7 @@ export function Navbar() {
           <MobileNavIcon active={onCommunityPage}>
             <Sparkles size={18} />
           </MobileNavIcon>
-          <span className={`text-[10px] ${onCommunityPage ? "font-bold" : "font-medium"}`}>Community</span>
+          <span className={`text-[10px] ${onCommunityPage ? "font-bold" : "font-semibold"}`}>Community</span>
         </Link>
         <Link
           href="/nutrition"
@@ -206,7 +211,7 @@ export function Navbar() {
           <MobileNavIcon active={onNutritionPage}>
             <BarChart3 size={18} />
           </MobileNavIcon>
-          <span className={`text-[10px] ${onNutritionPage ? "font-bold" : "font-medium"}`}>Week</span>
+          <span className={`text-[10px] ${onNutritionPage ? "font-bold" : "font-semibold"}`}>Week</span>
         </Link>
       </div>
     </>
