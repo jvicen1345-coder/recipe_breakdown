@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Quicksand } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 import { Navbar } from "@/components/Navbar";
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </PantryProvider>
           </PlanProvider>
         </ToastProvider>
+        <Analytics />
       </body>
     </html>
   );
