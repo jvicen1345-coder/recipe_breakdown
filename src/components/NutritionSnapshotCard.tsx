@@ -50,7 +50,7 @@ const MACRO_TILES: {
     key: "fat",
     label: "Fat",
     unit: "g",
-    emoji: "💧",
+    emoji: "🥑",
     bg: "from-sky-200/70 to-sky-50",
     fill: "bg-sky-400",
     text: "text-sky-600",
