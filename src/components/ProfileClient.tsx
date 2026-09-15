@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronRight, LogOut, MailCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ChevronRight, LogOut, MailCheck, Shield, Sparkles } from "lucide-react";
 
 import { useToast } from "./ToastProvider";
 
@@ -13,12 +13,22 @@ export function ProfileClient({
   showThisWeekCard: initialShowThisWeekCard,
   emailVerified,
   plan,
+  points,
+  pointsForFreePro,
+  trustLevel,
+  trustBadge,
+  isAdmin,
 }: {
   email: string;
   name: string | null;
   showThisWeekCard: boolean;
   emailVerified: boolean;
   plan: string;
+  points: number;
+  pointsForFreePro: number;
+  trustLevel: "new" | "trusted" | "flagged";
+  trustBadge: string | null;
+  isAdmin: boolean;
 }) {
   const isPro = plan === "pro";
   const router = useRouter();
@@ -152,6 +162,49 @@ export function ProfileClient({
             />
           </button>
         </label>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-[1.75rem] border border-blush-dark/50 bg-white/85 p-5 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)] backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <h2 className="font-serif text-lg font-semibold text-rose-deep">Community 🌸</h2>
+          {trustBadge && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sage/25 px-2.5 py-1 text-xs font-semibold text-sage-dark">
+              {trustBadge}
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-dusty-rose">
+          ✨ {points} points — {Math.max(pointsForFreePro - points, 0)} to go for free Pro 🌸
+        </p>
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/submit-recipe"
+            className="flex items-center justify-between gap-3 rounded-2xl bg-blush-soft px-4 py-3 text-left transition hover:bg-blush"
+          >
+            <span className="text-sm font-medium text-rose-deep">Share a recipe 🍓</span>
+            <ChevronRight size={16} className="text-dusty-rose" />
+          </Link>
+          {trustLevel === "trusted" && (
+            <Link
+              href="/community/review"
+              className="flex items-center justify-between gap-3 rounded-2xl bg-blush-soft px-4 py-3 text-left transition hover:bg-blush"
+            >
+              <span className="text-sm font-medium text-rose-deep">Review submissions 👩‍🍳</span>
+              <ChevronRight size={16} className="text-dusty-rose" />
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              href="/admin/community"
+              className="flex items-center justify-between gap-3 rounded-2xl bg-lavender/40 px-4 py-3 text-left transition hover:bg-lavender/60"
+            >
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-deep">
+                <Shield size={14} /> Admin review queue
+              </span>
+              <ChevronRight size={16} className="text-dusty-rose" />
+            </Link>
+          )}
+        </div>
       </section>
 
       <Link

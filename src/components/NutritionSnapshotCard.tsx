@@ -6,88 +6,12 @@ import { ArrowRight, Flame } from "lucide-react";
 
 import type { HomeNutritionCard } from "@/lib/types";
 
-// A soft default weekly goal — there's no user profile/goals system in this app,
-// so these stand in for "roughly average" when filling each tile's progress bar.
-const WEEKLY_GOAL = { calories: 2000, protein: 120, carbs: 250, fat: 65 };
-
-const MACRO_TILES: {
-  key: "calories" | "protein" | "carbs" | "fat";
-  label: string;
-  unit: string;
-  emoji: string;
-  bg: string;
-  fill: string;
-  text: string;
-}[] = [
-  {
-    key: "calories",
-    label: "Calories",
-    unit: "",
-    emoji: "🔥",
-    bg: "from-coral/25 to-coral/5",
-    fill: "bg-coral",
-    text: "text-coral-deep",
-  },
-  {
-    key: "protein",
-    label: "Protein",
-    unit: "g",
-    emoji: "💪",
-    bg: "from-lavender/70 to-lavender/15",
-    fill: "bg-lavender-dark",
-    text: "text-lavender-dark",
-  },
-  {
-    key: "carbs",
-    label: "Carbs",
-    unit: "g",
-    emoji: "🍞",
-    bg: "from-peach/70 to-peach/15",
-    fill: "bg-peach-dark",
-    text: "text-peach-dark",
-  },
-  {
-    key: "fat",
-    label: "Fat",
-    unit: "g",
-    emoji: "🥑",
-    bg: "from-sky-200/70 to-sky-50",
-    fill: "bg-sky-400",
-    text: "text-sky-600",
-  },
+const MACRO_TILES: { key: "calories" | "protein" | "carbs" | "fat"; unit: string; emoji: string }[] = [
+  { key: "calories", unit: "", emoji: "🔥" },
+  { key: "protein", unit: "g", emoji: "💪" },
+  { key: "carbs", unit: "g", emoji: "🍞" },
+  { key: "fat", unit: "g", emoji: "🥑" },
 ];
-
-function MacroTile({ tile, value }: { tile: (typeof MACRO_TILES)[number]; value: number }) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const pct = Math.max(0, Math.min(100, Math.round((value / WEEKLY_GOAL[tile.key]) * 100)));
-
-  return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowTooltip((v) => !v);
-      }}
-      className={`relative flex flex-col items-center gap-0.5 rounded-2xl bg-gradient-to-br px-3 py-3 text-center ${tile.bg}`}
-    >
-      <span className="text-base">{tile.emoji}</span>
-      <span className={`font-serif text-lg font-bold ${tile.text}`}>
-        {value}
-        {tile.unit}
-      </span>
-      <span className="text-[10px] font-medium tracking-wide text-dusty-rose uppercase">{tile.label}</span>
-      <span className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/60">
-        <span className={`block h-full rounded-full ${tile.fill}`} style={{ width: `${pct}%` }} />
-      </span>
-      {showTooltip && (
-        <span className="absolute -bottom-8 left-1/2 z-10 -translate-x-1/2 rounded-full bg-rose-deep px-3 py-1 text-[10px] font-semibold whitespace-nowrap text-white shadow-md">
-          {pct}% of your weekly goal 🌸
-        </span>
-      )}
-    </button>
-  );
-}
 
 export function NutritionSnapshotCard({ onStartCooking }: { onStartCooking?: () => void }) {
   const [data, setData] = useState<HomeNutritionCard | null>(null);
@@ -115,65 +39,69 @@ export function NutritionSnapshotCard({ onStartCooking }: { onStartCooking?: () 
   if (!data) return null;
 
   return (
-    <div className="rounded-[1.9rem] bg-gradient-to-br from-blush via-coral/25 to-lavender/40 p-[1.5px] shadow-[0_0_30px_-10px_rgba(240,113,74,0.4)]">
+    <div className="flex h-full flex-col gap-3 rounded-[1.9rem] bg-white p-5 shadow-[0_10px_30px_-18px_rgba(192,120,140,0.4)] ring-1 ring-blush-dark/30">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-serif text-base font-semibold text-rose-deep">This Week 📊</span>
+        <Link
+          href="/nutrition"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-dusty-rose hover:text-rose-deep"
+        >
+          See more <ArrowRight size={11} />
+        </Link>
+      </div>
+
       {!data.hasCookedThisWeek ? (
-        <div className="flex flex-col items-center gap-3 rounded-[1.85rem] bg-white/90 p-6 text-center backdrop-blur-sm">
-          <span className="text-3xl">📊</span>
-          <p className="font-serif text-lg font-semibold text-rose-deep">Cook something and we&apos;ll track your week 💕</p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-4 text-center">
+          <span className="text-2xl">🌸</span>
+          <p className="text-sm font-medium text-dusty-rose">Cook something to start your week 🌸</p>
           {onStartCooking && (
             <button
               type="button"
               onClick={onStartCooking}
-              className="rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+              className="rounded-full bg-gradient-to-r from-coral to-rose-deep px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-105"
             >
               Start Cooking 🍳
             </button>
           )}
         </div>
       ) : (
-        <Link
-          href="/nutrition"
-          className="flex flex-col gap-4 rounded-[1.85rem] bg-white/90 p-5 backdrop-blur-sm transition hover:-translate-y-0.5"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <p className="font-serif text-2xl leading-snug font-semibold text-rose-deep">
-              <span aria-hidden>✨ </span>
-              {data.insight}
-            </p>
-            <span className="mt-1 inline-flex shrink-0 items-center gap-1 text-xs font-medium text-dusty-rose">
-              See more <ArrowRight size={12} />
-            </span>
-          </div>
+        <Link href="/nutrition" className="flex flex-1 flex-col gap-3">
+          <p className="line-clamp-1 font-serif text-lg leading-snug font-semibold text-rose-deep">
+            <span aria-hidden>✨ </span>
+            {data.insight}
+          </p>
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex gap-1.5">
-              {data.dayMarks.map((day) => (
-                <span
-                  key={day.date}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold transition ${
-                    day.cooked
-                      ? "bg-gradient-to-br from-blush-dark to-coral text-white"
-                      : "border border-blush-dark/40 bg-cream/40 text-dusty-rose"
-                  } ${day.isToday ? "ring-2 ring-coral-deep ring-offset-1 ring-offset-white" : ""}`}
-                >
-                  {day.label}
-                </span>
-              ))}
-            </div>
-            {data.streakDays > 0 && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-peach px-2.5 py-1 text-xs font-semibold text-peach-dark">
-                <Flame size={12} /> {data.streakDays}d streak
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
             {MACRO_TILES.map((tile) => (
-              <MacroTile key={tile.key} tile={tile} value={data.totals[tile.key]} />
+              <span key={tile.key} className="flex items-center gap-1.5 text-sm font-semibold text-rose-deep">
+                <span aria-hidden>{tile.emoji}</span>
+                {data.totals[tile.key]}
+                {tile.unit}
+              </span>
             ))}
           </div>
 
-          <p className="text-[11px] text-dusty-rose/70">AI-estimated nutrition 🌸</p>
+          <div className="mt-auto flex items-end justify-between gap-3">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-1">
+                {data.dayMarks.map((day) => (
+                  <span
+                    key={day.date}
+                    className={`h-4 w-4 rounded-full transition ${
+                      day.cooked ? "bg-gradient-to-br from-blush-dark to-coral" : "border border-blush-dark/40 bg-cream/40"
+                    } ${day.isToday ? "ring-1 ring-coral-deep ring-offset-1 ring-offset-white" : ""}`}
+                  />
+                ))}
+              </div>
+              {data.streakDays > 0 && (
+                <span className="inline-flex w-fit shrink-0 items-center gap-1 rounded-full bg-peach px-2 py-0.5 text-[10px] font-semibold text-peach-dark">
+                  <Flame size={10} /> {data.streakDays}d streak
+                </span>
+              )}
+            </div>
+          </div>
+
+          <p className="text-[10px] text-dusty-rose/70">AI-estimated 🌸</p>
         </Link>
       )}
     </div>

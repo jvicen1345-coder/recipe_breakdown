@@ -112,6 +112,14 @@ export function MyRecipesGrid({
     return () => clearTimeout(timeout);
   }, [search, recipes]);
 
+  const communityRecipes = useMemo(
+    () =>
+      recipes
+        .filter((recipe) => recipe.sourceUrl.startsWith("community-submission:"))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [recipes],
+  );
+
   const isSmartSearch = smartMatchIds !== null && search.trim().length >= 3;
 
   const filteredRecipes = useMemo(() => {
@@ -243,6 +251,19 @@ export function MyRecipesGrid({
           <span className="text-xs text-dusty-rose">{recipes.length} saved 🌸</span>
         </div>
       </div>
+
+      {communityRecipes.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold text-dusty-rose">From our community 🌸</h2>
+          <div className="no-scrollbar flex gap-4 overflow-x-auto pb-1">
+            {communityRecipes.map((recipe) => (
+              <div key={recipe.id} className="w-40 shrink-0">
+                <RecipeCard recipe={recipe} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         {searching ? (

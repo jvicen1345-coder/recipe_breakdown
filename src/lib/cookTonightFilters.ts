@@ -24,6 +24,18 @@ export const COOK_TONIGHT_FILTER_LABELS: Record<string, string> = Object.fromEnt
   COOK_TONIGHT_FILTERS.map((f) => [f.value, f.label]),
 );
 
+// Girl Dinner mode's matching rule — quick/snack/no-cook/comfort/budget/vegan saves,
+// or just plain under 15 minutes. No single field captures "snack" or "no-cook"
+// directly, so mealType and a very-short cook time stand in for them.
+export function matchesGirlDinner(recipe: RecipeDto): boolean {
+  if (recipe.totalTimeMinutes != null && recipe.totalTimeMinutes < 15) return true; // Quick / no-cook
+  if (recipe.mealType === "quick-bite") return true; // Snack
+  if (recipe.priceLevel === "budget") return true;
+  if (recipe.dietType === "vegan") return true;
+  const title = recipe.title.toLowerCase();
+  return COMFORT_FOOD_KEYWORDS.some((keyword) => title.includes(keyword));
+}
+
 export function matchesCookTonightFilter(recipe: RecipeDto, filter: string): boolean {
   switch (filter) {
     case "quick":

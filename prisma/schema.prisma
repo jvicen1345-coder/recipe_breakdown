@@ -52,8 +52,24 @@ model User {
   // the "your pantry has saved you from buying X ingredients" stat on the subscription page.
   ingredientsSavedByPantry Int @default(0)
 
-  recipesCreated Recipe[]
-  foldersCreated Folder[]
+  // --- Personal macro goals (see lib/nutritionGoals.ts) — null falls back to the app's
+  // soft defaults, so most accounts never write these rows at all. ---
+  goalCalories Int?
+  goalProtein  Int?
+  goalCarbs    Int?
+  goalFat      Int?
+
+  // --- Community submissions + points (see lib/community.ts) ---
+  points Int @default(0)
+  // Extends Pro access without touching Stripe at all — bumped by 30 days each time
+  // the 500-point free-Pro-month reward fires. isPro() treats a future date here as
+  // equivalent to plan === "pro".
+  proAccessUntil DateTime?
+
+  recipesCreated       Recipe[]
+  foldersCreated       Folder[]
+  communitySubmissions CommunitySubmission[]
+  submissionVotes      SubmissionVote[]
 }
 
 model Recipe {
@@ -106,6 +122,10 @@ model Recipe {
   lastOrderedViaAppAt DateTime?
 
   cartOrders CartOrder[]
+
+  // Present only for recipes born from an approved community submission — that's
+  // what makes a recipe "from our community" rather than a regular TikTok save.
+  communitySubmission CommunitySubmission?
 }
 
 model Folder {
@@ -156,4 +176,84 @@ model CookLog {
   recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   cookedAt DateTime @default(now())
   rating   Int? // 1-5 stars, optional
+}
+
+// A hand-typed meal that didn't come from a saved recipe (see lib/nutritionGoals.ts and
+// the Week tab's "+ Log a meal" sheet) — shared across the household like CookLog, not
+// per-user, so it slots into the same weekly totals/meal list.
+model ManualMealLog {
+  id                 String   @id @default(cuid())
+  name               String
+  caloriesPerServing Int?
+  proteinGrams       Int?
+  carbsGrams         Int?
+  fatGrams           Int?
+  photoUrl           String?
+  loggedAt           DateTime @default(now())
+  createdAt          DateTime @default(now())
+}
+
+// One community recipe submission, working through the moderation pipeline described
+// in lib/community.ts: draft -> pending_ai -> pending_community -> pending_admin ->
+// approved | rejected (or auto_rejected straight out of the community vote).
+model CommunitySubmission {
+  id     String @id @default(cuid())
+  status String @default("draft")
+
+  submittedByUserId String
+  submittedBy       User   @relation(fields: [submittedByUserId], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String
+  cuisineType     String?
+  dietTagsJson    String  @default("[]") // JSON: string[]
+  cookTimeMinutes Int?
+  difficulty      String? // easy | medium | hard
+
+  ingredientsJson  String @default("[]") // JSON: { amount, unit, name }[]
+  instructionsJson String @default("[]") // JSON: string[]
+
+  // The verification-layer personal story — required, minimum 50 characters.
+  story String @default("")
+
+  photoUrl               String?
+  photoWidth             Int?
+  photoHeight            Int?
+  photoFlaggedScreenshot Boolean @default(false)
+
+  // Optional manual nutrition entry, same shape as Recipe.nutritionJson — AI-estimated
+  // on approval when left blank.
+  nutritionJson String?
+
+  // JSON: string[] of human-readable reasons Layer 1 pre-screening flagged this
+  // submission (empty array means it sailed straight through to community review).
+  aiFlagsJson String @default("[]")
+
+  rejectionReason String?
+
+  approvedRecipeId String? @unique
+  approvedRecipe   Recipe? @relation(fields: [approvedRecipeId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime  @default(now())
+  // Null while still a draft — set the moment "Submit for review" is pressed, and
+  // what the weekly submission-cap and points-on-submit logic key off of.
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+
+  votes SubmissionVote[]
+}
+
+// A trusted reviewer's Yes / Not sure / No verdict on one community submission —
+// three of these decide whether a submission moves to admin review or gets
+// auto-rejected (see lib/community.ts:tallyVotes).
+model SubmissionVote {
+  id           String              @id @default(cuid())
+  submissionId String
+  submission   CommunitySubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  voterUserId  String
+  voter        User                @relation(fields: [voterUserId], references: [id], onDelete: Cascade)
+  vote         String // yes | not_sure | no
+  createdAt    DateTime            @default(now())
+
+  @@unique([submissionId, voterUserId])
 }

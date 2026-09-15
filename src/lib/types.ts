@@ -64,28 +64,39 @@ export interface PantryItemDto {
   lastConfirmedAt: string;
 }
 
+export interface WeekMealEntry {
+  id: string;
+  kind: "recipe" | "manual";
+  recipeId: string | null;
+  title: string;
+  thumbnailUrl: string | null;
+  loggedAt: string;
+  rating: number | null;
+  caloriesPerServing: number | null;
+  proteinGrams: number | null;
+  carbsGrams: number | null;
+  fatGrams: number | null;
+  orderedViaApp: boolean;
+}
+
 export interface NutritionSnapshot {
   weekOffset: number;
   weekStart: string;
   weekEnd: string;
+  streakDays: number;
   totals: { calories: number; protein: number; carbs: number; fat: number };
+  goals: { calories: number; protein: number; carbs: number; fat: number };
   daily: { date: string; calories: number }[];
   macroPct: { protein: number; carbs: number; fat: number };
-  insight: string;
-  cookedRecipes: {
-    logId: string;
+  insight: string | null;
+  meals: WeekMealEntry[];
+  recommendations: {
     recipeId: string;
     title: string;
     thumbnailUrl: string | null;
-    cookedAt: string;
-    rating: number | null;
-    caloriesPerServing: number | null;
-    proteinGrams: number | null;
-    carbsGrams: number | null;
-    fatGrams: number | null;
-    orderedViaApp: boolean;
+    reason: string;
+    badge: "high-protein" | "light";
   }[];
-  recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[];
 }
 
 // Powers only the homepage "This Week" card (src/app/api/nutrition-home-card) — kept

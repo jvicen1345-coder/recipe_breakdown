@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Clock3, Loader2 } from "lucide-react";
 
+import { BlindDateReveal } from "./BlindDateReveal";
 import { CollectionImport } from "./CollectionImport";
 import { CookMode } from "./CookMode";
 import { CookTonightSwiper } from "./CookTonightSwiper";
+import { GirlDinnerMode } from "./GirlDinnerMode";
 import { NutritionSnapshotCard } from "./NutritionSnapshotCard";
 import { ProLockBadge } from "./ProLockBadge";
 import { useProUpsell } from "./ProUpsellProvider";
@@ -15,7 +17,7 @@ import { RecipeThumbnail } from "./RecipeThumbnail";
 import { useRecipeModal } from "./RecipeModalProvider";
 import { useToast } from "./ToastProvider";
 import { getMostRecentCookProgress } from "@/lib/cookModeStorage";
-import { COOK_TONIGHT_FILTERS, matchesCookTonightFilter } from "@/lib/cookTonightFilters";
+import { COOK_TONIGHT_FILTERS, matchesCookTonightFilter, matchesGirlDinner } from "@/lib/cookTonightFilters";
 import { formatMinutes } from "@/lib/format";
 import {
   getGreeting,
@@ -153,6 +155,8 @@ export function HomeFeed({
   const [error, setError] = useState<{ message: string; existingRecipeId?: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [showSwiper, setShowSwiper] = useState(false);
+  const [showBlindDate, setShowBlindDate] = useState(false);
+  const [showGirlDinner, setShowGirlDinner] = useState(false);
   const [cookRecipe, setCookRecipe] = useState<RecipeDto | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [continueRecipe, setContinueRecipe] = useState<{ recipe: RecipeDto; stepIndex: number } | null>(null);
@@ -248,6 +252,14 @@ export function HomeFeed({
       return;
     }
     setShowSwiper(true);
+  }
+
+  function handleOpenBlindDate() {
+    if (recipes.length < 1) {
+      showToast("Save a recipe first for us to set you up 🌸");
+      return;
+    }
+    setShowBlindDate(true);
   }
 
   const saved = mySavedRecipes(recipes, currentUserId);
@@ -565,22 +577,44 @@ export function HomeFeed({
               </section>
             )}
 
-            <section className="card-fade-in flex flex-col gap-3" style={{ animationDelay: nextDelay() }}>
-              <div className="flex items-center justify-center gap-1.5 text-center">
-                <p className="font-serif text-lg font-semibold text-rose-deep">Feeling indecisive? 🎀</p>
-                {!isPro && <ProLockBadge reason="recipe-swiper" />}
-              </div>
-              <div className="flex flex-col items-center gap-3 rounded-[1.75rem] bg-gradient-to-r from-blush to-lavender/40 px-5 py-6 text-center">
-                <p className="text-xs text-dusty-rose">Swipe through your saved recipes to find tonight&apos;s pick.</p>
-                <button
-                  type="button"
-                  onClick={handleOpenSwiper}
-                  className="shrink-0 rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
-                >
-                  Cook Tonight? 🌙
-                </button>
+            <section className="card-fade-in grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2" style={{ animationDelay: nextDelay() }}>
+              <div className="flex h-full flex-col gap-3 rounded-[1.75rem] bg-gradient-to-br from-blush to-lavender/40 p-5">
+                <div className="flex items-center justify-center gap-1.5 text-center">
+                  <p className="font-serif text-lg font-semibold text-rose-deep">Feeling indecisive? 🎀</p>
+                  {!isPro && <ProLockBadge reason="recipe-swiper" />}
+                </div>
+                <p className="-mt-1 text-center text-xs text-dusty-rose">Pick your vibe for tonight:</p>
+
+                <div className="mt-1 flex flex-1 flex-col justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenSwiper}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+                  >
+                    💘 Find Your Match
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenBlindDate}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-lavender-dark to-lavender px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+                  >
+                    🙈 Blind Date
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowGirlDinner(true)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-coral-deep to-peach-dark px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+                  >
+                    🍓 Girl Dinner
+                  </button>
+                </div>
               </div>
 
+              {showThisWeekCard && <NutritionSnapshotCard onStartCooking={() => setShowSwiper(true)} />}
+            </section>
+
+            <section className="card-fade-in flex flex-col gap-3" style={{ animationDelay: nextDelay() }}>
+              <h2 className="text-sm font-semibold text-dusty-rose">Or browse by vibe ⚡</h2>
               <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
                 {COOK_TONIGHT_FILTERS.map((filter) => {
                   const active = activeFilter === filter.value;
@@ -621,12 +655,6 @@ export function HomeFeed({
               </section>
             )}
 
-            {showThisWeekCard && (
-              <section className="card-fade-in" style={{ animationDelay: nextDelay() }}>
-                <NutritionSnapshotCard onStartCooking={() => setShowSwiper(true)} />
-              </section>
-            )}
-
             {favoriteRecipes.length > 0 && (
               <section className="card-fade-in flex flex-col gap-3" style={{ animationDelay: nextDelay() }}>
                 <h2 className="font-serif text-xl font-semibold text-rose-deep">Your favourites 💕</h2>
@@ -639,6 +667,10 @@ export function HomeFeed({
       )}
 
       {showSwiper && <CookTonightSwiper recipes={recipes} onClose={() => setShowSwiper(false)} />}
+      {showBlindDate && <BlindDateReveal recipes={recipes} onClose={() => setShowBlindDate(false)} />}
+      {showGirlDinner && (
+        <GirlDinnerMode recipes={recipes.filter(matchesGirlDinner)} onClose={() => setShowGirlDinner(false)} />
+      )}
       {cookRecipe && <CookMode recipe={cookRecipe} onClose={() => setCookRecipe(null)} />}
     </div>
   );

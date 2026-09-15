@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getSessionUserId } from "@/lib/auth";
 import { COMFORT_FOOD_KEYWORDS } from "@/lib/comfortFoodKeywords";
-import { computeWeekInsight } from "@/lib/nutritionInsight";
+import { computeWeekTabInsight } from "@/lib/nutritionInsight";
+import { resolveGoals } from "@/lib/nutritionGoals";
 import { prisma } from "@/lib/prisma";
 import type { Nutrition } from "@/lib/types";
 
@@ -37,11 +38,35 @@ export async function GET(request: Request) {
   const weekOffset = Number(url.searchParams.get("weekOffset") ?? "0") || 0;
   const { start, end } = getWeekRange(weekOffset);
 
-  const logs = await prisma.cookLog.findMany({
-    where: { cookedAt: { gte: start, lt: end } },
-    include: { recipe: true },
-    orderBy: { cookedAt: "asc" },
-  });
+  const today = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const streakWindowStart = new Date(today);
+  streakWindowStart.setDate(today.getDate() - 90);
+
+  const [logs, manualLogs, user, streakWindowLogs] = await Promise.all([
+    prisma.cookLog.findMany({
+      where: { cookedAt: { gte: start, lt: end } },
+      include: { recipe: true },
+      orderBy: { cookedAt: "asc" },
+    }),
+    prisma.manualMealLog.findMany({
+      where: { loggedAt: { gte: start, lt: end } },
+      orderBy: { loggedAt: "asc" },
+    }),
+    prisma.user.findUnique({ where: { id: userId } }),
+    // Always "today's actual streak," independent of which week is being browsed.
+    prisma.cookLog.findMany({ where: { cookedAt: { gte: streakWindowStart, lt: tomorrow } }, select: { cookedAt: true } }),
+  ]);
+
+  const cookedDateKeys = new Set(streakWindowLogs.map((log) => log.cookedAt.toISOString().slice(0, 10)));
+  let streakDays = 0;
+  const cursor = new Date(today);
+  if (!cookedDateKeys.has(cursor.toISOString().slice(0, 10))) cursor.setDate(cursor.getDate() - 1);
+  while (cookedDateKeys.has(cursor.toISOString().slice(0, 10))) {
+    streakDays++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
 
   const daily = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start);
@@ -50,8 +75,23 @@ export async function GET(request: Request) {
   });
 
   const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  const cookedRecipes = [];
   const cookedRecipeIds = new Set<string>();
+
+  interface MealEntry {
+    id: string;
+    kind: "recipe" | "manual";
+    recipeId: string | null;
+    title: string;
+    thumbnailUrl: string | null;
+    loggedAt: string;
+    rating: number | null;
+    caloriesPerServing: number | null;
+    proteinGrams: number | null;
+    carbsGrams: number | null;
+    fatGrams: number | null;
+    orderedViaApp: boolean;
+  }
+  const meals: MealEntry[] = [];
 
   for (const log of logs) {
     const nutrition = safeParseNutrition(log.recipe.nutritionJson);
@@ -64,13 +104,14 @@ export async function GET(request: Request) {
       if (daily[dayIndex]) daily[dayIndex].calories += nutrition.caloriesPerServing ?? 0;
     }
     cookedRecipeIds.add(log.recipeId);
-    cookedRecipes.push({
-      logId: log.id,
+    meals.push({
+      id: log.id,
+      kind: "recipe",
       recipeId: log.recipeId,
       title: log.recipe.title,
       thumbnailUrl:
         log.recipe.thumbnailUrl ?? (log.recipe.thumbnailPath ? `/api/media/${log.recipe.thumbnailPath}` : null),
-      cookedAt: log.cookedAt.toISOString(),
+      loggedAt: log.cookedAt.toISOString(),
       rating: log.rating,
       caloriesPerServing: nutrition?.caloriesPerServing ?? null,
       proteinGrams: nutrition?.proteinGrams ?? null,
@@ -79,6 +120,33 @@ export async function GET(request: Request) {
       orderedViaApp: log.recipe.lastOrderedViaAppAt != null,
     });
   }
+
+  for (const manual of manualLogs) {
+    const dayIndex = Math.floor((manual.loggedAt.getTime() - start.getTime()) / DAY_MS);
+    totals.calories += manual.caloriesPerServing ?? 0;
+    totals.protein += manual.proteinGrams ?? 0;
+    totals.carbs += manual.carbsGrams ?? 0;
+    totals.fat += manual.fatGrams ?? 0;
+    if (daily[dayIndex]) daily[dayIndex].calories += manual.caloriesPerServing ?? 0;
+    meals.push({
+      id: manual.id,
+      kind: "manual",
+      recipeId: null,
+      title: manual.name,
+      thumbnailUrl: manual.photoUrl,
+      loggedAt: manual.loggedAt.toISOString(),
+      rating: null,
+      caloriesPerServing: manual.caloriesPerServing,
+      proteinGrams: manual.proteinGrams,
+      carbsGrams: manual.carbsGrams,
+      fatGrams: manual.fatGrams,
+      orderedViaApp: false,
+    });
+  }
+
+  meals.sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
+
+  const loggedCount = logs.length + manualLogs.length;
 
   const macroCalories = totals.protein * 4 + totals.carbs * 4 + totals.fat * 9;
   const macroPct =
@@ -91,31 +159,48 @@ export async function GET(request: Request) {
       : { protein: 0, carbs: 0, fat: 0 };
 
   const avgDailyCalories = totals.calories / 7;
-  const highCarb = logs.length > 0 && macroPct.carbs >= 50;
-  const highProtein = logs.length > 0 && macroPct.protein >= 35;
-  const lowCalorie = logs.length > 0 && avgDailyCalories < 350;
-  const insight = computeWeekInsight(macroPct, avgDailyCalories, logs.length);
+  const highCarb = loggedCount > 0 && macroPct.carbs >= 50;
+  const highProtein = loggedCount > 0 && macroPct.protein >= 35;
+  const lowCalorie = loggedCount > 0 && avgDailyCalories < 350;
+  const insight = computeWeekTabInsight(macroPct, avgDailyCalories, loggedCount);
 
-  let recommendations: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[] = [];
-  if (logs.length > 0) {
+  let recommendations: {
+    recipeId: string;
+    title: string;
+    thumbnailUrl: string | null;
+    reason: string;
+    badge: "high-protein" | "light";
+  }[] = [];
+  if (loggedCount > 0) {
     const allRecipes = await prisma.recipe.findMany({
       where: { id: { notIn: [...cookedRecipeIds] } },
       orderBy: { createdAt: "desc" },
     });
 
-    const scored: { recipeId: string; title: string; thumbnailUrl: string | null; reason: string }[] = [];
+    const scored: (typeof recommendations)[number][] = [];
     for (const recipe of allRecipes) {
       const nutrition = safeParseNutrition(recipe.nutritionJson);
       const thumbnailUrl = recipe.thumbnailUrl ?? (recipe.thumbnailPath ? `/api/media/${recipe.thumbnailPath}` : null);
+      const badge: "high-protein" | "light" = (nutrition?.proteinGrams ?? 0) >= 20 ? "high-protein" : "light";
+
       if (highCarb && nutrition?.proteinGrams != null && nutrition.proteinGrams >= 20) {
-        scored.push({ recipeId: recipe.id, title: recipe.title, thumbnailUrl, reason: "Balances your week 💪" });
+        scored.push({ recipeId: recipe.id, title: recipe.title, thumbnailUrl, reason: "Balances your week 💪", badge });
       } else if (
         highProtein &&
-        (nutrition?.caloriesPerServing == null || nutrition.caloriesPerServing <= 400 || recipe.dietType === "vegan" || recipe.dietType === "vegetarian")
+        (nutrition?.caloriesPerServing == null ||
+          nutrition.caloriesPerServing <= 400 ||
+          recipe.dietType === "vegan" ||
+          recipe.dietType === "vegetarian")
       ) {
-        scored.push({ recipeId: recipe.id, title: recipe.title, thumbnailUrl, reason: "A lighter pick to balance your week 🥗" });
+        scored.push({
+          recipeId: recipe.id,
+          title: recipe.title,
+          thumbnailUrl,
+          reason: "A lighter pick to balance your week 🥗",
+          badge,
+        });
       } else if (lowCalorie && COMFORT_FOOD_KEYWORDS.some((k) => recipe.title.toLowerCase().includes(k))) {
-        scored.push({ recipeId: recipe.id, title: recipe.title, thumbnailUrl, reason: "A cozy treat to balance your week 🍰" });
+        scored.push({ recipeId: recipe.id, title: recipe.title, thumbnailUrl, reason: "A cozy treat to balance your week 🍰", badge });
       }
       if (scored.length >= 3) break;
     }
@@ -126,16 +211,18 @@ export async function GET(request: Request) {
     weekOffset,
     weekStart: start.toISOString().slice(0, 10),
     weekEnd: new Date(end.getTime() - DAY_MS).toISOString().slice(0, 10),
+    streakDays,
     totals: {
       calories: Math.round(totals.calories),
       protein: Math.round(totals.protein),
       carbs: Math.round(totals.carbs),
       fat: Math.round(totals.fat),
     },
+    goals: user ? resolveGoals(user) : resolveGoals({ goalCalories: null, goalProtein: null, goalCarbs: null, goalFat: null }),
     daily: daily.map((d) => ({ ...d, calories: Math.round(d.calories) })),
     macroPct,
     insight,
-    cookedRecipes,
+    meals,
     recommendations,
   });
 }
