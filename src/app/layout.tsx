@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
+import { NotificationToaster } from "@/components/NotificationToaster";
 import { PantryOnboardingProvider } from "@/components/PantryOnboardingProvider";
 import { PantryProvider } from "@/components/PantryProvider";
 import { PlanProvider } from "@/components/PlanProvider";
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${quicksand.variable} ${playfair.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col pb-16 sm:pb-0">
         <ToastProvider>
+          <NotificationToaster />
           <PlanProvider>
             <PantryProvider>
               <PantryOnboardingProvider>

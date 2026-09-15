@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, BookOpen, Home, Plus, ShoppingCart, User } from "lucide-react";
+import { BarChart3, BookOpen, Home, Plus, ShoppingCart, Sparkles, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { usePlan } from "./PlanProvider";
@@ -12,6 +12,7 @@ const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/recipes", label: "Recipes", icon: BookOpen },
   { href: "/grocery-list", label: "Grocery & Pantry", icon: ShoppingCart },
+  { href: "/community", label: "Community", icon: Sparkles },
   { href: "/nutrition", label: "This Week", icon: BarChart3 },
 ];
 
@@ -50,6 +51,7 @@ export function Navbar() {
   const onHome = pathname === "/";
   const onRecipesPage = pathname === "/recipes";
   const onGroceryPage = pathname === "/grocery-list";
+  const onCommunityPage = pathname === "/community";
   const onNutritionPage = pathname === "/nutrition";
   const showStaleDot = Boolean(pantryOnboardedAt) && stalenessLevel !== "fresh";
 
@@ -185,6 +187,16 @@ export function Navbar() {
             </span>
           </MobileNavIcon>
           <span className={`text-[10px] ${onGroceryPage ? "font-bold" : "font-medium"}`}>Grocery</span>
+        </Link>
+        <Link
+          href="/community"
+          className={mobileNavLinkClass(onCommunityPage)}
+          aria-current={onCommunityPage ? "page" : undefined}
+        >
+          <MobileNavIcon active={onCommunityPage}>
+            <Sparkles size={18} />
+          </MobileNavIcon>
+          <span className={`text-[10px] ${onCommunityPage ? "font-bold" : "font-medium"}`}>Community</span>
         </Link>
         <Link
           href="/nutrition"

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Timer as TimerIcon, X } from "lucide-react";
 
-import { ConfettiBurst } from "./ConfettiBurst";
+import { MadeItFlow } from "./MadeItFlow";
 import { useToast } from "./ToastProvider";
 import { markCooked } from "@/lib/clientState";
 import { clearCookModeProgress, getCookModeProgress, saveCookModeProgress } from "@/lib/cookModeStorage";
@@ -42,7 +42,6 @@ export function CookMode({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [saveProgressOnExit, setSaveProgressOnExit] = useState(true);
   const [timers, setTimers] = useState<ActiveTimer[]>([]);
-  const [showRating, setShowRating] = useState(false);
   const [saving, setSaving] = useState(false);
   const showToast = useToast();
   const touchStartX = useRef<number | null>(null);
@@ -126,7 +125,8 @@ export function CookMode({
     openDoorDashWithFallback();
   }
 
-  async function finishCook(rating?: number) {
+  async function finishCook(rating?: number, options?: { silent?: boolean }) {
+    if (saving) return;
     setSaving(true);
     try {
       await fetch(`/api/recipes/${recipe.id}/cook`, {
@@ -139,12 +139,18 @@ export function CookMode({
     }
     clearCookModeProgress(recipe.id);
     markCooked(recipe.id);
-    showToast("Marked as cooked! 🎉");
+    // The Made It flow already shows its own share/points confirmation toast —
+    // showing "Marked as cooked!" on top of that would just be noise.
+    if (!options?.silent) showToast("Marked as cooked! 🎉");
     onClose();
   }
 
-  const currentStepText = !isCelebration ? recipe.instructions[stepIndex] : "";
-  const detected = !isCelebration ? detectTimer(currentStepText) : null;
+  if (isCelebration) {
+    return <MadeItFlow recipe={recipe} onFinish={finishCook} />;
+  }
+
+  const currentStepText = recipe.instructions[stepIndex];
+  const detected = detectTimer(currentStepText);
   const timerAlreadyStarted = timers.some((t) => t.stepIndex === stepIndex);
   const progressPct = Math.min(100, ((stepIndex + 1) / Math.max(1, totalSteps)) * 100);
 
@@ -166,11 +172,9 @@ export function CookMode({
         >
           <X size={18} />
         </button>
-        {!isCelebration && (
-          <span className="text-xs font-medium text-dusty-rose">
-            Step {stepIndex + 1} of {totalSteps}
-          </span>
-        )}
+        <span className="text-xs font-medium text-dusty-rose">
+          Step {stepIndex + 1} of {totalSteps}
+        </span>
         <span className="w-9" />
       </div>
 
@@ -183,97 +187,49 @@ export function CookMode({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {isCelebration ? (
-          <div className="card-fade-in relative flex flex-col items-center gap-5">
-            <ConfettiBurst />
-            <h1 className="font-serif text-3xl font-semibold text-rose-deep sm:text-4xl">You did it! 🎉</h1>
-            <p className="text-sm text-dusty-rose">{recipe.title} is ready to enjoy ✨</p>
+        {stepIndex > 0 && (
+          <p className="line-clamp-2 max-w-md text-sm text-dusty-rose/70">{recipe.instructions[stepIndex - 1]}</p>
+        )}
+        <p
+          key={stepIndex}
+          className="card-fade-in max-w-lg font-serif text-2xl leading-snug font-semibold text-rose-deep sm:text-3xl"
+        >
+          {currentStepText}
+        </p>
+        {stepIndex < totalSteps - 1 && (
+          <p className="line-clamp-2 max-w-md text-sm text-dusty-rose/70">{recipe.instructions[stepIndex + 1]}</p>
+        )}
 
-            {saving ? (
-              <p className="text-sm text-dusty-rose">Saving… 🌸</p>
-            ) : !showRating ? (
-              <button
-                type="button"
-                onClick={() => setShowRating(true)}
-                className="rounded-full bg-gradient-to-r from-sage-dark to-sage px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
-              >
-                I made this! 💕
-              </button>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <p className="text-sm font-medium text-dusty-rose">Rate your cook</p>
-                <div className="flex gap-1 text-2xl">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => finishCook(n)}
-                      aria-label={`${n} star${n > 1 ? "s" : ""}`}
-                      className="transition hover:scale-125"
-                    >
-                      ⭐
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => finishCook()}
-                  className="text-xs font-medium text-dusty-rose underline-offset-2 hover:underline"
-                >
-                  Skip rating
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            {stepIndex > 0 && (
-              <p className="line-clamp-2 max-w-md text-sm text-dusty-rose/70">{recipe.instructions[stepIndex - 1]}</p>
-            )}
-            <p
-              key={stepIndex}
-              className="card-fade-in max-w-lg font-serif text-2xl leading-snug font-semibold text-rose-deep sm:text-3xl"
-            >
-              {currentStepText}
-            </p>
-            {stepIndex < totalSteps - 1 && (
-              <p className="line-clamp-2 max-w-md text-sm text-dusty-rose/70">{recipe.instructions[stepIndex + 1]}</p>
-            )}
-
-            {detected && !timerAlreadyStarted && (
-              <button
-                type="button"
-                onClick={() => startTimer(stepIndex, detected.minutes)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
-              >
-                <TimerIcon size={14} /> Start Timer ⏱ ({detected.minutes}m)
-              </button>
-            )}
-          </>
+        {detected && !timerAlreadyStarted && (
+          <button
+            type="button"
+            onClick={() => startTimer(stepIndex, detected.minutes)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-coral to-rose-deep px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:brightness-105"
+          >
+            <TimerIcon size={14} /> Start Timer ⏱ ({detected.minutes}m)
+          </button>
         )}
       </div>
 
-      {!isCelebration && (
-        <div className="flex items-center justify-between px-6 pb-4">
-          <button
-            type="button"
-            onClick={goPrev}
-            disabled={stepIndex === 0}
-            aria-label="Previous step"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-rose-deep shadow-sm transition hover:bg-white disabled:opacity-30"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            aria-label="Next step"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-r from-coral to-rose-deep text-white shadow-md transition hover:brightness-105"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center justify-between px-6 pb-4">
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={stepIndex === 0}
+          aria-label="Previous step"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-rose-deep shadow-sm transition hover:bg-white disabled:opacity-30"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <button
+          type="button"
+          onClick={goNext}
+          aria-label="Next step"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-r from-coral to-rose-deep text-white shadow-md transition hover:brightness-105"
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
 
       {timers.length > 0 && (
         <div className="no-scrollbar flex gap-2 overflow-x-auto border-t border-blush-dark/40 bg-white/80 px-4 py-3 backdrop-blur-sm">
@@ -297,30 +253,28 @@ export function CookMode({
           <div className="flex w-full max-w-xs flex-col items-center gap-4 rounded-3xl bg-white p-6 text-center shadow-xl">
             <p className="font-serif text-lg font-semibold text-rose-deep">Come back when you&apos;re ready 🌸</p>
 
-            {!isCelebration && (
-              <label className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl bg-blush-soft px-4 py-3 text-left">
-                <span className="text-xs font-medium text-rose-deep">
-                  Save my spot
-                  <br />
-                  <span className="text-dusty-rose">Resume at Step {stepIndex + 1} next time</span>
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={saveProgressOnExit}
-                  onClick={() => setSaveProgressOnExit((v) => !v)}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-                    saveProgressOnExit ? "bg-coral" : "bg-blush-dark"
+            <label className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl bg-blush-soft px-4 py-3 text-left">
+              <span className="text-xs font-medium text-rose-deep">
+                Save my spot
+                <br />
+                <span className="text-dusty-rose">Resume at Step {stepIndex + 1} next time</span>
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={saveProgressOnExit}
+                onClick={() => setSaveProgressOnExit((v) => !v)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                  saveProgressOnExit ? "bg-coral" : "bg-blush-dark"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                    saveProgressOnExit ? "left-5" : "left-0.5"
                   }`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition ${
-                      saveProgressOnExit ? "left-5" : "left-0.5"
-                    }`}
-                  />
-                </button>
-              </label>
-            )}
+                />
+              </button>
+            </label>
 
             <div className="flex w-full gap-2">
               <button
@@ -339,7 +293,7 @@ export function CookMode({
               </button>
             </div>
 
-            {!isCelebration && stepIndex >= 3 && (
+            {stepIndex >= 3 && (
               <button
                 type="button"
                 onClick={handleOrderInstead}

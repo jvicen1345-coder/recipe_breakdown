@@ -70,6 +70,10 @@ model User {
   foldersCreated       Folder[]
   communitySubmissions CommunitySubmission[]
   submissionVotes      SubmissionVote[]
+  madeItPosts          MadeItPost[]
+  madeItHearts         MadeItHeart[]
+  madeItReports        MadeItReport[]
+  notifications        Notification[]
 }
 
 model Recipe {
@@ -126,6 +130,8 @@ model Recipe {
   // Present only for recipes born from an approved community submission — that's
   // what makes a recipe "from our community" rather than a regular TikTok save.
   communitySubmission CommunitySubmission?
+
+  madeItPosts MadeItPost[]
 }
 
 model Folder {
@@ -259,4 +265,73 @@ model SubmissionVote {
   createdAt    DateTime            @default(now())
 
   @@unique([submissionId, voterUserId])
+}
+
+// A "Made It" share — a photo + rating a user posted to the community feed after
+// finishing Cook Mode. Always implies a community post; the flow's "just comment on
+// TikTok" path never creates one of these (see MadeItFlow).
+model MadeItPost {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  photoUrl    String
+  photoWidth  Int
+  photoHeight Int
+  caption     String? // max MAX_CAPTION_LENGTH chars, enforced at the API layer
+  rating      Int // 1-5
+
+  // Set once a report threshold is hit — hides the post from the public feed without
+  // deleting it. No admin review queue for these yet; this is the "basic" moderation
+  // the spec asked for.
+  hiddenAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  hearts  MadeItHeart[]
+  reports MadeItReport[]
+}
+
+// One user's heart on a post — permanent (no unheart) so the capped point award below
+// can never be gamed by toggling. @@unique enforces one heart per user per post.
+model MadeItHeart {
+  id     String     @id @default(cuid())
+  postId String
+  post   MadeItPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+// A "Report this post" tap — @@unique so one user can't spam reports on the same
+// post to force it hidden; see HEART_POINT_CAP-style threshold in lib/madeIt.ts.
+model MadeItReport {
+  id             String     @id @default(cuid())
+  postId         String
+  post           MadeItPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporterUserId String
+  reporter       User       @relation(fields: [reporterUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, reporterUserId])
+}
+
+// A small in-app (not OS-level push) notification — today only used for "someone
+// loved your X 💕" — surfaced as a one-shot toast the next time the recipient opens
+// the app, then marked read.
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  message String
+  read    Boolean @default(false)
+
+  createdAt DateTime @default(now())
 }
