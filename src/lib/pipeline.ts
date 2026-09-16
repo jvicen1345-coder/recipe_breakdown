@@ -55,7 +55,7 @@ export async function createRecipeFromUrl(url: string, createdByUserId: string, 
     });
 
     const id = randomUUID();
-    const thumbnailPath = await saveThumbnailFile(id, framePaths);
+    const thumbnailPath = await saveThumbnailFile(id, analysis.thumbnailFramePath, framePaths);
 
     return prisma.recipe.create({
       data: {
@@ -89,10 +89,18 @@ export async function createRecipeFromUrl(url: string, createdByUserId: string, 
   }
 }
 
-/** Copies a representative extracted frame into permanent local storage as the recipe's thumbnail. */
-async function saveThumbnailFile(recipeId: string, framePaths: string[]): Promise<string | null> {
+/**
+ * Copies the extracted frame that best represents the dish into permanent local storage as the
+ * recipe's thumbnail — the one Claude picked during analysis (in focus, shows the finished dish),
+ * falling back to the middle sampled frame if analysis didn't return one.
+ */
+async function saveThumbnailFile(
+  recipeId: string,
+  preferredFramePath: string | null,
+  framePaths: string[],
+): Promise<string | null> {
   if (framePaths.length === 0) return null;
-  const chosen = framePaths[Math.floor(framePaths.length / 2)];
+  const chosen = preferredFramePath ?? framePaths[Math.floor(framePaths.length / 2)];
   try {
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
     const filename = `${recipeId}.jpg`;
