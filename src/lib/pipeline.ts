@@ -55,6 +55,16 @@ let fullPipelineAvailable: Promise<boolean> | undefined;
  * tier) — and availability can't change during a running process anyway, so
  * there's no reason to keep re-spawning it on every request.
  */
+/**
+ * Whether Collection import works on this host — either yt-dlp is present
+ * locally, or next.config.ts is transparently proxying the Collection routes
+ * to another host that has it (see FULL_PIPELINE_HOST there). Only gates the
+ * UI section; single-video submission still only uses the local pipeline.
+ */
+export async function isCollectionImportAvailable(): Promise<boolean> {
+  return (await isFullPipelineAvailable()) || Boolean(process.env.FULL_PIPELINE_HOST);
+}
+
 export function isFullPipelineAvailable(): Promise<boolean> {
   if (!fullPipelineAvailable) {
     fullPipelineAvailable = commandExists(YT_DLP_BIN, { timeoutMs: 15_000 });

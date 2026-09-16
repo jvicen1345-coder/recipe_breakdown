@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { HomeFeed } from "@/components/HomeFeed";
 import { getSessionUserId } from "@/lib/auth";
-import { isFullPipelineAvailable } from "@/lib/pipeline";
+import { isCollectionImportAvailable } from "@/lib/pipeline";
 import { isPro } from "@/lib/plan";
 import { prisma } from "@/lib/prisma";
 import { toRecipeDto } from "@/lib/types";
@@ -38,7 +38,7 @@ export default async function HomePage() {
       "Couldn't reach the database. If you're still setting this up, make sure DATABASE_URL is configured and migrations have run.";
   }
 
-  const collectionImportEnabled = await isFullPipelineAvailable();
+  const collectionImportEnabled = await isCollectionImportAvailable();
 
   return (
     <HomeFeed
