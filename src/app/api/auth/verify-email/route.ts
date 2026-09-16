@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { getRequestOrigin } from "@/lib/requestOrigin";
 
 export async function GET(request: Request) {
   const token = new URL(request.url).searchParams.get("token");
+  const origin = getRequestOrigin(request);
   const redirectTo = (result: "verified" | "invalid") =>
-    NextResponse.redirect(new URL(`/profile?verify=${result}`, request.url));
+    NextResponse.redirect(new URL(`/profile?verify=${result}`, origin));
 
   if (!token) return redirectTo("invalid");
 
