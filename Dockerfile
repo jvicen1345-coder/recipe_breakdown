@@ -27,6 +27,14 @@ ENV NODE_ENV=production
 # Railway/Render Postgres's private-network host generally isn't reachable
 # from the build environment (only from the running container). Migrations
 # run at container start instead, once the real DATABASE_URL is live.
+#
+# `next build` still needs DATABASE_URL to be *set* (src/lib/prisma.ts
+# throws at module load otherwise, which fails page-data collection) even
+# though it never connects at build time — and most hosts (Railway/Render
+# included) only inject configured variables into the running container,
+# not into the `docker build` step itself. This placeholder satisfies that
+# check; the real value Railway injects at container start overrides it.
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/placeholder"
 RUN npx next build
 
 EXPOSE 3000
