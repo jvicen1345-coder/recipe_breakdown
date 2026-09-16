@@ -165,19 +165,24 @@ need to run it by hand for local dev before `npm run dev`, since `dev` doesn't b
 ## Deploying (Railway, Render, Fly.io, a VPS, ...)
 
 The included `Dockerfile` installs `ffmpeg` and a standalone `yt-dlp` binary alongside the app, so
-the full pipeline — not just the web UI — works once deployed. Any host that builds from a
-Dockerfile works the same way; Railway is a straightforward option:
+the full pipeline — not just the web UI — works once deployed. `railway.json` configures the build
+(from the Dockerfile) and a `/api/health` healthcheck so Railway waits for a new deploy to actually
+be serving requests before cutting traffic over. Any host that builds from a Dockerfile works the
+same way; Railway is a straightforward option:
 
 1. New Project → **Deploy from GitHub repo** → pick this repo and branch. Railway detects the
-   `Dockerfile` and builds from it automatically.
+   `Dockerfile` (and `railway.json`) and builds from it automatically.
 2. Add environment variables (Project → Variables): `DATABASE_URL`, `ANTHROPIC_API_KEY`, and
-   optionally `OPENAI_API_KEY` / `ANTHROPIC_MODEL` / `OPENAI_TRANSCRIBE_MODEL`. You can point
+   `AUTH_SECRET` (a random string — see `.env.example`; without it, login sessions fall back to an
+   insecure dev-only secret) are the ones you need for a real deployment. Optionally add
+   `OPENAI_API_KEY` / `ANTHROPIC_MODEL` / `OPENAI_TRANSCRIBE_MODEL` and anything else from
+   `.env.example` (email verification, Stripe, Google login, affiliate IDs). You can point
    `DATABASE_URL` at any reachable Postgres instance, including one you set up elsewhere (e.g. Neon).
 3. Deploy. The build runs `prisma migrate deploy` automatically (same as on Vercel), so the schema
    gets created on first deploy.
-4. Optional: attach a persistent Volume mounted at `/app/data` so saved thumbnails survive
-   redeploys (without one, `data/uploads` resets each time the container rebuilds — saved recipes
-   and their text/metadata in Postgres are unaffected either way, only the thumbnail images).
+4. Attach a persistent Volume mounted at `/app/data` so uploaded community-recipe photos survive
+   redeploys (without one, `data/community-uploads` resets each time the container rebuilds — saved
+   recipes and their text/metadata in Postgres are unaffected either way, only those photo files).
 
 Deploying to **Vercel** (or any other serverless host) works too — it just automatically runs the
 lite pipeline instead, since `yt-dlp` isn't available there. No extra setup beyond `DATABASE_URL`
