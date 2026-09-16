@@ -367,36 +367,21 @@ export function HomeFeed({
           />
         </svg>
 
-        <span
-          aria-hidden
-          className="floaty pointer-events-none absolute top-[10%] left-[1%] hidden text-3xl opacity-70 select-none sm:block sm:text-4xl"
-        >
-          🌸
-        </span>
-        <span
-          aria-hidden
-          className="floaty-fast pointer-events-none absolute top-[4%] right-[2%] hidden text-2xl opacity-60 select-none sm:block sm:text-3xl"
-        >
-          ✨
-        </span>
-        <span
-          aria-hidden
-          className="floaty-slow pointer-events-none absolute bottom-[8%] left-[6%] hidden text-3xl opacity-60 select-none sm:block sm:text-4xl"
-        >
-          🍋
-        </span>
-        <span
-          aria-hidden
-          className="floaty floaty-delay pointer-events-none absolute right-[5%] bottom-[4%] hidden text-2xl opacity-70 select-none sm:block sm:text-3xl"
-        >
-          🫶
-        </span>
-
         <div className="relative mx-auto flex max-w-xl flex-col items-center gap-3">
           <h1 className="font-serif text-4xl font-semibold text-rose-deep sm:text-5xl">
             What&apos;s cooking, bestie? 🍓
           </h1>
           <p className="text-sm text-foreground/70 sm:text-base">From FYP to your kitchen ✨</p>
+        </div>
+
+        <div
+          aria-hidden
+          className="relative z-10 mx-auto mt-6 flex w-full max-w-[15rem] items-center justify-between select-none sm:max-w-xs"
+        >
+          <span className="floaty-x text-2xl opacity-70 sm:text-3xl">🌸</span>
+          <span className="floaty-x-fast floaty-delay text-xl opacity-60 sm:text-2xl">✨</span>
+          <span className="floaty-x-slow text-2xl opacity-60 sm:text-3xl">🍋</span>
+          <span className="floaty-x floaty-delay text-xl opacity-70 sm:text-2xl">🫶</span>
         </div>
       </header>
 
