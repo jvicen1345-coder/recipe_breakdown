@@ -1,5 +1,7 @@
 import path from "node:path";
 
+import sharp from "sharp";
+
 import { runCommand } from "./exec";
 
 const FFMPEG_BIN = process.env.FFMPEG_PATH || "ffmpeg";
@@ -39,7 +41,7 @@ export async function extractFrames(
   opts?: { count?: number; width?: number },
 ): Promise<string[]> {
   const count = opts?.count ?? 5;
-  const width = opts?.width ?? 480;
+  const width = opts?.width ?? 720;
   const duration = (await probeDurationSeconds(videoPath)) ?? 15;
 
   const margin = duration * 0.08;
@@ -72,4 +74,28 @@ export async function extractFrames(
     frames.push(framePath);
   }
   return frames;
+}
+
+const LAPLACIAN_KERNEL = { width: 3, height: 3, kernel: [0, 1, 0, 1, -4, 1, 0, 1, 0] };
+
+/** Variance of a Laplacian edge response — low values mean a flat/motion-blurred frame. */
+async function frameSharpness(framePath: string): Promise<number> {
+  const { channels } = await sharp(framePath).greyscale().convolve(LAPLACIAN_KERNEL).stats();
+  return channels[0].stdev ** 2;
+}
+
+/**
+ * Picks the least blurry of the extracted frames to use as a thumbnail. Frames are sampled
+ * at fixed timestamps regardless of what's happening in the video, so the "middle" one can
+ * easily land mid-zoom or mid-pan, producing a motion-blurred thumbnail.
+ */
+export async function pickSharpestFrame(framePaths: string[]): Promise<string> {
+  const scored = await Promise.all(
+    framePaths.map(async (framePath) => ({
+      framePath,
+      score: await frameSharpness(framePath).catch(() => -1),
+    })),
+  );
+  const best = scored.reduce((a, b) => (b.score > a.score ? b : a));
+  return best.score >= 0 ? best.framePath : framePaths[Math.floor(framePaths.length / 2)];
 }

@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { analyzeRecipe } from "./analyze";
 import { commandExists } from "./exec";
-import { extractAudio, extractFrames } from "./media";
+import { extractAudio, extractFrames, pickSharpestFrame } from "./media";
 import { fetchTikTokOEmbed } from "./oembed";
 import { prisma } from "./prisma";
 import { assertTikTokUrl, cleanupWorkDir, downloadTikTok, YT_DLP_BIN } from "./tiktok";
@@ -159,10 +159,10 @@ async function createRecipeLite(url: string, createdByUserId: string, userNotes?
   });
 }
 
-/** Copies a representative extracted frame into permanent local storage as the recipe's thumbnail. */
+/** Copies the sharpest extracted frame into permanent local storage as the recipe's thumbnail. */
 async function saveThumbnailFile(recipeId: string, framePaths: string[]): Promise<string | null> {
   if (framePaths.length === 0) return null;
-  const chosen = framePaths[Math.floor(framePaths.length / 2)];
+  const chosen = await pickSharpestFrame(framePaths);
   try {
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
     const filename = `${recipeId}.jpg`;
