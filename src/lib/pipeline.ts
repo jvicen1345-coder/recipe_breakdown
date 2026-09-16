@@ -36,19 +36,30 @@ export async function createRecipeFromUrl(url: string, createdByUserId: string, 
     throw new RecipeAlreadyExistsError(existing.id);
   }
 
-  const hasYtDlp = await commandExists(YT_DLP_BIN);
+  const hasYtDlp = await isFullPipelineAvailable();
   return hasYtDlp
     ? createRecipeFull(url, createdByUserId, userNotes)
     : createRecipeLite(url, createdByUserId, userNotes);
 }
 
+let fullPipelineAvailable: Promise<boolean> | undefined;
+
 /**
  * Whether this host can run the full pipeline (yt-dlp present). Collection import
  * needs yt-dlp just to list a Collection's contents, so it's only worth offering
  * in the UI when this is true — e.g. not on Vercel's serverless runtime.
+ *
+ * Checked once per process and cached: yt-dlp's standalone binary self-extracts
+ * on its first run, which can take noticeably longer than a per-request check
+ * should wait for on a CPU-constrained host (seen exceeding 5s on Render's free
+ * tier) — and availability can't change during a running process anyway, so
+ * there's no reason to keep re-spawning it on every request.
  */
-export async function isFullPipelineAvailable(): Promise<boolean> {
-  return commandExists(YT_DLP_BIN);
+export function isFullPipelineAvailable(): Promise<boolean> {
+  if (!fullPipelineAvailable) {
+    fullPipelineAvailable = commandExists(YT_DLP_BIN, { timeoutMs: 15_000 });
+  }
+  return fullPipelineAvailable;
 }
 
 async function createRecipeFull(url: string, createdByUserId: string, userNotes?: string) {

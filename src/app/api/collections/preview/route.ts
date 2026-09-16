@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { fetchTikTokCollection } from "@/lib/collection";
-import { commandExists, ExternalToolError } from "@/lib/exec";
-import { InvalidTikTokUrlError, YT_DLP_BIN } from "@/lib/tiktok";
+import { ExternalToolError } from "@/lib/exec";
+import { isFullPipelineAvailable } from "@/lib/pipeline";
+import { InvalidTikTokUrlError } from "@/lib/tiktok";
 
 export const maxDuration = 60;
 
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
   }
 
-  const hasYtDlp = await commandExists(YT_DLP_BIN);
+  const hasYtDlp = await isFullPipelineAvailable();
   if (!hasYtDlp) {
     return NextResponse.json(
       {
