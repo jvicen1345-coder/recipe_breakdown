@@ -48,13 +48,17 @@ export async function fetchGoogleProfile(code: string, origin: string): Promise<
       grant_type: "authorization_code",
     }),
   });
-  if (!tokenRes.ok) throw new Error(`Google token exchange failed: ${tokenRes.status}`);
+  if (!tokenRes.ok) {
+    throw new Error(`Google token exchange failed: ${tokenRes.status} ${await tokenRes.text()}`);
+  }
   const tokens = await tokenRes.json();
 
   const profileRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
-  if (!profileRes.ok) throw new Error(`Google userinfo fetch failed: ${profileRes.status}`);
+  if (!profileRes.ok) {
+    throw new Error(`Google userinfo fetch failed: ${profileRes.status} ${await profileRes.text()}`);
+  }
   const profile = await profileRes.json();
 
   if (typeof profile.sub !== "string" || typeof profile.email !== "string") {
