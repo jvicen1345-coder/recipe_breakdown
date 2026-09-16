@@ -4,6 +4,7 @@ import { z } from "zod";
 import { hashPassword, issueVerificationToken, setSessionCookie } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import { getRequestOrigin } from "@/lib/requestOrigin";
 
 const signupSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email."),
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     // Deferred so the response (and the client's redirect to the homepage) doesn't
     // wait on a network round-trip to Resend — the account already exists and the
     // session cookie is already set, so there's nothing left that needs this first.
-    const origin = new URL(request.url).origin;
+    const origin = getRequestOrigin(request);
     after(async () => {
       try {
         const token = await issueVerificationToken(user.id);

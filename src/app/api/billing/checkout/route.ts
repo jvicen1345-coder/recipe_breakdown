@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getRequestOrigin } from "@/lib/requestOrigin";
 import { isStripeConfigured, stripe, STRIPE_PRICE_IDS } from "@/lib/stripe";
 
 const schema = z.object({ interval: z.enum(["month", "year"]) });
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  const origin = new URL(request.url).origin;
+  const origin = getRequestOrigin(request);
 
   if (isStripeConfigured() && stripe) {
     const priceId = STRIPE_PRICE_IDS[interval];
