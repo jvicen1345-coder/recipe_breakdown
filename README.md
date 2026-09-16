@@ -178,8 +178,12 @@ same way; Railway is a straightforward option:
    `OPENAI_API_KEY` / `ANTHROPIC_MODEL` / `OPENAI_TRANSCRIBE_MODEL` and anything else from
    `.env.example` (email verification, Stripe, Google login, affiliate IDs). You can point
    `DATABASE_URL` at any reachable Postgres instance, including one you set up elsewhere (e.g. Neon).
-3. Deploy. The build runs `prisma migrate deploy` automatically (same as on Vercel), so the schema
-   gets created on first deploy.
+3. Deploy. `DATABASE_URL` needs to be set before the build step even runs (`next build` fails fast
+   without it, though it doesn't need to be reachable yet) — the container then runs
+   `prisma migrate deploy` at startup, once it's actually live, so the schema gets created on first
+   boot. This runs at container start rather than during the image build (unlike the plain
+   `npm run build` used for a Vercel deploy) because a Postgres add-on's private-network host is
+   usually only reachable from the running container, not from the build environment.
 4. Attach a persistent Volume mounted at `/app/data` so uploaded community-recipe photos survive
    redeploys (without one, `data/community-uploads` resets each time the container rebuilds — saved
    recipes and their text/metadata in Postgres are unaffected either way, only those photo files).

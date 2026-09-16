@@ -22,8 +22,12 @@ RUN npm ci
 COPY . .
 
 ENV NODE_ENV=production
-# DATABASE_URL must be set at build time too (this also runs `prisma migrate deploy`).
-RUN npm run build
+# Just the Next.js build here, not `npm run build` — that also runs
+# `prisma migrate deploy`, which needs a reachable database, and a
+# Railway/Render Postgres's private-network host generally isn't reachable
+# from the build environment (only from the running container). Migrations
+# run at container start instead, once the real DATABASE_URL is live.
+RUN npx next build
 
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
