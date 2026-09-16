@@ -12,6 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+# postinstall runs `prisma generate`, which needs the schema + config present
+# before `npm ci` — copy those ahead of the rest of the source so Docker's
+# layer cache still only re-runs `npm ci` when deps or the schema change.
+COPY prisma.config.ts ./
+COPY prisma ./prisma
 RUN npm ci
 
 COPY . .
