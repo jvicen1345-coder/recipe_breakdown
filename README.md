@@ -94,7 +94,8 @@ the substitute is already in your pantry or on your grocery list.
 The app automatically picks one of two pipelines per request, depending on whether `yt-dlp` is
 actually installed on the host it's running on — no configuration needed either way.
 
-**Lite pipeline** (used when `yt-dlp` isn't available — e.g. on Vercel):
+**Lite pipeline** (used when `yt-dlp` isn't available — e.g. on a serverless host without
+Docker support):
 
 1. Fetches the video's caption, hashtags, author, and thumbnail from TikTok's public oEmbed
    endpoint — a normal web request, no video download.
@@ -130,14 +131,14 @@ video in it (title, thumbnail, uploader), uncheck any you don't want, and import
 one runs through the normal pipeline and streams into your library as it finishes.
 
 This needs `yt-dlp` to list the collection's contents, so — like the full pipeline — it only works
-on a self-hosted deployment, not Vercel. The app checks for `yt-dlp` on startup and hides this UI
-entirely when it isn't available, so it won't show up (or offer something that can't work) on a
-serverless deployment.
+on a self-hosted (Docker) deployment, such as Render, not a typical serverless host. The app checks
+for `yt-dlp` on startup and hides this UI entirely when it isn't available, so it won't show up (or
+offer something that can't work) on a serverless deployment.
 
 ## Prerequisites
 
 - Node.js 20+
-- A Postgres database (e.g. [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres),
+- A Postgres database (e.g. [Render Postgres](https://render.com/docs/postgresql),
   [Neon](https://neon.tech), [Supabase](https://supabase.com), [Railway](https://railway.app), or a
   local instance for development)
 - An [Anthropic API key](https://console.anthropic.com/) (required — this is what builds the
@@ -158,30 +159,35 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-`npm run build` also runs `prisma migrate deploy` first, so a normal deploy (Vercel or otherwise)
+`npm run build` also runs `prisma migrate deploy` first, so a normal deploy (Render or otherwise)
 applies any pending schema migrations automatically as long as `DATABASE_URL` is set — you only
 need to run it by hand for local dev before `npm run dev`, since `dev` doesn't build.
 
-## Deploying (Railway, Render, Fly.io, a VPS, ...)
+## Deploying (Render, Railway, Fly.io, a VPS, ...)
 
 The included `Dockerfile` installs `ffmpeg` and a standalone `yt-dlp` binary alongside the app, so
 the full pipeline — not just the web UI — works once deployed. Any host that builds from a
-Dockerfile works the same way; Railway is a straightforward option:
+Dockerfile works the same way; **Render** is a straightforward option:
 
-1. New Project → **Deploy from GitHub repo** → pick this repo and branch. Railway detects the
-   `Dockerfile` and builds from it automatically.
-2. Add environment variables (Project → Variables): `DATABASE_URL`, `ANTHROPIC_API_KEY`, and
+1. New → **Web Service** → connect this repo and branch. Render detects the `Dockerfile` and builds
+   from it automatically.
+2. Add environment variables (Service → Environment): `DATABASE_URL`, `ANTHROPIC_API_KEY`, and
    optionally `OPENAI_API_KEY` / `ANTHROPIC_MODEL` / `OPENAI_TRANSCRIBE_MODEL`. You can point
-   `DATABASE_URL` at any reachable Postgres instance, including one you set up elsewhere (e.g. Neon).
-3. Deploy. The build runs `prisma migrate deploy` automatically (same as on Vercel), so the schema
-   gets created on first deploy.
-4. Optional: attach a persistent Volume mounted at `/app/data` so saved thumbnails survive
-   redeploys (without one, `data/uploads` resets each time the container rebuilds — saved recipes
-   and their text/metadata in Postgres are unaffected either way, only the thumbnail images).
+   `DATABASE_URL` at a [Render Postgres](https://render.com/docs/postgresql) instance or any other
+   reachable Postgres instance, including one you set up elsewhere (e.g. Neon).
+3. Deploy. The build runs `prisma migrate deploy` automatically, so the schema gets created on
+   first deploy.
+4. Optional: attach a persistent [Disk](https://render.com/docs/disks) mounted at `/app/data` so
+   saved thumbnails survive redeploys (without one, `data/uploads` resets each time the container
+   rebuilds — saved recipes and their text/metadata in Postgres are unaffected either way, only the
+   thumbnail images).
 
-Deploying to **Vercel** (or any other serverless host) works too — it just automatically runs the
-lite pipeline instead, since `yt-dlp` isn't available there. No extra setup beyond `DATABASE_URL`
-and `ANTHROPIC_API_KEY`.
+Railway works the same way (New Project → **Deploy from GitHub repo**; it also detects the
+`Dockerfile` and builds from it automatically).
+
+Deploying to a serverless host (with no Docker/persistent-filesystem support) works too — it just
+automatically runs the lite pipeline instead, since `yt-dlp` isn't available there. No extra setup
+beyond `DATABASE_URL` and `ANTHROPIC_API_KEY`.
 
 ## Environment variables
 
@@ -198,10 +204,11 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 
 ## Notes and limitations
 
-- **On the lite pipeline (Vercel etc.), accuracy depends on the caption.** No spoken narration or
-  on-screen text is read — only the caption/hashtags and whatever you type into "Add notes." Videos
-  that put the recipe in the caption work well; videos that only say it out loud or show it as
-  on-screen text need the full pipeline, or your own notes to fill the gap.
+- **On the lite pipeline (serverless hosts without Docker support, etc.), accuracy depends on the
+  caption.** No spoken narration or on-screen text is read — only the caption/hashtags and whatever
+  you type into "Add notes." Videos that put the recipe in the caption work well; videos that only
+  say it out loud or show it as on-screen text need the full pipeline, or your own notes to fill the
+  gap.
 - **TikTok changes often.** This affects both pipelines differently: the lite pipeline depends on
   TikTok's oEmbed endpoint staying available; the full pipeline depends on `yt-dlp` staying current
   with TikTok's site (`pip install -U yt-dlp` or your package manager's equivalent if downloads stop

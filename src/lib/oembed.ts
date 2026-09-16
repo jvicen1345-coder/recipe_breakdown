@@ -6,9 +6,9 @@ export interface TikTokOEmbed {
 
 /**
  * Fetches a TikTok video's public caption/author/thumbnail via its oEmbed endpoint —
- * no video download required. Used as the "lite" pipeline on hosts (e.g. Vercel) that
- * can't run yt-dlp/ffmpeg. Doesn't include spoken narration or on-screen text, only
- * whatever the caption/hashtags say.
+ * no video download required. Used as the "lite" pipeline on hosts that can't run
+ * yt-dlp/ffmpeg (typical serverless platforms without Docker support). Doesn't include
+ * spoken narration or on-screen text, only whatever the caption/hashtags say.
  */
 export async function fetchTikTokOEmbed(url: string): Promise<TikTokOEmbed> {
   const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;

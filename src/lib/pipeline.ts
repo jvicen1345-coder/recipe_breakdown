@@ -24,7 +24,7 @@ export class RecipeAlreadyExistsError extends Error {
  *
  * - Full (yt-dlp + ffmpeg present, e.g. the Docker image): downloads the video,
  *   extracts audio + sample frames, transcribes narration, and analyzes all of it.
- * - Lite (no yt-dlp, e.g. Vercel's serverless runtime): reads the caption/author/
+ * - Lite (no yt-dlp, e.g. a typical serverless runtime): reads the caption/author/
  *   thumbnail from TikTok's public oEmbed endpoint and analyzes just that (plus
  *   any notes typed in) — no video download, no local disk usage.
  */
@@ -45,7 +45,7 @@ export async function createRecipeFromUrl(url: string, createdByUserId: string, 
 /**
  * Whether this host can run the full pipeline (yt-dlp present). Collection import
  * needs yt-dlp just to list a Collection's contents, so it's only worth offering
- * in the UI when this is true — e.g. not on Vercel's serverless runtime.
+ * in the UI when this is true — e.g. not on a typical serverless runtime.
  */
 export async function isFullPipelineAvailable(): Promise<boolean> {
   return commandExists(YT_DLP_BIN);
