@@ -38,10 +38,12 @@ ENV DATABASE_URL="postgresql://user:password@localhost:5432/placeholder"
 RUN npx next build
 
 EXPOSE 3000
-# Retries migrate deploy a few times before giving up: a serverless Postgres
-# (e.g. Neon) that's been idle can take a moment to wake from suspend, and
-# Prisma's advisory-lock wait has a fixed ~10s client-side timeout — long
-# enough to occasionally lose that race on a cold compute even though
-# nothing is actually contending for the lock. A retry a few seconds later
-# hits an already-warm compute.
-CMD ["sh", "-c", "i=0; until npx prisma migrate deploy; do i=$((i+1)); [ $i -ge 3 ] && exit 1; echo \"migrate deploy failed, retrying in 5s ($i/3)...\"; sleep 5; done; npm start"]
+# Retries migrate deploy several times before giving up. Two separate causes
+# can each cost a failed attempt: a serverless Postgres (e.g. Neon) waking
+# from suspend, and — now that another deploy target (Vercel) also runs its
+# own `prisma migrate deploy` against this same shared database on its own
+# build — genuine advisory-lock contention between the two. Either way,
+# Prisma's client-side wait for that lock is a fixed ~10s, so one failure
+# isn't conclusive; 6 tries with a short gap gives real overlap a couple
+# minutes to clear before this deploy actually fails.
+CMD ["sh", "-c", "i=0; until npx prisma migrate deploy; do i=$((i+1)); [ $i -ge 6 ] && exit 1; echo \"migrate deploy failed, retrying in 8s ($i/6)...\"; sleep 8; done; npm start"]
