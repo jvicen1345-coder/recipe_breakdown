@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 
-import { usePantryOnboarding } from "./PantryOnboardingProvider";
 import { usePlan } from "./PlanProvider";
 import { useToast } from "./ToastProvider";
 
@@ -41,7 +40,6 @@ export function SubscriptionClient({
   const router = useRouter();
   const showToast = useToast();
   const { refresh: refreshPlan } = usePlan();
-  const openPantryOnboarding = usePantryOnboarding();
   const isPro = plan === "pro";
   const [loadingInterval, setLoadingInterval] = useState<"month" | "year" | null>(null);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
@@ -56,20 +54,11 @@ export function SubscriptionClient({
         body: JSON.stringify({ interval }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) {
+      if (!res.ok || !data?.url) {
         showToast(data?.error ?? "Couldn't start checkout — try again.");
         return;
       }
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      showToast("You're Pro now! 🌸 (test mode — no real charge)");
-      router.refresh();
-      refreshPlan();
-      if (data.pantryOnboardingNeeded) {
-        openPantryOnboarding();
-      }
+      window.location.href = data.url;
     } finally {
       setLoadingInterval(null);
     }

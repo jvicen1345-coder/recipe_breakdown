@@ -1,11 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, X } from "lucide-react";
 
-import { usePantryOnboarding } from "./PantryOnboardingProvider";
-import { usePlan } from "./PlanProvider";
 import { useToast } from "./ToastProvider";
 
 export type UpsellReason =
@@ -65,10 +62,7 @@ export function useProUpsell() {
 export function ProUpsellProvider({ children }: { children: React.ReactNode }) {
   const [reason, setReason] = useState<UpsellReason | null>(null);
   const [loadingInterval, setLoadingInterval] = useState<"month" | "year" | null>(null);
-  const router = useRouter();
   const showToast = useToast();
-  const openPantryOnboarding = usePantryOnboarding();
-  const { refresh: refreshPlan } = usePlan();
 
   const openUpsell = useCallback((r: UpsellReason = "general") => setReason(r), []);
   const close = useCallback(() => {
@@ -84,22 +78,11 @@ export function ProUpsellProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ interval }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) {
+      if (!res.ok || !data?.url) {
         showToast(data?.error ?? "Couldn't start checkout — try again.");
         return;
       }
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      // Test mode — no Stripe configured, plan already flipped server-side.
-      setReason(null);
-      showToast("You're Pro now! 🌸 (test mode — no real charge)");
-      router.refresh();
-      refreshPlan();
-      if (data.pantryOnboardingNeeded) {
-        openPantryOnboarding();
-      }
+      window.location.href = data.url;
     } catch {
       showToast("Couldn't reach the server — try again.");
     } finally {
