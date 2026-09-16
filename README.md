@@ -91,22 +91,6 @@ the substitute is already in your pantry or on your grocery list.
 
 ## How it works
 
-The app automatically picks one of two pipelines per request, depending on whether `yt-dlp` is
-actually installed on the host it's running on — no configuration needed either way.
-
-**Lite pipeline** (used when `yt-dlp` isn't available — e.g. on a serverless host without
-Docker support):
-
-1. Fetches the video's caption, hashtags, author, and thumbnail from TikTok's public oEmbed
-   endpoint — a normal web request, no video download.
-2. Sends that caption plus any notes you typed in to Claude, which returns a structured recipe
-   breakdown.
-
-No spoken narration or on-screen text is read in this mode, so accuracy depends on how much the
-caption/hashtags say — use the "Add notes" field to fill in anything the caption leaves out.
-
-**Full pipeline** (used when `yt-dlp` + `ffmpeg` are installed — e.g. the included Docker image):
-
 1. **Download** — [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) fetches the video file and its
    metadata (caption, hashtags, uploader, duration).
 2. **Extract** — `ffmpeg` pulls the audio track and a handful of evenly-spaced frames from the
@@ -117,10 +101,14 @@ caption/hashtags say — use the "Add notes" field to fill in anything the capti
 5. The video/audio are discarded after analysis; one extracted frame is kept as the thumbnail
    (saved to local disk).
 
-Both pipelines produce the same kind of result (title, ingredients, instructions, time, difficulty,
-price, protein/diet type, nutrition facts) and save to the same Postgres database. Nutrition facts
-are a per-serving estimate from the same Claude analysis step, reasoned from the ingredients and
-quantities like a nutrition-label estimate — not a measured or database-verified value.
+The result (title, ingredients, instructions, time, difficulty, price, protein/diet type, nutrition
+facts) is saved to Postgres. Nutrition facts are a per-serving estimate from the Claude analysis
+step, reasoned from the ingredients and quantities like a nutrition-label estimate — not a measured
+or database-verified value.
+
+This requires `yt-dlp` and `ffmpeg` on the host, so the app needs a self-hosted deployment (the
+included `Dockerfile`, e.g. on Render/Railway/a VPS) — it doesn't run on Vercel or other serverless
+hosts that can't install those binaries.
 
 ### Importing a whole Collection
 
@@ -128,12 +116,8 @@ TikTok lets you group saved videos into a Collection with its own shareable link
 (`tiktok.com/@user/collection/...`, or a `tiktok.com/t/...` short link that redirects to one).
 "Import a whole Collection instead" (below the main form) lets you paste that link, preview every
 video in it (title, thumbnail, uploader), uncheck any you don't want, and import the rest — each
-one runs through the normal pipeline and streams into your library as it finishes.
-
-This needs `yt-dlp` to list the collection's contents, so — like the full pipeline — it only works
-on a self-hosted (Docker) deployment, such as Render, not a typical serverless host. The app checks
-for `yt-dlp` on startup and hides this UI entirely when it isn't available, so it won't show up (or
-offer something that can't work) on a serverless deployment.
+one runs through the normal pipeline and streams into your library as it finishes. This also needs
+`yt-dlp` to list the collection's contents.
 
 ## Prerequisites
 
@@ -143,10 +127,9 @@ offer something that can't work) on a serverless deployment.
   local instance for development)
 - An [Anthropic API key](https://console.anthropic.com/) (required — this is what builds the
   structured recipe)
-- Optional, only for the full pipeline: [`yt-dlp`](https://github.com/yt-dlp/yt-dlp#installation)
-  and `ffmpeg`/`ffprobe` on your `PATH` (or set `YT_DLP_PATH` / `FFMPEG_PATH` / `FFPROBE_PATH`), plus
-  an [OpenAI API key](https://platform.openai.com/) for transcription. Without these, the app still
-  works fully — it just uses the lite pipeline (see "How it works" above).
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp#installation) and `ffmpeg`/`ffprobe` on your `PATH`
+  (or set `YT_DLP_PATH` / `FFMPEG_PATH` / `FFPROBE_PATH`), plus an
+  [OpenAI API key](https://platform.openai.com/) for transcription.
 
 ## Setup
 
@@ -166,8 +149,9 @@ need to run it by hand for local dev before `npm run dev`, since `dev` doesn't b
 ## Deploying (Render, Railway, Fly.io, a VPS, ...)
 
 The included `Dockerfile` installs `ffmpeg` and a standalone `yt-dlp` binary alongside the app, so
-the full pipeline — not just the web UI — works once deployed. Any host that builds from a
-Dockerfile works the same way; **Render** is a straightforward option:
+the pipeline works once deployed. This needs a host that builds from a Dockerfile and runs a
+persistent server — not a serverless platform like Vercel, which can't install those binaries.
+**Render** is a straightforward option:
 
 1. New → **Web Service** → connect this repo and branch. Render detects the `Dockerfile` and builds
    from it automatically.
@@ -185,10 +169,6 @@ Dockerfile works the same way; **Render** is a straightforward option:
 Railway works the same way (New Project → **Deploy from GitHub repo**; it also detects the
 `Dockerfile` and builds from it automatically).
 
-Deploying to a serverless host (with no Docker/persistent-filesystem support) works too — it just
-automatically runs the lite pipeline instead, since `yt-dlp` isn't available there. No extra setup
-beyond `DATABASE_URL` and `ANTHROPIC_API_KEY`.
-
 ## Environment variables
 
 See [`.env.example`](./.env.example) for the full list. The important ones:
@@ -204,34 +184,24 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 
 ## Notes and limitations
 
-- **On the lite pipeline (serverless hosts without Docker support, etc.), accuracy depends on the
-  caption.** No spoken narration or on-screen text is read — only the caption/hashtags and whatever
-  you type into "Add notes." Videos that put the recipe in the caption work well; videos that only
-  say it out loud or show it as on-screen text need the full pipeline, or your own notes to fill the
-  gap.
-- **TikTok changes often.** This affects both pipelines differently: the lite pipeline depends on
-  TikTok's oEmbed endpoint staying available; the full pipeline depends on `yt-dlp` staying current
-  with TikTok's site (`pip install -U yt-dlp` or your package manager's equivalent if downloads stop
-  working).
-- **Private, age-restricted, region-locked, or removed videos** won't resolve on either pipeline.
+- **TikTok changes often.** `yt-dlp` depends on staying current with TikTok's site — run
+  `pip install -U yt-dlp` (or your package manager's equivalent) if downloads stop working.
+- **Private, age-restricted, region-locked, or removed videos** won't resolve.
 - **Time, difficulty, price, and nutrition facts are estimates** from a language model reasoning
   over the video's content and general culinary knowledge, not measured facts — treat them as a
   helpful ballpark, not a lab-verified nutrition label.
 - **This is a single-user app** by design — no accounts/auth. If you deploy it somewhere shared,
   put it behind your own access control.
-- **The full pipeline's requests can take 30–90+ seconds** (video download + transcription +
-  analysis); the lite pipeline is much faster (a couple of seconds). The API route sets
-  `maxDuration = 300` regardless, but confirm your hosting platform allows long-running server
-  functions if you're running the full pipeline.
+- **Requests can take 30–90+ seconds** (video download + transcription + analysis). The API route
+  sets `maxDuration = 300`, but confirm your hosting platform allows long-running server functions.
 
 ## Project structure
 
-- `src/lib/oembed.ts` — lite pipeline: fetches caption/author/thumbnail via TikTok's oEmbed endpoint
-- `src/lib/tiktok.ts` — full pipeline: downloads video + metadata via `yt-dlp`
-- `src/lib/media.ts` — full pipeline: extracts audio/frames via `ffmpeg`
-- `src/lib/transcribe.ts` — full pipeline: Whisper transcription
-- `src/lib/analyze.ts` — Claude-powered structured recipe extraction (both pipelines)
-- `src/lib/pipeline.ts` — picks a pipeline (based on whether `yt-dlp` is installed) and persists the result
+- `src/lib/tiktok.ts` — downloads video + metadata via `yt-dlp`
+- `src/lib/media.ts` — extracts audio/frames via `ffmpeg`
+- `src/lib/transcribe.ts` — Whisper transcription
+- `src/lib/analyze.ts` — Claude-powered structured recipe extraction
+- `src/lib/pipeline.ts` — runs the pipeline end-to-end and persists the result
 - `src/lib/collection.ts` — lists a Collection's videos via `yt-dlp --flat-playlist`
 - `src/app/api/collections/preview` — lists a Collection's videos for the picker UI
 - `src/app/api/collections/import` — imports selected videos, streaming one result per line (NDJSON)
