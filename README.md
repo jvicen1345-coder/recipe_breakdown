@@ -122,8 +122,9 @@ one runs through the normal pipeline and streams into your library as it finishe
 ## Prerequisites
 
 - Node.js 20+
-- A Postgres database (e.g. [Neon](https://neon.tech), [Supabase](https://supabase.com),
-  [Railway](https://railway.app), or a local instance for development)
+- A Postgres database (e.g. [Render Postgres](https://render.com/docs/postgresql),
+  [Neon](https://neon.tech), [Supabase](https://supabase.com), [Railway](https://railway.app), or a
+  local instance for development)
 - An [Anthropic API key](https://console.anthropic.com/) (required — this is what builds the
   structured recipe)
 - [`yt-dlp`](https://github.com/yt-dlp/yt-dlp#installation) and `ffmpeg`/`ffprobe` on your `PATH`
@@ -141,27 +142,32 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-`npm run build` also runs `prisma migrate deploy` first, so a normal deploy applies any pending
-schema migrations automatically as long as `DATABASE_URL` is set — you only need to run it by hand
-for local dev before `npm run dev`, since `dev` doesn't build.
+`npm run build` also runs `prisma migrate deploy` first, so a normal deploy (Render or otherwise)
+applies any pending schema migrations automatically as long as `DATABASE_URL` is set — you only
+need to run it by hand for local dev before `npm run dev`, since `dev` doesn't build.
 
-## Deploying (Railway, Render, Fly.io, a VPS, ...)
+## Deploying (Render, Railway, Fly.io, a VPS, ...)
 
 The included `Dockerfile` installs `ffmpeg` and a standalone `yt-dlp` binary alongside the app, so
 the pipeline works once deployed. This needs a host that builds from a Dockerfile and runs a
 persistent server — not a serverless platform like Vercel, which can't install those binaries.
-Railway is a straightforward option:
+**Render** is a straightforward option:
 
-1. New Project → **Deploy from GitHub repo** → pick this repo and branch. Railway detects the
-   `Dockerfile` and builds from it automatically.
-2. Add environment variables (Project → Variables): `DATABASE_URL`, `ANTHROPIC_API_KEY`, and
+1. New → **Web Service** → connect this repo and branch. Render detects the `Dockerfile` and builds
+   from it automatically.
+2. Add environment variables (Service → Environment): `DATABASE_URL`, `ANTHROPIC_API_KEY`, and
    optionally `OPENAI_API_KEY` / `ANTHROPIC_MODEL` / `OPENAI_TRANSCRIBE_MODEL`. You can point
-   `DATABASE_URL` at any reachable Postgres instance, including one you set up elsewhere (e.g. Neon).
+   `DATABASE_URL` at a [Render Postgres](https://render.com/docs/postgresql) instance or any other
+   reachable Postgres instance, including one you set up elsewhere (e.g. Neon).
 3. Deploy. The build runs `prisma migrate deploy` automatically, so the schema gets created on
    first deploy.
-4. Optional: attach a persistent Volume mounted at `/app/data` so saved thumbnails survive
-   redeploys (without one, `data/uploads` resets each time the container rebuilds — saved recipes
-   and their text/metadata in Postgres are unaffected either way, only the thumbnail images).
+4. Optional: attach a persistent [Disk](https://render.com/docs/disks) mounted at `/app/data` so
+   saved thumbnails survive redeploys (without one, `data/uploads` resets each time the container
+   rebuilds — saved recipes and their text/metadata in Postgres are unaffected either way, only the
+   thumbnail images).
+
+Railway works the same way (New Project → **Deploy from GitHub repo**; it also detects the
+`Dockerfile` and builds from it automatically).
 
 ## Environment variables
 
