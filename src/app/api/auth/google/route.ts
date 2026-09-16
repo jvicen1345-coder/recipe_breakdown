@@ -10,7 +10,7 @@ import { getRequestOrigin } from "@/lib/requestOrigin";
 // as `state` — the callback route checks the two match before trusting the code.
 export async function GET(request: Request) {
   if (!isGoogleAuthConfigured()) {
-    return NextResponse.redirect(new URL("/login?error=google-not-configured", request.url));
+    return NextResponse.redirect(new URL("/login?error=google-not-configured", getRequestOrigin(request)));
   }
 
   const state = randomBytes(16).toString("hex");
