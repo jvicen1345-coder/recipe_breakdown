@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { fetchTikTokCollection } from "@/lib/collection";
-import { commandExists, ExternalToolError } from "@/lib/exec";
-import { InvalidTikTokUrlError, YT_DLP_BIN } from "@/lib/tiktok";
+import { ExternalToolError } from "@/lib/exec";
+import { InvalidTikTokUrlError } from "@/lib/tiktok";
 
 export const maxDuration = 60;
 
@@ -14,17 +14,6 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request." }, { status: 400 });
-  }
-
-  const hasYtDlp = await commandExists(YT_DLP_BIN);
-  if (!hasYtDlp) {
-    return NextResponse.json(
-      {
-        error:
-          "Importing a Collection needs yt-dlp, which isn't available on this deployment. It only works on a self-hosted deployment (e.g. the included Dockerfile on Railway/Render/a VPS) — single-video links still work here.",
-      },
-      { status: 501 },
-    );
   }
 
   try {
