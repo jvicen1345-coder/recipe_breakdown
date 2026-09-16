@@ -133,14 +133,12 @@ function GhostCard({ entry }: { entry: GhostEntry }) {
 export function HomeFeed({
   initialRecipes,
   loadError,
-  collectionImportEnabled = false,
   showThisWeekCard = true,
   isPro = false,
   currentUserId,
 }: {
   initialRecipes: RecipeDto[];
   loadError?: string | null;
-  collectionImportEnabled?: boolean;
   showThisWeekCard?: boolean;
   isPro?: boolean;
   currentUserId: string;
@@ -466,13 +464,11 @@ export function HomeFeed({
         )}
       </form>
 
-      {collectionImportEnabled && (
-        <CollectionImport
-          onImported={(recipe) =>
-            setRecipes((prev) => (prev.some((r) => r.id === recipe.id) ? prev : [recipe, ...prev]))
-          }
-        />
-      )}
+      <CollectionImport
+        onImported={(recipe) =>
+          setRecipes((prev) => (prev.some((r) => r.id === recipe.id) ? prev : [recipe, ...prev]))
+        }
+      />
 
       {isEmpty ? (
         <>
