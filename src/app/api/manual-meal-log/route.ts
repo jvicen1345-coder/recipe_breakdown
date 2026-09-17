@@ -27,6 +27,7 @@ export async function POST(request: Request) {
 
   const log = await prisma.manualMealLog.create({
     data: {
+      userId: auth.userId,
       name: data.name,
       caloriesPerServing: data.caloriesPerServing ?? null,
       proteinGrams: data.proteinGrams ?? null,

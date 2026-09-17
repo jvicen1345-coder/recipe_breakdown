@@ -46,17 +46,20 @@ export async function GET(request: Request) {
 
   const [logs, manualLogs, user, streakWindowLogs] = await Promise.all([
     prisma.cookLog.findMany({
-      where: { cookedAt: { gte: start, lt: end } },
+      where: { userId, cookedAt: { gte: start, lt: end } },
       include: { recipe: true },
       orderBy: { cookedAt: "asc" },
     }),
     prisma.manualMealLog.findMany({
-      where: { loggedAt: { gte: start, lt: end } },
+      where: { userId, loggedAt: { gte: start, lt: end } },
       orderBy: { loggedAt: "asc" },
     }),
     prisma.user.findUnique({ where: { id: userId } }),
     // Always "today's actual streak," independent of which week is being browsed.
-    prisma.cookLog.findMany({ where: { cookedAt: { gte: streakWindowStart, lt: tomorrow } }, select: { cookedAt: true } }),
+    prisma.cookLog.findMany({
+      where: { userId, cookedAt: { gte: streakWindowStart, lt: tomorrow } },
+      select: { cookedAt: true },
+    }),
   ]);
 
   const cookedDateKeys = new Set(streakWindowLogs.map((log) => log.cookedAt.toISOString().slice(0, 10)));
@@ -173,7 +176,7 @@ export async function GET(request: Request) {
   }[] = [];
   if (loggedCount > 0) {
     const allRecipes = await prisma.recipe.findMany({
-      where: { id: { notIn: [...cookedRecipeIds] } },
+      where: { userId, id: { notIn: [...cookedRecipeIds] } },
       orderBy: { createdAt: "desc" },
     });
 

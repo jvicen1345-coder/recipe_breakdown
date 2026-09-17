@@ -18,7 +18,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const { id } = await params;
   const recipe = await prisma.recipe.findUnique({ where: { id } });
-  if (!recipe) {
+  if (!recipe || recipe.userId !== auth.userId) {
     return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
   }
 
@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const cookLog = await prisma.cookLog.create({
-    data: { recipeId: id, rating: parsed.data.rating },
+    data: { recipeId: id, userId: auth.userId, rating: parsed.data.rating },
   });
   const cookCount = await prisma.cookLog.count({ where: { recipeId: id } });
 

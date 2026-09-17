@@ -13,7 +13,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   const { id } = await params;
   const item = await prisma.pantryItem.findUnique({ where: { id } });
-  if (!item) {
+  if (!item || item.userId !== auth.userId) {
     return NextResponse.json({ error: "Pantry item not found." }, { status: 404 });
   }
   await prisma.pantryItem.delete({ where: { id } });

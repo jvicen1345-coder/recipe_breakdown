@@ -15,7 +15,7 @@ export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  const folders = await prisma.folder.findMany({ orderBy: { createdAt: "asc" } });
+  const folders = await prisma.folder.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
   return NextResponse.json({ folders: folders.map(toFolderDto) });
 }
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   if (!isPro(user)) {
-    const folderCount = await prisma.folder.count({ where: { createdByUserId: user.id } });
+    const folderCount = await prisma.folder.count({ where: { userId: user.id } });
     if (folderCount >= FREE_FOLDER_LIMIT) {
       return NextResponse.json(
         { error: "You've hit the free plan's 2-folder limit.", reason: "folder-limit" },
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   }
 
   const folder = await prisma.folder.create({
-    data: { name: parsed.data.name, emoji: parsed.data.emoji || null, createdByUserId: user.id },
+    data: { name: parsed.data.name, emoji: parsed.data.emoji || null, userId: user.id },
   });
   return NextResponse.json({ folder: toFolderDto(folder) }, { status: 201 });
 }

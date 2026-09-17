@@ -28,18 +28,18 @@ export class RecipeAlreadyExistsError extends Error {
  *   thumbnail from TikTok's public oEmbed endpoint and analyzes just that (plus
  *   any notes typed in) — no video download, no local disk usage.
  */
-export async function createRecipeFromUrl(url: string, createdByUserId: string, userNotes?: string) {
+export async function createRecipeFromUrl(url: string, userId: string, userNotes?: string) {
   assertTikTokUrl(url);
 
-  const existing = await prisma.recipe.findUnique({ where: { sourceUrl: url } });
+  const existing = await prisma.recipe.findFirst({ where: { userId, sourceUrl: url } });
   if (existing) {
     throw new RecipeAlreadyExistsError(existing.id);
   }
 
   const hasYtDlp = await isFullPipelineAvailable();
   return hasYtDlp
-    ? createRecipeFull(url, createdByUserId, userNotes)
-    : createRecipeLite(url, createdByUserId, userNotes);
+    ? createRecipeFull(url, userId, userNotes)
+    : createRecipeLite(url, userId, userNotes);
 }
 
 let fullPipelineAvailable: Promise<boolean> | undefined;
@@ -72,7 +72,7 @@ export function isFullPipelineAvailable(): Promise<boolean> {
   return fullPipelineAvailable;
 }
 
-async function createRecipeFull(url: string, createdByUserId: string, userNotes?: string) {
+async function createRecipeFull(url: string, userId: string, userNotes?: string) {
   const { metadata, videoPath, workDir } = await downloadTikTok(url);
 
   try {
@@ -104,7 +104,7 @@ async function createRecipeFull(url: string, createdByUserId: string, userNotes?
     return prisma.recipe.create({
       data: {
         id,
-        createdByUserId,
+        userId,
         sourceUrl: metadata.webpageUrl,
         title: analysis.title,
         authorHandle: metadata.uploader,
@@ -133,7 +133,7 @@ async function createRecipeFull(url: string, createdByUserId: string, userNotes?
   }
 }
 
-async function createRecipeLite(url: string, createdByUserId: string, userNotes?: string) {
+async function createRecipeLite(url: string, userId: string, userNotes?: string) {
   const meta = await fetchTikTokOEmbed(url);
 
   const analysis = await analyzeRecipe({
@@ -155,7 +155,7 @@ async function createRecipeLite(url: string, createdByUserId: string, userNotes?
   return prisma.recipe.create({
     data: {
       id,
-      createdByUserId,
+      userId,
       sourceUrl: url,
       title: analysis.title,
       authorHandle: meta.authorHandle,
