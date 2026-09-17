@@ -4,35 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, TriangleAlert } from "lucide-react";
 
-interface AdminUser {
-  id: string;
-  email: string;
-  name: string | null;
-  createdAt: string;
-  emailVerified: boolean;
-  plan: string;
-  proSource: "owner" | "stripe" | "community" | "legacy" | "free";
-  hasStripeSubscription: boolean;
-  subscriptionStatus: string | null;
-  subscriptionInterval: string | null;
-  subscriptionRenewsAt: string | null;
-  subscriptionCancelAtPeriodEnd: boolean;
-  proAccessUntil: string | null;
-  points: number;
-}
-
-const PRO_SOURCE_BADGE: Record<AdminUser["proSource"], { label: string; className: string }> = {
-  owner: { label: "Owner 👑", className: "bg-lavender/40 text-rose-deep" },
-  stripe: { label: "Pro · Stripe", className: "bg-sage/25 text-sage-dark" },
-  community: { label: "Pro · points", className: "bg-blush text-rose-deep" },
-  legacy: { label: "⚠️ Free grant", className: "bg-coral-deep/15 text-coral-deep" },
-  free: { label: "Free", className: "bg-blush-soft text-dusty-rose" },
-};
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
+import { type AdminUser, PRO_SOURCE_BADGE, formatUserDate } from "@/lib/adminUsers";
 
 export function AdminUsersClient() {
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -122,9 +94,9 @@ export function AdminUsersClient() {
                 const badge = PRO_SOURCE_BADGE[u.proSource];
                 const renewsOrExpires =
                   u.proSource === "stripe"
-                    ? `${u.subscriptionCancelAtPeriodEnd ? "Ends" : "Renews"} ${formatDate(u.subscriptionRenewsAt)}`
+                    ? `${u.subscriptionCancelAtPeriodEnd ? "Ends" : "Renews"} ${formatUserDate(u.subscriptionRenewsAt)}`
                     : u.proSource === "community"
-                      ? `Until ${formatDate(u.proAccessUntil)}`
+                      ? `Until ${formatUserDate(u.proAccessUntil)}`
                       : "—";
                 return (
                   <tr key={u.id} className="border-b border-blush-dark/20 last:border-0">
@@ -139,7 +111,7 @@ export function AdminUsersClient() {
                         )}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-dusty-rose">{formatDate(u.createdAt)}</td>
+                    <td className="px-4 py-3 text-dusty-rose">{formatUserDate(u.createdAt)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${badge.className}`}>
                         {badge.label}
