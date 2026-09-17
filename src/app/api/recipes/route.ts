@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getSessionUserId, requireVerifiedUserId } from "@/lib/auth";
 import { ExternalToolError } from "@/lib/exec";
 import { prisma } from "@/lib/prisma";
-import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
+import { createRecipeFromUrl, RecipeAlreadyExistsError, toUserFacingPipelineError } from "@/lib/pipeline";
 import { countRecipesThisMonth, FREE_RECIPE_LIMIT, isPro, PRO_MONTHLY_RECIPE_LIMIT } from "@/lib/plan";
 import { InvalidTikTokUrlError } from "@/lib/tiktok";
 import { toRecipeDto } from "@/lib/types";
@@ -73,13 +73,14 @@ export async function POST(request: Request) {
       );
     }
     if (err instanceof ExternalToolError) {
+      console.error("[api/recipes] failed to analyze recipe:", err);
       return NextResponse.json(
-        { error: `Couldn't process that video (${err.tool}): ${err.message}` },
+        { error: toUserFacingPipelineError(`Couldn't process that video (${err.tool}): ${err.message}`, user.email) },
         { status: 502 },
       );
     }
     console.error("[api/recipes] failed to analyze recipe:", err);
-    const message = err instanceof Error ? err.message : "Failed to analyze that video.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const rawMessage = err instanceof Error ? err.message : "Failed to analyze that video.";
+    return NextResponse.json({ error: toUserFacingPipelineError(rawMessage, user.email) }, { status: 500 });
   }
 }

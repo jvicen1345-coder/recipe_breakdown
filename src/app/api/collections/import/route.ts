@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 import { requireVerifiedUserId } from "@/lib/auth";
-import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
+import { createRecipeFromUrl, RecipeAlreadyExistsError, toUserFacingPipelineError } from "@/lib/pipeline";
 import { countRecipesThisMonth, FREE_RECIPE_LIMIT, isPro, PRO_MONTHLY_RECIPE_LIMIT } from "@/lib/plan";
 import { prisma } from "@/lib/prisma";
+import { InvalidTikTokUrlError } from "@/lib/tiktok";
 import { toRecipeDto } from "@/lib/types";
 
 // Importing several videos sequentially (each running the full download/
@@ -70,10 +71,12 @@ export async function POST(request: Request) {
         } catch (err) {
           if (err instanceof RecipeAlreadyExistsError) {
             send({ url, status: "duplicate", recipeId: err.recipeId });
+          } else if (err instanceof InvalidTikTokUrlError) {
+            send({ url, status: "error", message: err.message });
           } else {
             console.error("[api/collections/import] item failed:", url, err);
-            const message = err instanceof Error ? err.message : "Failed to analyze that video.";
-            send({ url, status: "error", message });
+            const rawMessage = err instanceof Error ? err.message : "Failed to analyze that video.";
+            send({ url, status: "error", message: toUserFacingPipelineError(rawMessage, user?.email ?? "") });
           }
         }
       }

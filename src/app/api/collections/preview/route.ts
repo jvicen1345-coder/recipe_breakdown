@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getSessionUserId } from "@/lib/auth";
 import { fetchTikTokCollection } from "@/lib/collection";
 import { ExternalToolError } from "@/lib/exec";
+import { toUserFacingPipelineError } from "@/lib/pipeline";
+import { prisma } from "@/lib/prisma";
 import { InvalidTikTokUrlError } from "@/lib/tiktok";
 
 export const maxDuration = 60;
@@ -26,11 +29,24 @@ export async function POST(request: Request) {
     if (err instanceof InvalidTikTokUrlError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
+
+    const userId = await getSessionUserId();
+    const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+
     if (err instanceof ExternalToolError) {
-      return NextResponse.json({ error: `Couldn't read that collection (${err.tool}): ${err.message}` }, { status: 502 });
+      console.error("[api/collections/preview] failed:", err);
+      return NextResponse.json(
+        {
+          error: toUserFacingPipelineError(
+            `Couldn't read that collection (${err.tool}): ${err.message}`,
+            user?.email ?? "",
+          ),
+        },
+        { status: 502 },
+      );
     }
     console.error("[api/collections/preview] failed:", err);
-    const message = err instanceof Error ? err.message : "Failed to read that collection.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const rawMessage = err instanceof Error ? err.message : "Failed to read that collection.";
+    return NextResponse.json({ error: toUserFacingPipelineError(rawMessage, user?.email ?? "") }, { status: 500 });
   }
 }

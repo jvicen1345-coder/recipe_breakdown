@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { analyzeRecipe } from "./analyze";
 import { extractAudio, extractFrames } from "./media";
+import { getOwnerEmails } from "./plan";
 import { prisma } from "./prisma";
 import { assertTikTokUrl, cleanupWorkDir, downloadTikTok } from "./tiktok";
 import { transcribeAudio } from "./transcribe";
@@ -14,6 +15,18 @@ export class RecipeAlreadyExistsError extends Error {
   constructor(public readonly recipeId: string) {
     super("This TikTok link has already been saved.");
   }
+}
+
+const GENERIC_PIPELINE_ERROR_MESSAGE =
+  "Couldn't load that recipe right now 🌸 — TikTok can be tricky sometimes. Try again in a moment ✨";
+
+/**
+ * Unexpected pipeline failures (yt-dlp/ffmpeg/transcription/analysis errors) are
+ * too technical to show regular users — everyone gets the same friendly message.
+ * The app owner (OWNER_EMAILS) still sees the real error, for debugging.
+ */
+export function toUserFacingPipelineError(rawMessage: string, requesterEmail: string): string {
+  return getOwnerEmails().includes(requesterEmail.toLowerCase()) ? rawMessage : GENERIC_PIPELINE_ERROR_MESSAGE;
 }
 
 /**
