@@ -32,7 +32,7 @@ export function MyRecipesGrid({
   myRecipeCount = 0,
   freeRecipeLimit = 25,
   monthlyRecipeCount = 0,
-  monthlyRecipeLimit = 100,
+  monthlyRecipeLimit = 60,
 }: {
   initialRecipes: RecipeDto[];
   initialFolders: FolderDto[];
