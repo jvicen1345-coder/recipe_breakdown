@@ -645,6 +645,10 @@ export function HomeFeed({
         )
       )}
 
+      <p className="pt-2 pb-4 text-center text-[11px] text-dusty-rose/70">
+        Powered by the same software as Limbic Center
+      </p>
+
       {showSwiper && <CookTonightSwiper recipes={recipes} onClose={() => setShowSwiper(false)} />}
       {showGirlDinner && (
         <GirlDinnerMode recipes={recipes.filter(matchesGirlDinner)} onClose={() => setShowGirlDinner(false)} />
