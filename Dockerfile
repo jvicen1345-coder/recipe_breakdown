@@ -1,5 +1,5 @@
 # Runs the Next.js app plus the yt-dlp/ffmpeg pipeline it shells out to.
-# Needs a host with a persistent filesystem and shell access (Railway, Render,
+# Needs a host with a persistent filesystem and shell access (Render, Railway,
 # Fly.io, a VPS) — this will NOT work on a serverless platform like Vercel.
 FROM node:22-slim
 

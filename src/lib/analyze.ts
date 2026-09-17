@@ -46,6 +46,15 @@ export const recipeAnalysisSchema = z.object({
 
 export type RecipeAnalysis = z.infer<typeof recipeAnalysisSchema>;
 
+export interface RecipeAnalysisResult extends RecipeAnalysis {
+  /** Path (from the input `framePaths`) of the frame best suited as a card thumbnail, or null if none were usable. */
+  thumbnailFramePath: string | null;
+}
+
+const toolResponseSchema = recipeAnalysisSchema.extend({
+  thumbnailFrameIndex: z.number().int().nonnegative().nullable(),
+});
+
 const TOOL_NAME = "submit_recipe_breakdown";
 
 const RECIPE_TOOL: Anthropic.Tool = {
@@ -134,6 +143,15 @@ const RECIPE_TOOL: Anthropic.Tool = {
         description:
           "Note any assumptions made or gaps in the source video (e.g. no narration, quantities guessed).",
       },
+      thumbnailFrameIndex: {
+        type: ["integer", "null"],
+        description:
+          "0-based index (matching the 'Frame N' labels given with the images) of the sampled frame that " +
+          "best works as a recipe card thumbnail: a clear, in-focus shot of the finished or near-finished " +
+          "dish. Avoid blurry/motion-blurred frames, close-ups of hands or raw/unmixed ingredients, and " +
+          "empty pans or backgrounds — prefer whichever frame looks most appetizing and least blurry even " +
+          "if none are great. Null only if no frames were provided.",
+      },
     },
     required: [
       "title",
@@ -150,6 +168,7 @@ const RECIPE_TOOL: Anthropic.Tool = {
       "tips",
       "nutrition",
       "confidenceNotes",
+      "thumbnailFrameIndex",
     ],
   },
 };
@@ -161,6 +180,8 @@ You will receive the video's caption/hashtags, an optional speech transcript, op
 When information is missing or ambiguous, do not leave fields empty — use your general culinary knowledge to make a reasonable estimate (typical quantities, standard technique, usual cook time for that dish) and record any notable assumptions in confidenceNotes. Estimate total hands-on + cook/bake time in minutes, a difficulty rating for a home cook (easy/medium/hard), and an approximate total USD grocery cost to make the whole dish (not per serving) based on typical US grocery prices. Classify the single dominant protein and the overall diet category (vegan/vegetarian/pescatarian/omnivore), plus which meal it's typically for (breakfast/lunch/dinner/quick-bite — use quick-bite for snacks, small plates, or anything meant to be thrown together fast rather than a sit-down meal).
 
 Also estimate nutrition facts for a single serving (divide the whole dish by the serving count you determined): calories, protein, carbs, fat, fiber, sugar (all in grams except calories), and sodium (in milligrams). Base this on standard nutritional values for the ingredients and quantities involved — reason like a nutrition-label estimate, not a guess pulled from thin air. Only use null for a nutrition field if the dish genuinely has none of it (e.g. fiberGrams could be 0, but don't null out a field just because you're unsure — estimate it).
+
+Each frame is preceded by a "Frame N" label. Pick which one would make the best recipe card thumbnail and report its index as thumbnailFrameIndex — see that field's description for what makes a good pick.
 
 Always respond by calling the submit_recipe_breakdown tool exactly once, with no other text.`;
 
@@ -177,23 +198,33 @@ function truncate(text: string, max = 6000): string {
   return text.length > max ? `${text.slice(0, max)}\n…(truncated)` : text;
 }
 
-async function buildImageBlocks(framePaths: string[]): Promise<Anthropic.ImageBlockParam[]> {
-  const blocks: Anthropic.ImageBlockParam[] = [];
-  for (const framePath of framePaths) {
+/**
+ * Builds labeled "Frame N" + image content blocks for the frames that could be read, plus a
+ * parallel array mapping each block's label index back to that frame's index in `framePaths` —
+ * frames that fail to load are skipped, so the two can otherwise drift apart.
+ */
+async function buildImageBlocks(
+  framePaths: string[],
+): Promise<{ content: Anthropic.ContentBlockParam[]; sourceIndexes: number[] }> {
+  const content: Anthropic.ContentBlockParam[] = [];
+  const sourceIndexes: number[] = [];
+  for (let i = 0; i < framePaths.length; i++) {
     try {
-      const buf = await fs.readFile(framePath);
-      blocks.push({
+      const buf = await fs.readFile(framePaths[i]);
+      content.push({ type: "text", text: `Frame ${sourceIndexes.length}:` });
+      content.push({
         type: "image",
         source: { type: "base64", media_type: "image/jpeg", data: buf.toString("base64") },
       });
+      sourceIndexes.push(i);
     } catch {
       // Skip frames that failed to extract; analysis proceeds with whatever we have.
     }
   }
-  return blocks;
+  return { content, sourceIndexes };
 }
 
-export async function analyzeRecipe(input: AnalyzeInput): Promise<RecipeAnalysis> {
+export async function analyzeRecipe(input: AnalyzeInput): Promise<RecipeAnalysisResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error(
@@ -214,7 +245,7 @@ export async function analyzeRecipe(input: AnalyzeInput): Promise<RecipeAnalysis
     input.userNotes ? `--- Notes typed in by the user ---\n${truncate(input.userNotes, 2000)}` : null,
   ].filter(Boolean);
 
-  const imageBlocks = await buildImageBlocks(input.framePaths);
+  const { content: imageContent, sourceIndexes } = await buildImageBlocks(input.framePaths);
 
   const message = await client.messages.create({
     model,
@@ -225,7 +256,7 @@ export async function analyzeRecipe(input: AnalyzeInput): Promise<RecipeAnalysis
     messages: [
       {
         role: "user",
-        content: [{ type: "text", text: textParts.join("\n\n") }, ...imageBlocks],
+        content: [{ type: "text", text: textParts.join("\n\n") }, ...imageContent],
       },
     ],
   });
@@ -237,10 +268,15 @@ export async function analyzeRecipe(input: AnalyzeInput): Promise<RecipeAnalysis
     throw new Error("The recipe analysis model did not return a structured result.");
   }
 
-  const parsed = recipeAnalysisSchema.safeParse(toolUse.input);
+  const parsed = toolResponseSchema.safeParse(toolUse.input);
   if (!parsed.success) {
     throw new Error(`Recipe analysis returned an unexpected shape: ${parsed.error.message}`);
   }
 
-  return parsed.data;
+  const { thumbnailFrameIndex, ...analysis } = parsed.data;
+  const sourceIndex =
+    thumbnailFrameIndex !== null ? sourceIndexes[thumbnailFrameIndex] : undefined;
+  const thumbnailFramePath = sourceIndex !== undefined ? input.framePaths[sourceIndex] : null;
+
+  return { ...analysis, thumbnailFramePath };
 }

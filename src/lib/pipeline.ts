@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { analyzeRecipe } from "./analyze";
-import { extractAudio, extractFrames } from "./media";
+import { extractAudio, extractFrames, pickSharpestFrame } from "./media";
 import { getOwnerEmails } from "./plan";
 import { prisma } from "./prisma";
 import { assertTikTokUrl, cleanupWorkDir, downloadTikTok } from "./tiktok";
@@ -68,7 +68,7 @@ export async function createRecipeFromUrl(url: string, userId: string, userNotes
     });
 
     const id = randomUUID();
-    const thumbnailPath = await saveThumbnailFile(id, framePaths);
+    const thumbnailPath = await saveThumbnailFile(id, analysis.thumbnailFramePath, framePaths);
 
     return prisma.recipe.create({
       data: {
@@ -102,10 +102,18 @@ export async function createRecipeFromUrl(url: string, userId: string, userNotes
   }
 }
 
-/** Copies a representative extracted frame into permanent local storage as the recipe's thumbnail. */
-async function saveThumbnailFile(recipeId: string, framePaths: string[]): Promise<string | null> {
+/**
+ * Copies the extracted frame that best represents the dish into permanent local storage as the
+ * recipe's thumbnail — the one Claude picked during analysis (in focus, shows the finished dish),
+ * falling back to the sharpest sampled frame if analysis didn't return one.
+ */
+async function saveThumbnailFile(
+  recipeId: string,
+  preferredFramePath: string | null,
+  framePaths: string[],
+): Promise<string | null> {
   if (framePaths.length === 0) return null;
-  const chosen = framePaths[Math.floor(framePaths.length / 2)];
+  const chosen = preferredFramePath ?? (await pickSharpestFrame(framePaths));
   try {
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
     const filename = `${recipeId}.jpg`;

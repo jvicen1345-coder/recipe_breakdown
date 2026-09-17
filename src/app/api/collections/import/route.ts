@@ -10,7 +10,8 @@ import { toRecipeDto } from "@/lib/types";
 // Importing several videos sequentially (each running the full download/
 // transcribe/analyze pipeline) can take a while — this streams one result
 // line at a time rather than waiting for all of them before responding.
-// Capped at 300: Vercel's Hobby plan rejects any higher maxDuration outright.
+// Generous ceiling for that; Render's web services don't impose Vercel's
+// old serverless-function timeout, but this still bounds a runaway request.
 export const maxDuration = 300;
 
 const schema = z.object({
