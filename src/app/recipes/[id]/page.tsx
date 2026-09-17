@@ -19,7 +19,7 @@ export default async function RecipeDetailPage({ params }: Props) {
 
   const { id } = await params;
   const record = await prisma.recipe.findUnique({ where: { id } });
-  if (!record) notFound();
+  if (!record || record.userId !== userId) notFound();
 
   const recipe = toRecipeDto(record);
 

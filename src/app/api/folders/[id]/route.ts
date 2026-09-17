@@ -25,7 +25,7 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   const folder = await prisma.folder.findUnique({ where: { id } });
-  if (!folder) {
+  if (!folder || folder.userId !== auth.userId) {
     return NextResponse.json({ error: "Folder not found." }, { status: 404 });
   }
 
@@ -39,7 +39,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   const { id } = await params;
   const folder = await prisma.folder.findUnique({ where: { id } });
-  if (!folder) {
+  if (!folder || folder.userId !== auth.userId) {
     return NextResponse.json({ error: "Folder not found." }, { status: 404 });
   }
 

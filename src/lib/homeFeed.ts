@@ -1,9 +1,9 @@
-// Pure helpers behind the "For You" homepage feed. Personalization here is scoped
-// to recipes THIS signed-in user personally saved (createdByUserId) — the shared
-// library stays fully visible everywhere else, this only decides what the feed
-// highlights. "Cooked" status uses the same per-browser localStorage timestamps
-// the Cook Tonight swiper already relies on (see clientState.ts), not the shared
-// CookLog table, so it's consistent with existing recency logic elsewhere.
+// Pure helpers behind the "For You" homepage feed. Every recipe passed in already
+// belongs to the signed-in user (recipes are private, see prisma/schema.prisma), so
+// mySavedRecipes is just a defensive filter rather than what narrows visibility.
+// "Cooked" status uses the same per-browser localStorage timestamps the Cook
+// Tonight swiper already relies on (see clientState.ts), not the CookLog table, so
+// it's consistent with existing recency logic elsewhere.
 import { getCookedTimestamps, getFavoriteIds, getViewedTimestamps } from "./clientState";
 import { matchesCookTonightFilter } from "./cookTonightFilters";
 import { PROTEIN_LABELS } from "./format";
@@ -11,7 +11,7 @@ import type { RecipeDto } from "./types";
 
 export function mySavedRecipes(recipes: RecipeDto[], currentUserId: string | null): RecipeDto[] {
   if (!currentUserId) return [];
-  return recipes.filter((r) => r.createdByUserId === currentUserId);
+  return recipes.filter((r) => r.userId === currentUserId);
 }
 
 function stringHash(seed: string): number {
