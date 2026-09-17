@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { MyRecipesGrid } from "@/components/MyRecipesGrid";
 import { getSessionUserId } from "@/lib/auth";
-import { FREE_RECIPE_LIMIT, isPro } from "@/lib/plan";
+import { countRecipesThisMonth, FREE_RECIPE_LIMIT, isPro, PRO_MONTHLY_RECIPE_LIMIT } from "@/lib/plan";
 import { prisma } from "@/lib/prisma";
 import { toFolderDto, toRecipeDto } from "@/lib/types";
 import type { FolderDto, RecipeDto } from "@/lib/types";
@@ -17,6 +17,7 @@ export default async function RecipesPage() {
   let folders: FolderDto[] = [];
   let isProUser = false;
   let myRecipeCount = 0;
+  let monthlyRecipeCount = 0;
 
   try {
     const [recipeRows, folderRows, user, myRecipeCountResult] = await Promise.all([
@@ -27,6 +28,7 @@ export default async function RecipesPage() {
     ]);
     isProUser = user ? isPro(user) : false;
     myRecipeCount = myRecipeCountResult;
+    if (isProUser) monthlyRecipeCount = await countRecipesThisMonth(userId);
     recipes = recipeRows.map(toRecipeDto);
     folders = folderRows.map(toFolderDto);
   } catch (err) {
@@ -40,6 +42,8 @@ export default async function RecipesPage() {
       isPro={isProUser}
       myRecipeCount={myRecipeCount}
       freeRecipeLimit={FREE_RECIPE_LIMIT}
+      monthlyRecipeCount={monthlyRecipeCount}
+      monthlyRecipeLimit={PRO_MONTHLY_RECIPE_LIMIT}
     />
   );
 }

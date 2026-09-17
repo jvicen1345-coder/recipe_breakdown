@@ -9,7 +9,7 @@ import { usePlan } from "./PlanProvider";
 import { useToast } from "./ToastProvider";
 
 const PRO_PERKS = [
-  "Unlimited recipe saves",
+  "100 recipe imports a month",
   "Cook Mode 🍳",
   "Full pantry checker 🧺",
   "Smart missing ingredients list",

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { requireVerifiedUserId } from "@/lib/auth";
 import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
-import { FREE_RECIPE_LIMIT, isPro } from "@/lib/plan";
+import { countRecipesThisMonth, FREE_RECIPE_LIMIT, isPro, PRO_MONTHLY_RECIPE_LIMIT } from "@/lib/plan";
 import { prisma } from "@/lib/prisma";
 import { toRecipeDto } from "@/lib/types";
 
@@ -46,10 +46,21 @@ export async function POST(request: Request) {
       const userIsPro = user ? isPro(user) : false;
 
       for (const url of urls) {
-        if (!userIsPro) {
+        if (userIsPro) {
+          const monthlyCount = await countRecipesThisMonth(userId);
+          if (monthlyCount >= PRO_MONTHLY_RECIPE_LIMIT) {
+            send({
+              url,
+              status: "error",
+              message: `You've hit Pro's ${PRO_MONTHLY_RECIPE_LIMIT}-recipe monthly limit — it resets in a few weeks.`,
+              reason: "monthly-limit",
+            });
+            continue;
+          }
+        } else {
           const savedCount = await prisma.recipe.count({ where: { createdByUserId: userId } });
           if (savedCount >= FREE_RECIPE_LIMIT) {
-            send({ url, status: "error", message: "You've hit the free plan's 10-recipe limit.", reason: "recipe-limit" });
+            send({ url, status: "error", message: `You've hit the free plan's ${FREE_RECIPE_LIMIT}-recipe limit.`, reason: "recipe-limit" });
             continue;
           }
         }

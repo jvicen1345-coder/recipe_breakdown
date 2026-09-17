@@ -5,7 +5,7 @@ import { getSessionUserId, requireVerifiedUserId } from "@/lib/auth";
 import { ExternalToolError } from "@/lib/exec";
 import { prisma } from "@/lib/prisma";
 import { createRecipeFromUrl, RecipeAlreadyExistsError } from "@/lib/pipeline";
-import { FREE_RECIPE_LIMIT, isPro } from "@/lib/plan";
+import { countRecipesThisMonth, FREE_RECIPE_LIMIT, isPro, PRO_MONTHLY_RECIPE_LIMIT } from "@/lib/plan";
 import { InvalidTikTokUrlError } from "@/lib/tiktok";
 import { toRecipeDto } from "@/lib/types";
 
@@ -38,11 +38,22 @@ export async function POST(request: Request) {
   const user = await prisma.user.findUnique({ where: { id: auth.userId } });
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  if (!isPro(user)) {
+  if (isPro(user)) {
+    const monthlyCount = await countRecipesThisMonth(user.id);
+    if (monthlyCount >= PRO_MONTHLY_RECIPE_LIMIT) {
+      return NextResponse.json(
+        {
+          error: `You've hit Pro's ${PRO_MONTHLY_RECIPE_LIMIT}-recipe monthly limit — it resets in a few weeks.`,
+          reason: "monthly-limit",
+        },
+        { status: 402 },
+      );
+    }
+  } else {
     const savedCount = await prisma.recipe.count({ where: { createdByUserId: user.id } });
     if (savedCount >= FREE_RECIPE_LIMIT) {
       return NextResponse.json(
-        { error: "You've hit the free plan's 10-recipe limit.", reason: "recipe-limit" },
+        { error: `You've hit the free plan's ${FREE_RECIPE_LIMIT}-recipe limit.`, reason: "recipe-limit" },
         { status: 402 },
       );
     }
