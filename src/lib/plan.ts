@@ -1,8 +1,19 @@
-export const FREE_RECIPE_LIMIT = 10;
+import { prisma } from "./prisma";
+
+export const FREE_RECIPE_LIMIT = 25;
 export const FREE_FOLDER_LIMIT = 2;
+
+// Pro isn't unlimited — it's a much roomier monthly allowance instead of the
+// free plan's lifetime cap, so it resets every 30 days rather than ever running out.
+export const PRO_MONTHLY_RECIPE_LIMIT = 100;
 
 export const PRO_PRICE_MONTHLY_USD = 4.99;
 export const PRO_PRICE_YEARLY_USD = 29.99;
+
+export async function countRecipesThisMonth(userId: string): Promise<number> {
+  const monthAgo = new Date(Date.now() - 30 * 86_400_000);
+  return prisma.recipe.count({ where: { userId, createdAt: { gte: monthAgo } } });
+}
 
 // The app owner gets Pro for free — same allowlist-by-env-var pattern as
 // ADMIN_EMAILS in lib/admin.ts. Everyone else needs a real subscription or

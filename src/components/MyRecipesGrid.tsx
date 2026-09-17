@@ -30,13 +30,17 @@ export function MyRecipesGrid({
   initialFolders,
   isPro = false,
   myRecipeCount = 0,
-  freeRecipeLimit = 10,
+  freeRecipeLimit = 25,
+  monthlyRecipeCount = 0,
+  monthlyRecipeLimit = 100,
 }: {
   initialRecipes: RecipeDto[];
   initialFolders: FolderDto[];
   isPro?: boolean;
   myRecipeCount?: number;
   freeRecipeLimit?: number;
+  monthlyRecipeCount?: number;
+  monthlyRecipeLimit?: number;
 }) {
   const recipes = initialRecipes;
   const [folders, setFolders] = useState(initialFolders);
@@ -247,6 +251,11 @@ export function MyRecipesGrid({
             >
               {myRecipeCount}/{freeRecipeLimit} recipes saved
             </button>
+          )}
+          {isPro && (
+            <span className="rounded-full bg-blush px-2.5 py-1 text-[11px] font-medium text-rose-deep shadow-sm">
+              {monthlyRecipeCount}/{monthlyRecipeLimit} imports this month
+            </span>
           )}
           <span className="text-xs text-dusty-rose">{recipes.length} saved 🌸</span>
         </div>
