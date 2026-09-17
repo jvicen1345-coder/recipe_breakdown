@@ -648,7 +648,7 @@ export function HomeFeed({
       <p className="pt-2 pb-4 text-center text-[11px] text-dusty-rose/70">
         Powered by the same software as{" "}
         <a
-          href="https://limbiccenter.com"
+          href="https://limbic.center/sign-in"
           target="_blank"
           rel="noreferrer"
           className="underline underline-offset-2 hover:text-dusty-rose"
