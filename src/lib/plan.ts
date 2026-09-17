@@ -5,7 +5,7 @@ export const FREE_FOLDER_LIMIT = 2;
 
 // Pro isn't unlimited — it's a much roomier monthly allowance instead of the
 // free plan's lifetime cap, so it resets every 30 days rather than ever running out.
-export const PRO_MONTHLY_RECIPE_LIMIT = 100;
+export const PRO_MONTHLY_RECIPE_LIMIT = 60;
 
 export const PRO_PRICE_MONTHLY_USD = 4.99;
 export const PRO_PRICE_YEARLY_USD = 29.99;

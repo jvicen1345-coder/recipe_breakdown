@@ -18,7 +18,7 @@ const UPSELL_COPY: Record<UpsellReason, { title: string; subtext: string }> = {
   "recipe-limit": {
     title: "Your recipe box is getting full 🌸",
     subtext:
-      "Upgrade to Cutesy Eats Pro to save up to 100 recipes a month, unlock Cook Mode, and get smarter grocery lists that only order what you need.",
+      "Upgrade to Cutesy Eats Pro to save up to 60 recipes a month, unlock Cook Mode, and get smarter grocery lists that only order what you need.",
   },
   "folder-limit": {
     title: "Your folders are getting full 🌸",
@@ -43,7 +43,7 @@ const UPSELL_COPY: Record<UpsellReason, { title: string; subtext: string }> = {
   },
   general: {
     title: "Unlock Cutesy Eats Pro ✨",
-    subtext: "Save up to 100 recipes a month, unlock Cook Mode, and get smarter grocery lists that only order what you need.",
+    subtext: "Save up to 60 recipes a month, unlock Cook Mode, and get smarter grocery lists that only order what you need.",
   },
 };
 
