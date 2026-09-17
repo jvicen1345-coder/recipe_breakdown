@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight, LogOut, MailCheck, Shield, Sparkles } from "lucide-react";
 
 import { useToast } from "./ToastProvider";
+import { UsersCard } from "./UsersCard";
 
 export function ProfileClient({
   email,
@@ -204,19 +205,10 @@ export function ProfileClient({
               <ChevronRight size={16} className="text-dusty-rose" />
             </Link>
           )}
-          {isAdmin && (
-            <Link
-              href="/admin/users"
-              className="flex items-center justify-between gap-3 rounded-2xl bg-lavender/40 px-4 py-3 text-left transition hover:bg-lavender/60"
-            >
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-deep">
-                <Shield size={14} /> Manage users
-              </span>
-              <ChevronRight size={16} className="text-dusty-rose" />
-            </Link>
-          )}
         </div>
       </section>
+
+      {isAdmin && <UsersCard />}
 
       <Link
         href="/profile/subscription"
