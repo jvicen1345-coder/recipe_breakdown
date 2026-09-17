@@ -1,25 +1,53 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Loader2, TriangleAlert } from "lucide-react";
 
 import { type AdminUser, PRO_SOURCE_BADGE, formatUserDate } from "@/lib/adminUsers";
+import { useToast } from "./ToastProvider";
 
 export function AdminUsersClient() {
+  const showToast = useToast();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch("/api/admin/users")
+  const loadUsers = useCallback(() => {
+    return fetch("/api/admin/users")
       .then(async (res) => {
         const data = await res.json().catch(() => null);
         if (!res.ok) throw new Error(data?.error ?? "Failed to load users.");
         setUsers(data.users ?? []);
+        setError(null);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load users."));
   }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  async function revokePro(id: string) {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/admin/users/${id}/revoke-pro`, { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        showToast(data?.error ?? "Couldn't revoke Pro — try again.");
+        return;
+      }
+      setConfirmingId(null);
+      showToast("Pro access revoked.");
+      await loadUsers();
+    } catch {
+      showToast("Couldn't reach the server — try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     if (!users) return null;
@@ -79,7 +107,7 @@ export function AdminUsersClient() {
 
       {filtered && filtered.length > 0 && (
         <div className="overflow-x-auto rounded-[1.75rem] border border-blush-dark/50 bg-white/85 shadow-[0_20px_55px_-25px_rgba(192,120,140,0.5)]">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="border-b border-blush-dark/40 text-xs uppercase tracking-wide text-dusty-rose">
                 <th className="px-4 py-3 font-medium">Account</th>
@@ -87,6 +115,7 @@ export function AdminUsersClient() {
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Renews / expires</th>
                 <th className="px-4 py-3 font-medium">Points</th>
+                <th className="px-4 py-3 font-medium" />
               </tr>
             </thead>
             <tbody>
@@ -119,6 +148,40 @@ export function AdminUsersClient() {
                     </td>
                     <td className="px-4 py-3 text-dusty-rose">{renewsOrExpires}</td>
                     <td className="px-4 py-3 text-dusty-rose">{u.points}</td>
+                    <td className="px-4 py-3 text-right">
+                      {u.proSource !== "free" && u.proSource !== "owner" && (
+                        confirmingId === u.id ? (
+                          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                            <span className="text-xs text-dusty-rose">Revoke?</span>
+                            <button
+                              type="button"
+                              onClick={() => revokePro(u.id)}
+                              disabled={busyId === u.id}
+                              className="inline-flex items-center gap-1 rounded-full bg-coral-deep px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {busyId === u.id && <Loader2 size={12} className="animate-spin" />}
+                              Yes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmingId(null)}
+                              disabled={busyId === u.id}
+                              className="rounded-full bg-blush px-3 py-1.5 text-xs font-semibold text-rose-deep transition hover:bg-blush-dark disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingId(u.id)}
+                            className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-coral-deep underline-offset-2 hover:underline"
+                          >
+                            Revoke Pro
+                          </button>
+                        )
+                      )}
+                    </td>
                   </tr>
                 );
               })}
