@@ -13,6 +13,8 @@ export function AdminUsersClient() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [grantingId, setGrantingId] = useState<string | null>(null);
+  const [grantDays, setGrantDays] = useState("30");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const loadUsers = useCallback(() => {
@@ -41,6 +43,30 @@ export function AdminUsersClient() {
       }
       setConfirmingId(null);
       showToast("Pro access revoked.");
+      await loadUsers();
+    } catch {
+      showToast("Couldn't reach the server — try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function grantPro(id: string) {
+    const days = Number(grantDays);
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/admin/users/${id}/grant-pro`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days: Number.isFinite(days) && days > 0 ? days : undefined }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        showToast(data?.error ?? "Couldn't grant Pro — try again.");
+        return;
+      }
+      setGrantingId(null);
+      showToast("Pro access granted 🌸");
       await loadUsers();
     } catch {
       showToast("Couldn't reach the server — try again.");
@@ -149,6 +175,48 @@ export function AdminUsersClient() {
                     <td className="px-4 py-3 text-dusty-rose">{renewsOrExpires}</td>
                     <td className="px-4 py-3 text-dusty-rose">{u.points}</td>
                     <td className="px-4 py-3 text-right">
+                      {u.proSource === "free" &&
+                        (grantingId === u.id ? (
+                          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                            <input
+                              type="number"
+                              min={1}
+                              max={365}
+                              value={grantDays}
+                              onChange={(e) => setGrantDays(e.target.value)}
+                              className="w-14 rounded-full border border-blush-dark/60 bg-white px-2 py-1 text-xs text-rose-deep outline-none focus:border-coral"
+                            />
+                            <span className="text-xs text-dusty-rose">days</span>
+                            <button
+                              type="button"
+                              onClick={() => grantPro(u.id)}
+                              disabled={busyId === u.id}
+                              className="inline-flex items-center gap-1 rounded-full bg-sage px-3 py-1.5 text-xs font-semibold text-sage-dark transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {busyId === u.id && <Loader2 size={12} className="animate-spin" />}
+                              Yes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setGrantingId(null)}
+                              disabled={busyId === u.id}
+                              className="rounded-full bg-blush px-3 py-1.5 text-xs font-semibold text-rose-deep transition hover:bg-blush-dark disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGrantDays("30");
+                              setGrantingId(u.id);
+                            }}
+                            className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-sage-dark underline-offset-2 hover:underline"
+                          >
+                            Grant Pro
+                          </button>
+                        ))}
                       {u.proSource !== "free" && u.proSource !== "owner" && (
                         confirmingId === u.id ? (
                           <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">

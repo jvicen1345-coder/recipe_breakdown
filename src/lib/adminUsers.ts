@@ -23,7 +23,7 @@ export interface AdminUser {
 export const PRO_SOURCE_BADGE: Record<ProSource, { label: string; className: string }> = {
   owner: { label: "Owner 👑", className: "bg-lavender/40 text-rose-deep" },
   stripe: { label: "Pro · Stripe", className: "bg-sage/25 text-sage-dark" },
-  community: { label: "Pro · points", className: "bg-blush text-rose-deep" },
+  community: { label: "Pro · granted", className: "bg-blush text-rose-deep" },
   legacy: { label: "⚠️ Free grant", className: "bg-coral-deep/15 text-coral-deep" },
   free: { label: "Free", className: "bg-blush-soft text-dusty-rose" },
 };
