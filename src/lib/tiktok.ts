@@ -6,7 +6,9 @@ import path from "node:path";
 import { runCommand } from "./exec";
 
 export const YT_DLP_BIN = process.env.YT_DLP_PATH || "yt-dlp";
-const DOWNLOAD_TIMEOUT_MS = 120_000;
+// 150s leaves the rest of the 300s route budget (maxDuration) for audio/frame
+// extraction, transcription, and the Claude analysis call that follow.
+const DOWNLOAD_TIMEOUT_MS = 150_000;
 
 export class InvalidTikTokUrlError extends Error {}
 
@@ -62,7 +64,7 @@ export async function downloadTikTok(url: string): Promise<TikTokDownload> {
         "--max-filesize",
         "300M",
         "--socket-timeout",
-        "30",
+        "45",
         "-f",
         "mp4/best",
         "-o",
