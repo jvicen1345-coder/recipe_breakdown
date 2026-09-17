@@ -41,6 +41,7 @@ EXPOSE 3000
 # Retries migrate deploy several times before giving up. A serverless Postgres
 # (e.g. Neon) waking from suspend can cost a failed attempt — Prisma's
 # client-side wait for the advisory lock is a fixed ~10s, so one failure isn't
-# conclusive; a few tries with a short gap gives the compute time to wake up
-# before this deploy actually fails.
+# conclusive; 6 tries with a short gap gives the compute time to wake up (or
+# an overlapping deploy's own migration to clear) before this deploy actually
+# fails.
 CMD ["sh", "-c", "i=0; until npx prisma migrate deploy; do i=$((i+1)); [ $i -ge 6 ] && exit 1; echo \"migrate deploy failed, retrying in 8s ($i/6)...\"; sleep 8; done; npm start"]

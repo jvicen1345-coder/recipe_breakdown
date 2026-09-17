@@ -7,9 +7,10 @@ import type { Nutrition } from "@/lib/types";
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
-// Generic reference daily targets — there's no user profile/goals system in this
-// single-user app, so these stand in for "a typical day" when figuring out what's
-// still left to eat today. Not medical advice, just a rough anchor for the nudge.
+// Generic reference daily targets — this card doesn't factor in the account's own
+// nutrition goals (see resolveGoals/nutrition-snapshot), so these stand in for "a
+// typical day" when figuring out what's still left to eat today. Not medical
+// advice, just a rough anchor for the nudge.
 const DAILY_TARGETS = { calories: 2000, protein: 100, carbs: 250, fat: 65 };
 
 function safeParseNutrition(json: string | null): Nutrition | null {
@@ -53,12 +54,18 @@ export async function GET() {
   streakWindowStart.setDate(today.getDate() - 90);
 
   const [weekLogs, streakWindowLogs, todayLogs] = await Promise.all([
-    prisma.cookLog.findMany({ where: { cookedAt: { gte: weekStart, lt: weekEnd } }, include: { recipe: true } }),
     prisma.cookLog.findMany({
-      where: { cookedAt: { gte: streakWindowStart, lt: tomorrow } },
+      where: { userId, cookedAt: { gte: weekStart, lt: weekEnd } },
+      include: { recipe: true },
+    }),
+    prisma.cookLog.findMany({
+      where: { userId, cookedAt: { gte: streakWindowStart, lt: tomorrow } },
       select: { cookedAt: true },
     }),
-    prisma.cookLog.findMany({ where: { cookedAt: { gte: today, lt: tomorrow } }, include: { recipe: true } }),
+    prisma.cookLog.findMany({
+      where: { userId, cookedAt: { gte: today, lt: tomorrow } },
+      include: { recipe: true },
+    }),
   ]);
 
   const hasCookedThisWeek = weekLogs.length > 0;
@@ -136,7 +143,7 @@ export async function GET() {
     )[0][0];
 
     const candidates = await prisma.recipe.findMany({
-      where: { id: { notIn: [...todayCookedIds] } },
+      where: { userId, id: { notIn: [...todayCookedIds] } },
       orderBy: { createdAt: "desc" },
     });
 

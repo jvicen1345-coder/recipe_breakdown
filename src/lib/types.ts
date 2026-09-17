@@ -43,10 +43,10 @@ export interface RecipeDto {
   personalNotes: string | null;
   folderId: string | null;
   createdAt: string;
-  // Whoever saved this recipe — attribution only (see prisma/schema.prisma), used
-  // client-side to personalize the homepage feed to "recipes I saved" without
-  // narrowing what's visible (the library itself stays fully shared).
-  createdByUserId: string | null;
+  // The owner — recipes are private (see prisma/schema.prisma), so every recipe in
+  // a response already belongs to the caller. Kept on the DTO as a safety check for
+  // client code (e.g. homeFeed.ts) rather than something that narrows visibility itself.
+  userId: string;
 }
 
 export interface FolderDto {
@@ -158,7 +158,7 @@ export function toRecipeDto(recipe: Recipe): RecipeDto {
     personalNotes: recipe.personalNotes,
     folderId: recipe.folderId,
     createdAt: recipe.createdAt.toISOString(),
-    createdByUserId: recipe.createdByUserId,
+    userId: recipe.userId,
   };
 }
 

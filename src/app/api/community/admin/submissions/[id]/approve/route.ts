@@ -72,7 +72,7 @@ export async function POST(_request: Request, { params }: Params) {
       nutritionJson,
       userNotes: submission.description,
       thumbnailUrl: submission.photoUrl,
-      createdByUserId: submission.submittedByUserId,
+      userId: submission.submittedByUserId,
     },
   });
 

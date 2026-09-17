@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
       for (const url of urls) {
         if (!userIsPro) {
-          const savedCount = await prisma.recipe.count({ where: { createdByUserId: userId } });
+          const savedCount = await prisma.recipe.count({ where: { userId } });
           if (savedCount >= FREE_RECIPE_LIMIT) {
             send({ url, status: "error", message: "You've hit the free plan's 10-recipe limit.", reason: "recipe-limit" });
             continue;

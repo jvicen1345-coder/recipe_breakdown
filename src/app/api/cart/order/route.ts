@@ -52,10 +52,16 @@ export async function POST(request: Request) {
 
   await prisma.$transaction([
     prisma.cartOrder.create({
-      data: { provider, itemsJson: JSON.stringify(items ?? []), recipeId: recipeId ?? null, source: source ?? null },
+      data: {
+        provider,
+        itemsJson: JSON.stringify(items ?? []),
+        recipeId: recipeId ?? null,
+        source: source ?? null,
+        userId: auth.userId,
+      },
     }),
     ...recipeIdsToStamp.map((id) =>
-      prisma.recipe.updateMany({ where: { id }, data: { lastOrderedViaAppAt: now } }),
+      prisma.recipe.updateMany({ where: { id, userId: auth.userId }, data: { lastOrderedViaAppAt: now } }),
     ),
     ...(pantrySavedCount
       ? [

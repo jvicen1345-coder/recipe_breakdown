@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 import { runCommand } from "@/lib/exec";
 
-// Used by Render/Railway's healthcheck to confirm a new deploy is actually
-// serving requests before it takes over traffic from the previous one. Plain
-// GET stays cheap for that frequent polling; ?diagnostics=true additionally
+// Used by Render's healthcheck to confirm a new deploy is actually serving
+// requests before it takes over traffic from the previous one. Plain GET
+// stays cheap for that frequent polling; ?diagnostics=true additionally
 // reports whether yt-dlp/ffmpeg/ffprobe are actually detected at runtime —
 // useful for diagnosing pipeline issues without shell access.
 async function checkTool(bin: string, versionFlag: string, timeoutMs = 5000) {

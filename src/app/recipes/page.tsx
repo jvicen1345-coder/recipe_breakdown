@@ -20,10 +20,10 @@ export default async function RecipesPage() {
 
   try {
     const [recipeRows, folderRows, user, myRecipeCountResult] = await Promise.all([
-      prisma.recipe.findMany({ orderBy: { createdAt: "desc" } }),
-      prisma.folder.findMany({ orderBy: { createdAt: "asc" } }),
+      prisma.recipe.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+      prisma.folder.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
       prisma.user.findUnique({ where: { id: userId } }),
-      prisma.recipe.count({ where: { createdByUserId: userId } }),
+      prisma.recipe.count({ where: { userId } }),
     ]);
     isProUser = user ? isPro(user) : false;
     myRecipeCount = myRecipeCountResult;

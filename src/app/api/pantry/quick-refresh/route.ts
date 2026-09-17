@@ -29,12 +29,14 @@ export async function POST(request: Request) {
   await prisma.$transaction([
     ...parsed.data.confirmed.map((name) =>
       prisma.pantryItem.upsert({
-        where: { name },
-        create: { name, category: categoryForItemName(name), lastConfirmedAt: now },
+        where: { userId_name: { userId: auth.userId, name } },
+        create: { name, category: categoryForItemName(name), lastConfirmedAt: now, userId: auth.userId },
         update: { lastConfirmedAt: now },
       }),
     ),
-    ...parsed.data.removed.map((name) => prisma.pantryItem.deleteMany({ where: { name } })),
+    ...parsed.data.removed.map((name) =>
+      prisma.pantryItem.deleteMany({ where: { userId: auth.userId, name } }),
+    ),
     prisma.user.update({ where: { id: auth.userId }, data: { pantryLastConfirmedAt: now } }),
   ]);
 
