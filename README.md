@@ -153,15 +153,23 @@ persistent server — not a serverless platform like Vercel, which can't install
 Railway is a straightforward option:
 
 1. New Project → **Deploy from GitHub repo** → pick this repo and branch. Railway detects the
-   `Dockerfile` and builds from it automatically.
+   `Dockerfile` (and `railway.json`) and builds from it automatically.
 2. Add environment variables (Project → Variables): `DATABASE_URL`, `ANTHROPIC_API_KEY`, and
-   optionally `OPENAI_API_KEY` / `ANTHROPIC_MODEL` / `OPENAI_TRANSCRIBE_MODEL`. You can point
+   `AUTH_SECRET` (a random string — see `.env.example`; without it, login sessions fall back to an
+   insecure dev-only secret) are the ones you need for a real deployment. Optionally add
+   `OPENAI_API_KEY` / `ANTHROPIC_MODEL` / `OPENAI_TRANSCRIBE_MODEL` and anything else from
+   `.env.example` (email verification, Stripe, Google login, affiliate IDs). You can point
    `DATABASE_URL` at any reachable Postgres instance, including one you set up elsewhere (e.g. Neon).
-3. Deploy. The build runs `prisma migrate deploy` automatically, so the schema gets created on
-   first deploy.
-4. Optional: attach a persistent Volume mounted at `/app/data` so saved thumbnails survive
-   redeploys (without one, `data/uploads` resets each time the container rebuilds — saved recipes
-   and their text/metadata in Postgres are unaffected either way, only the thumbnail images).
+3. Deploy. `DATABASE_URL` needs to be set before the build step even runs (`next build` fails fast
+   without it, though it doesn't need to be reachable yet) — the container then runs
+   `prisma migrate deploy` at startup, once it's actually live, so the schema gets created on first
+   boot. This runs at container start rather than during the image build because a Postgres add-on's
+   private-network host is usually only reachable from the running container, not from the build
+   environment.
+4. Attach a persistent Volume mounted at `/app/data` so saved thumbnails and uploaded
+   community-recipe photos survive redeploys (without one, `data/uploads` and
+   `data/community-uploads` reset each time the container rebuilds — saved recipes and their
+   text/metadata in Postgres are unaffected either way, only those local files).
 
 ## Environment variables
 
@@ -184,8 +192,9 @@ See [`.env.example`](./.env.example) for the full list. The important ones:
 - **Time, difficulty, price, and nutrition facts are estimates** from a language model reasoning
   over the video's content and general culinary knowledge, not measured facts — treat them as a
   helpful ballpark, not a lab-verified nutrition label.
-- **This is a single-user app** by design — no accounts/auth. If you deploy it somewhere shared,
-  put it behind your own access control.
+- **Recipes, folders, pantry, cook log, and meal log are all private to the account that owns
+  them** — the only cross-account visibility is the opt-in "social" layer (Community submissions,
+  Made It posts).
 - **Requests can take 30–90+ seconds** (video download + transcription + analysis). The API route
   sets `maxDuration = 300`, but confirm your hosting platform allows long-running server functions.
 

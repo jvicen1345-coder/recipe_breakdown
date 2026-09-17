@@ -28,8 +28,13 @@ export async function POST(request: Request) {
   }
   const data = parsed.data;
 
-  const recipe = await prisma.recipe.findUnique({ where: { id: data.recipeId }, select: { id: true } });
-  if (!recipe) return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
+  const recipe = await prisma.recipe.findUnique({
+    where: { id: data.recipeId },
+    select: { id: true, userId: true },
+  });
+  if (!recipe || recipe.userId !== auth.userId) {
+    return NextResponse.json({ error: "Recipe not found." }, { status: 404 });
+  }
 
   const post = await prisma.madeItPost.create({
     data: {

@@ -21,10 +21,10 @@ export class RecipeAlreadyExistsError extends Error {
  * extracts audio + sample frames via ffmpeg, transcribes narration, and sends
  * the caption/transcript/frames/notes to Claude for the structured breakdown.
  */
-export async function createRecipeFromUrl(url: string, createdByUserId: string, userNotes?: string) {
+export async function createRecipeFromUrl(url: string, userId: string, userNotes?: string) {
   assertTikTokUrl(url);
 
-  const existing = await prisma.recipe.findUnique({ where: { sourceUrl: url } });
+  const existing = await prisma.recipe.findFirst({ where: { userId, sourceUrl: url } });
   if (existing) {
     throw new RecipeAlreadyExistsError(existing.id);
   }
@@ -60,7 +60,7 @@ export async function createRecipeFromUrl(url: string, createdByUserId: string, 
     return prisma.recipe.create({
       data: {
         id,
-        createdByUserId,
+        userId,
         sourceUrl: metadata.webpageUrl,
         title: analysis.title,
         authorHandle: metadata.uploader,

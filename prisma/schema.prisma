@@ -10,7 +10,9 @@ datasource db {
   provider = "postgresql"
 }
 
-// A saved account, shared by everyone who signs up — this app doesn't have per-user data.
+// A saved account. Recipes, folders, pantry, cook log, and meal log are all
+// private to the account that owns them — the only cross-account visibility
+// is the opt-in "social" layer (Community submissions, Made It posts).
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -68,6 +70,10 @@ model User {
 
   recipesCreated       Recipe[]
   foldersCreated       Folder[]
+  pantryItems          PantryItem[]
+  cookLogs             CookLog[]
+  manualMealLogs       ManualMealLog[]
+  cartOrders           CartOrder[]
   communitySubmissions CommunitySubmission[]
   submissionVotes      SubmissionVote[]
   madeItPosts          MadeItPost[]
@@ -78,7 +84,7 @@ model User {
 
 model Recipe {
   id          String   @id @default(cuid())
-  sourceUrl   String   @unique
+  sourceUrl   String
 
   title         String
   authorHandle  String?
@@ -115,11 +121,11 @@ model Recipe {
 
   createdAt DateTime @default(now())
 
-  // Whoever saved this recipe — the library itself stays shared (everyone sees every
-  // recipe), this only exists so the free-tier 10-recipe cap counts what YOU personally
-  // saved rather than the whole household's shared count.
-  createdByUserId String?
-  createdBy       User?   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  // The owner — this recipe is private to them. The only way it becomes visible to
+  // anyone else is the opt-in "social" layer (a Made It post, or being born from an
+  // approved Community submission), never by browsing the general recipe library.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Set when this recipe's ingredients were sent to a delivery cart — powers the
   // "Ordered via Cutesy Eats" tag on the weekly nutrition snapshot.
@@ -132,6 +138,10 @@ model Recipe {
   communitySubmission CommunitySubmission?
 
   madeItPosts MadeItPost[]
+
+  // Same source video can be independently saved by different users, but not
+  // twice by the same one.
+  @@unique([userId, sourceUrl])
 }
 
 model Folder {
@@ -142,23 +152,27 @@ model Folder {
 
   recipes Recipe[]
 
-  // Same attribution-only purpose as Recipe.createdByUserId — powers the free-tier
-  // 2-folder cap without making folders themselves per-user/private.
-  createdByUserId String?
-  createdBy       User?   @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  // The owner — folders are private, same as the recipes inside them.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// A staple the household keeps stocked (olive oil, garlic, pasta, …), used to check
-// which recipe ingredients are already on hand.
+// A staple this user's pantry keeps stocked (olive oil, garlic, pasta, …), used to
+// check which recipe ingredients are already on hand.
 model PantryItem {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
   category  String
   createdAt DateTime @default(now())
   // Bumped whenever this item is (re)confirmed — via onboarding, the full pantry page,
   // or the quick-refresh sheet. Distinct from createdAt so "last confirmed 3 days ago"
   // reads right even for an item added months back.
   lastConfirmedAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
 }
 
 // One "send to a delivery app" action from the Smart Cart or "Shop this recipe" —
@@ -174,6 +188,9 @@ model CartOrder {
   // cook_mode_exit. Powers affiliate-click analytics (which context converts best).
   source    String?
   createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // One "I made this!" event from Cook Mode — powers cook counts, the "haven't
@@ -185,11 +202,13 @@ model CookLog {
   recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   cookedAt DateTime @default(now())
   rating   Int? // 1-5 stars, optional
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // A hand-typed meal that didn't come from a saved recipe (see lib/nutritionGoals.ts and
-// the Week tab's "+ Log a meal" sheet) — shared across the household like CookLog, not
-// per-user, so it slots into the same weekly totals/meal list.
+// the Week tab's "+ Log a meal" sheet) — private to whoever logged it, same as CookLog.
 model ManualMealLog {
   id                 String   @id @default(cuid())
   name               String
@@ -200,6 +219,9 @@ model ManualMealLog {
   photoUrl           String?
   loggedAt           DateTime @default(now())
   createdAt          DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // One community recipe submission, working through the moderation pipeline described

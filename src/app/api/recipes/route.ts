@@ -21,7 +21,7 @@ export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  const recipes = await prisma.recipe.findMany({ orderBy: { createdAt: "desc" } });
+  const recipes = await prisma.recipe.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
   return NextResponse.json({ recipes: recipes.map(toRecipeDto) });
 }
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   if (!isPro(user)) {
-    const savedCount = await prisma.recipe.count({ where: { createdByUserId: user.id } });
+    const savedCount = await prisma.recipe.count({ where: { userId: user.id } });
     if (savedCount >= FREE_RECIPE_LIMIT) {
       return NextResponse.json(
         { error: "You've hit the free plan's 10-recipe limit.", reason: "recipe-limit" },
