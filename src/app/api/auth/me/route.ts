@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getSessionUserId } from "@/lib/auth";
+import { isPro } from "@/lib/plan";
 import { prisma } from "@/lib/prisma";
 
 function userPayload(user: {
@@ -11,6 +12,7 @@ function userPayload(user: {
   showThisWeekCard: boolean;
   emailVerified: boolean;
   plan: string;
+  proAccessUntil: Date | null;
   groceryCadence: string | null;
   pantryOnboardedAt: Date | null;
   pantryLastConfirmedAt: Date | null;
@@ -22,6 +24,7 @@ function userPayload(user: {
     showThisWeekCard: user.showThisWeekCard,
     emailVerified: user.emailVerified,
     plan: user.plan,
+    isPro: isPro(user),
     groceryCadence: user.groceryCadence,
     pantryOnboardedAt: user.pantryOnboardedAt?.toISOString() ?? null,
     pantryLastConfirmedAt: user.pantryLastConfirmedAt?.toISOString() ?? null,

@@ -42,7 +42,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled) return;
-        setIsPro(data?.user?.plan === "pro");
+        setIsPro(Boolean(data?.user?.isPro));
         setName(data?.user?.name ?? null);
         setGroceryCadence(data?.user?.groceryCadence ?? null);
         setPantryOnboardedAt(data?.user?.pantryOnboardedAt ?? null);
