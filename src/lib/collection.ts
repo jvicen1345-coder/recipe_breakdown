@@ -1,7 +1,12 @@
 import { runCommand } from "./exec";
 import { assertTikTokUrl, YT_DLP_BIN } from "./tiktok";
 
-const LIST_TIMEOUT_MS = 60_000;
+// Matches downloadTikTok's timeout in tiktok.ts: yt-dlp's default 20s socket
+// timeout is too short against TikTok from Render's network and was aborting
+// the whole listing over a single slow entry (yt-dlp exits non-zero without
+// --ignore-errors even in --flat-playlist mode). 45s * yt-dlp's 3 default
+// extractor retries = 135s worst case, so the process ceiling leaves headroom.
+const LIST_TIMEOUT_MS = 150_000;
 const MAX_ENTRIES = 50;
 
 export interface TikTokCollectionEntry {
@@ -39,7 +44,17 @@ export async function fetchTikTokCollection(url: string): Promise<TikTokCollecti
 
   const { stdout } = await runCommand(
     YT_DLP_BIN,
-    [url, "--flat-playlist", "-J", "--no-warnings", "--playlist-end", String(MAX_ENTRIES)],
+    [
+      url,
+      "--flat-playlist",
+      "-J",
+      "--no-warnings",
+      "--ignore-errors",
+      "--socket-timeout",
+      "45",
+      "--playlist-end",
+      String(MAX_ENTRIES),
+    ],
     { timeoutMs: LIST_TIMEOUT_MS },
   );
 

@@ -8,7 +8,8 @@ import { toUserFacingPipelineError } from "@/lib/pipeline";
 import { prisma } from "@/lib/prisma";
 import { InvalidTikTokUrlError } from "@/lib/tiktok";
 
-export const maxDuration = 60;
+// Matches fetchTikTokCollection's own internal timeout ceiling in lib/collection.ts.
+export const maxDuration = 180;
 
 const schema = z.object({ url: z.string().trim().min(1, "A TikTok collection link is required.") });
 
